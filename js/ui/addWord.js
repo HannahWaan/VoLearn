@@ -1005,48 +1005,84 @@ export function saveWord() {
     
     const phonetic = meanings[0]?.phoneticUS || meanings[0]?.phoneticUK || '';
     
-    // Check for existing word to update
-    const existingIndex = appData.vocabulary.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
+    // Lưu lại setId trước khi edit để quay về đúng chỗ
+    const returnToSetId = editingWordId ? 
+        (appData.vocabulary.find(w => w.id === editingWordId)?.setId || setId) : 
+        null;
     
-    if (existingIndex !== -1) {
-        // Update existing
-        appData.vocabulary[existingIndex] = {
-            ...appData.vocabulary[existingIndex],
-            word,
-            phonetic,
-            wordFormation,
-            meanings,
-            setId: setId || null,
-            updatedAt: new Date().toISOString()
-        };
-        saveData(appData);
-        clearWordFormSilent();
-        showToast(`Đã cập nhật từ "${word}"`);
-    } else {
-        // Create new word
-        const newWord = {
-            id: generateId(),
-            word, 
-            phonetic, 
-            wordFormation, 
-            meanings,
-            setId: setId || null,
-            createdAt: new Date().toISOString(),
-            mastered: false,
-            bookmarked: false,
-            srsLevel: 0,
-            nextReview: new Date().toISOString()
-        };
-        
-        appData.vocabulary.push(newWord);
-        
-        // Update history
-        addToHistory('add', newWord.id);
-        
-        saveData(appData);
-        clearWordFormSilent();
-        showToast(`Đã lưu từ "${word}"`);
+    // Check if editing existing word
+    if (editingWordId) {
+        const existingIndex = appData.vocabulary.findIndex(w => w.id === editingWordId);
+        if (existingIndex !== -1) {
+            appData.vocabulary[existingIndex] = {
+                ...appData.vocabulary[existingIndex],
+                word,
+                phonetic,
+                wordFormation,
+                meanings,
+                setId: setId || null,
+                updatedAt: new Date().toISOString()
+            };
+            saveData(appData);
+            clearWordFormSilent();
+            showToast(`Đã cập nhật từ "${word}"`, 'success');
+            
+            // Quay lại bộ từ vựng sau khi edit
+            setTimeout(() => {
+                if (returnToSetId || setId) {
+                    window.currentSetViewId = returnToSetId || setId || 'all';
+                    navigate('set-view');
+                    setTimeout(() => {
+                        if (window.renderSetView) window.renderSetView();
+                    }, 100);
+                }
+            }, 500);
+            return;
+        }
     }
+    
+    // Check for existing word by name
+    const existingByName = appData.vocabulary.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
+    
+    if (existingByName !== -1 && !editingWordId) {
+        if (confirm(`Từ "${word}" đã tồn tại. Bạn có muốn cập nhật không?`)) {
+            appData.vocabulary[existingByName] = {
+                ...appData.vocabulary[existingByName],
+                word,
+                phonetic,
+                wordFormation,
+                meanings,
+                setId: setId || null,
+                updatedAt: new Date().toISOString()
+            };
+            saveData(appData);
+            clearWordFormSilent();
+            showToast(`Đã cập nhật từ "${word}"`, 'success');
+        }
+        return;
+    }
+    
+    // Create new word
+    const newWord = {
+        id: generateId(),
+        word, 
+        phonetic, 
+        wordFormation, 
+        meanings,
+        setId: setId || null,
+        createdAt: new Date().toISOString(),
+        mastered: false,
+        bookmarked: false,
+        srsLevel: 0,
+        nextReview: new Date().toISOString()
+    };
+    
+    appData.vocabulary.push(newWord);
+    addToHistory('add', newWord.id);
+    
+    saveData(appData);
+    clearWordFormSilent();
+    showToast(`Đã lưu từ "${word}"`, 'success');
     
     // Dispatch event for other modules to update
     window.dispatchEvent(new CustomEvent('volearn:wordSaved'));
