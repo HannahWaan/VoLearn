@@ -1,11 +1,9 @@
 /* ===== SPEECH MODULE ===== */
 /* VoLearn v2.1.0 - Text to Speech */
 
-/* ===== STATE ===== */
 let voices = [];
 let voicesLoaded = false;
 
-/* ===== INITIALIZATION ===== */
 export function initSpeech() {
     console.log('🔊 Đang tải giọng đọc...');
     
@@ -14,9 +12,6 @@ export function initSpeech() {
         voicesLoaded = voices.length > 0;
         if (voicesLoaded) {
             console.log(`✅ Đã tải ${voices.length} giọng đọc`);
-            // Log available English voices for debugging
-            const enVoices = voices.filter(v => v.lang.startsWith('en'));
-            console.log('English voices:', enVoices.map(v => `${v.name} (${v.lang})`));
         }
     };
     
@@ -26,67 +21,58 @@ export function initSpeech() {
         speechSynthesis.onvoiceschanged = loadVoices;
     }
     
-    // Fallback: try loading voices after delay
     setTimeout(loadVoices, 500);
+    setTimeout(loadVoices, 1000);
 }
 
-/* ===== GET VOICE BY LANG ===== */
 function getVoice(lang) {
     if (!lang || typeof lang !== 'string') {
         lang = 'en-US';
     }
     
-    // Map common accent codes
-    const langMap = {
-        'en-US': ['en-US', 'en_US'],
-        'en-GB': ['en-GB', 'en_GB', 'en-AU', 'en_AU'],
-        'vi-VN': ['vi-VN', 'vi_VN', 'vi']
-    };
+    // Normalize lang code
+    lang = lang.replace('_', '-');
     
-    const langVariants = langMap[lang] || [lang];
-    const langPrefix = lang.split('-')[0];
+    // Try exact match
+    let voice = voices.find(v => v.lang.replace('_', '-') === lang);
+    if (voice) return voice;
     
-    // Try exact match first
-    for (const variant of langVariants) {
-        const voice = voices.find(v => v.lang === variant || v.lang.replace('_', '-') === variant);
+    // Try variations
+    if (lang === 'en-GB') {
+        voice = voices.find(v => 
+            v.lang.includes('GB') || 
+            v.lang.includes('UK') ||
+            v.name.toLowerCase().includes('british') ||
+            v.name.toLowerCase().includes('uk') ||
+            v.name.toLowerCase().includes('daniel') ||  // macOS UK voice
+            v.name.toLowerCase().includes('kate')       // Windows UK voice
+        );
         if (voice) return voice;
     }
     
-    // Try prefix match for the specific accent
-    if (lang === 'en-GB') {
-        // For UK, try to find British or non-US English
-        const ukVoice = voices.find(v => 
-            v.lang === 'en-GB' || 
-            v.lang === 'en_GB' ||
-            (v.lang.startsWith('en') && v.name.toLowerCase().includes('british')) ||
-            (v.lang.startsWith('en') && v.name.toLowerCase().includes('uk'))
-        );
-        if (ukVoice) return ukVoice;
-    }
-    
     if (lang === 'en-US') {
-        // For US, try to find American English
-        const usVoice = voices.find(v => 
-            v.lang === 'en-US' || 
-            v.lang === 'en_US' ||
-            (v.lang.startsWith('en') && v.name.toLowerCase().includes('us')) ||
-            (v.lang.startsWith('en') && v.name.toLowerCase().includes('american'))
+        voice = voices.find(v => 
+            v.lang.includes('US') || 
+            v.name.toLowerCase().includes('us') ||
+            v.name.toLowerCase().includes('american') ||
+            v.name.toLowerCase().includes('samantha') ||  // macOS US voice
+            v.name.toLowerCase().includes('david')        // Windows US voice
         );
-        if (usVoice) return usVoice;
+        if (voice) return voice;
     }
     
-    // Fallback to any English voice
-    const anyEnglish = voices.find(v => v.lang.startsWith('en'));
-    if (anyEnglish) return anyEnglish;
+    // Fallback to any English
+    const langPrefix = lang.split('-')[0];
+    voice = voices.find(v => v.lang.startsWith(langPrefix));
+    if (voice) return voice;
     
-    // Final fallback: first available voice
     return voices[0];
 }
 
-/* ===== SPEAK ===== */
 export function speak(text, options = {}) {
     if (!text || typeof text !== 'string') return;
     
+    // Cancel any ongoing speech
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
@@ -99,7 +85,6 @@ export function speak(text, options = {}) {
             const voice = getVoice(options.lang);
             if (voice) {
                 utterance.voice = voice;
-                console.log(`Speaking "${text}" with voice: ${voice.name} (${voice.lang})`);
             }
         }
         utterance.rate = options.rate || 1;
@@ -107,31 +92,35 @@ export function speak(text, options = {}) {
         utterance.volume = options.volume || 1;
     }
     
-    speechSynthesis.speak(utterance);
+    // Ensure speech synthesis is ready
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+    }
+    
+    // Small delay to ensure cancel is processed
+    setTimeout(() => {
+        speechSynthesis.speak(utterance);
+    }, 50);
 }
 
-/* ===== SPEAK WORD ===== */
 export function speakWord(word, accentCode) {
     if (!word) return;
-    speechSynthesis.cancel();
     
     const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
-    speak(word, { lang });
+    console.log(`🔊 Speaking "${word}" with accent: ${lang}`);
+    speak(word, { lang, rate: 0.9 });
 }
 
-/* ===== SPEAK WITH ACCENT ===== */
 export function speakWithAccent(text, accentCode) {
     if (!text) return;
     const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
     speak(text, { lang });
 }
 
-/* ===== STOP SPEAKING ===== */
 export function stopSpeaking() {
     speechSynthesis.cancel();
 }
 
-/* ===== GET AVAILABLE VOICES ===== */
 export function getAvailableVoices() {
     return [...voices];
 }
