@@ -443,3 +443,48 @@
 .word-card.selected .btn-icon.active {
     color: #fff;
 }
+
+/* ===== SCALE SLIDER ===== */
+.scale-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scale-slider,
+#word-scale-slider {
+    width: 100px;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--border-color, #e0e0e0);
+    border-radius: 2px;
+    outline: none;
+}
+
+.scale-slider::-webkit-slider-thumb,
+#word-scale-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color, #667eea);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ===== SPLIT VIEW SCALE ===== */
+.set-view-split {
+    display: grid;
+    grid-template-columns: 40% 60%;
+    gap: 16px;
+    height: 100%;
+    transition: grid-template-columns 0.3s ease;
+}
+
+.word-list-grid {
+    --card-scale: 1;
+}
+
+.word-card {
+    transform: scale(var(--card-scale, 1));
+    transform-origin: top left;
+}
