@@ -1,11 +1,12 @@
 /* ===== BOOKSHELF MODULE ===== */
 /* VoLearn v2.1.0 - Quản lý tủ sách */
 
-import { appData, addSet, deleteSet as deleteSetFromState } from '../core/state.js';
+import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast } from './toast.js';
 import { openModal, closeAllModals } from './modalEngine.js';
 import { escapeHtml, generateId } from '../utils/helpers.js';
+import { navigate } from '../core/router.js';
 
 /* ===== STATE ===== */
 let searchQuery = '';
@@ -14,6 +15,7 @@ let searchQuery = '';
 export function initBookshelf() {
     bindBookshelfEvents();
     renderShelves();
+    populateSetSelect();
     console.log('✅ Bookshelf initialized');
 }
 
@@ -114,6 +116,9 @@ export function openCreateSetModal() {
     if (colorInput) colorInput.value = '#667eea';
     
     openModal('create-set-modal');
+    
+    // Focus on name input
+    setTimeout(() => nameInput?.focus(), 100);
 }
 
 export function saveNewSet() {
@@ -147,9 +152,13 @@ export function saveNewSet() {
     appData.sets.push(newSet);
     
     saveData(appData);
+    
+    // Close modal FIRST
     closeAllModals();
+    
+    // Then update UI
     renderShelves();
-    populateSetSelect(); // Update dropdown in Add Word page
+    populateSetSelect();
     
     showToast(`Đã tạo bộ từ "${name}"`);
 }
@@ -184,15 +193,11 @@ export function deleteSet(setId) {
 
 /* ===== OPEN SET DETAIL ===== */
 export function openSetDetail(setId) {
-    // This will be handled by setView module
-    window.dispatchEvent(new CustomEvent('volearn:openSet', { 
-        detail: { setId } 
-    }));
+    // Store current set ID globally
+    window.currentSetId = setId;
     
-    // Or direct call if available
-    if (window.openSetDetailView) {
-        window.openSetDetailView(setId);
-    }
+    // Navigate to set-view section
+    navigate('set-view');
 }
 
 /* ===== GLOBAL EXPORTS ===== */
