@@ -3,6 +3,8 @@
 
 import { appData } from '../core/state.js';
 import { showToast } from './toast.js';
+import { openModal, closeAllModals } from './modalEngine.js';
+import { escapeHtml } from '../utils/helpers.js';
 
 /* ===== STATE ===== */
 let currentMonth = new Date().getMonth();
@@ -11,17 +13,18 @@ let selectedDate = null;
 
 /* ===== INIT ===== */
 export function initCalendar() {
+    bindCalendarEvents();
     renderCalendar();
     renderTodayStats();
-    bindCalendarEvents();
+    console.log('✅ Calendar initialized');
 }
 
 /* ===== RENDER CALENDAR ===== */
 export function renderCalendar() {
     const container = document.getElementById('calendar-grid');
-    const monthLabel = document.getElementById('calendar-month');
+    const monthLabel = document.getElementById('current-month');
     
-    if (!container || !monthLabel) return;
+    if (!container) return;
 
     const monthNames = [
         'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 
@@ -29,177 +32,76 @@ export function renderCalendar() {
         'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
     ];
     
-    monthLabel.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    if (monthLabel) {
+        monthLabel.textContent = `${monthNames[currentMonth]}, ${currentYear}`;
+    }
 
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay(); // 0 = Sunday
-
-    // Adjust for Monday start
-    const adjustedStartDay = startingDay === 0 ? 6 : startingDay - 1;
+    let startingDay = firstDay.getDay(); // 0 = Sunday
+    
+    // Adjust for Sunday = 0 -> make it 7 for easier calculation (week starts Monday)
+    if (startingDay === 0) startingDay = 7;
 
     let html = '';
 
-    // Day headers
+    // Day headers (Mon-Sun)
     const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     html += dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
 
-    // Empty cells before first day
-    for (let i = 0; i < adjustedStartDay; i++) {
+    // Empty cells before first day (Monday = 1)
+    for (let i = 1; i < startingDay; i++) {
         html += '<div class="calendar-day empty"></div>';
     }
 
     // Days
     const today = new Date();
-    const isCurrentMonth = today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+    const todayStr = formatDateStr(today.getFullYear(), today.getMonth(), today.getDate());
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = formatDate(currentYear, currentMonth, day);
+        const dateStr = formatDateStr(currentYear, currentMonth, day);
         const stats = getDayStats(dateStr);
-        const isToday = isCurrentMonth && day === today.getDate();
+        const isToday = dateStr === todayStr;
         const isSelected = selectedDate === dateStr;
-        const hasActivity = stats.wordsAdded > 0 || stats.wordsPracticed > 0;
+        const hasActivity = stats.added > 0 || stats.reviewed > 0;
 
         let classes = ['calendar-day'];
         if (isToday) classes.push('today');
         if (isSelected) classes.push('selected');
         if (hasActivity) classes.push('has-activity');
 
-        const activityLevel = getActivityLevel(stats);
-        if (activityLevel > 0) classes.push(`level-${activityLevel}`);
-
         html += `
-            <div class="${classes.join(' ')}" data-date="${dateStr}">
+            <div class="${classes.join(' ')}" data-date="${dateStr}" onclick="window.showDayWords('${dateStr}')">
                 <span class="day-number">${day}</span>
-                ${hasActivity ? `
-                    <div class="day-indicators">
-                        ${stats.wordsAdded > 0 ? '<span class="indicator added"></span>' : ''}
-                        ${stats.wordsPracticed > 0 ? '<span class="indicator practiced"></span>' : ''}
-                    </div>
-                ` : ''}
             </div>
         `;
     }
 
     container.innerHTML = html;
-    bindDayClickEvents();
 }
 
 /* ===== RENDER TODAY STATS ===== */
 function renderTodayStats() {
-    const container = document.getElementById('today-stats');
-    if (!container) return;
-
-    const today = formatDate(
+    const today = formatDateStr(
         new Date().getFullYear(),
         new Date().getMonth(),
         new Date().getDate()
     );
     
     const stats = getDayStats(today);
-
-    container.innerHTML = `
-        <div class="today-stats-card">
-            <h3><i class="fas fa-calendar-day"></i> Hôm nay</h3>
-            <div class="stats-row">
-                <div class="stat-item">
-                    <span class="stat-value">${stats.wordsAdded}</span>
-                    <span class="stat-label">Từ mới</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${stats.wordsPracticed}</span>
-                    <span class="stat-label">Đã luyện</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${stats.correctAnswers}</span>
-                    <span class="stat-label">Đúng</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${stats.streak}</span>
-                    <span class="stat-label">Streak</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-/* ===== RENDER DAY DETAIL ===== */
-function renderDayDetail(dateStr) {
-    const modal = document.getElementById('day-detail-modal');
-    if (!modal) return;
-
-    const stats = getDayStats(dateStr);
-    const wordsAddedList = getWordsAddedOnDate(dateStr);
-    const date = new Date(dateStr);
     
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = date.toLocaleDateString('vi-VN', options);
-
-    const content = modal.querySelector('.modal-content') || modal;
-    content.innerHTML = `
-        <div class="modal-header">
-            <h2>${formattedDate}</h2>
-            <button class="btn-close" onclick="window.closeDayDetailModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="modal-body">
-            <div class="day-stats-grid">
-                <div class="day-stat">
-                    <i class="fas fa-plus-circle text-success"></i>
-                    <div>
-                        <span class="value">${stats.wordsAdded}</span>
-                        <span class="label">Từ đã thêm</span>
-                    </div>
-                </div>
-                <div class="day-stat">
-                    <i class="fas fa-graduation-cap text-primary"></i>
-                    <div>
-                        <span class="value">${stats.wordsPracticed}</span>
-                        <span class="label">Từ đã luyện</span>
-                    </div>
-                </div>
-                <div class="day-stat">
-                    <i class="fas fa-check text-success"></i>
-                    <div>
-                        <span class="value">${stats.correctAnswers}</span>
-                        <span class="label">Câu đúng</span>
-                    </div>
-                </div>
-                <div class="day-stat">
-                    <i class="fas fa-times text-danger"></i>
-                    <div>
-                        <span class="value">${stats.wrongAnswers}</span>
-                        <span class="label">Câu sai</span>
-                    </div>
-                </div>
-            </div>
-            
-            ${wordsAddedList.length > 0 ? `
-                <div class="words-added-section">
-                    <h3><i class="fas fa-list"></i> Từ đã thêm</h3>
-                    <ul class="words-added-list">
-                        ${wordsAddedList.map(w => `
-                            <li>
-                                <strong>${escapeHtml(w.word)}</strong>
-                                <span>${escapeHtml(w.meaning || '')}</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            ` : ''}
-        </div>
-    `;
-
-    modal.classList.add('show');
+    const dailyAdded = document.getElementById('daily-added');
+    const dailyReviewed = document.getElementById('daily-reviewed');
+    
+    if (dailyAdded) dailyAdded.textContent = stats.added;
+    if (dailyReviewed) dailyReviewed.textContent = stats.reviewed;
 }
 
 /* ===== BIND EVENTS ===== */
 function bindCalendarEvents() {
     // Previous month
-    const prevBtn = document.getElementById('btn-prev-month');
+    const prevBtn = document.getElementById('prev-month');
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             currentMonth--;
@@ -212,7 +114,7 @@ function bindCalendarEvents() {
     }
 
     // Next month
-    const nextBtn = document.getElementById('btn-next-month');
+    const nextBtn = document.getElementById('next-month');
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             currentMonth++;
@@ -223,125 +125,103 @@ function bindCalendarEvents() {
             renderCalendar();
         });
     }
+}
 
-    // Today button
-    const todayBtn = document.getElementById('btn-today');
-    if (todayBtn) {
-        todayBtn.addEventListener('click', () => {
-            const today = new Date();
-            currentMonth = today.getMonth();
-            currentYear = today.getFullYear();
-            renderCalendar();
-        });
+/* ===== SHOW DAY WORDS ===== */
+export function showDayWords(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar(); // Update selected state
+    
+    const stats = getDayStats(dateStr);
+    const addedWords = getWordsAddedOnDate(dateStr);
+    const reviewedWords = getWordsReviewedOnDate(dateStr);
+    
+    const date = new Date(dateStr);
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = date.toLocaleDateString('vi-VN', options);
+    
+    // Create or get modal
+    let modal = document.getElementById('day-detail-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'day-detail-modal';
+        modal.className = 'modal';
+        document.getElementById('modals-container')?.appendChild(modal);
     }
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${formattedDate}</h3>
+                <button class="modal-close" onclick="window.closeDayDetailModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="day-stats">
+                    <div class="day-stat">
+                        <span class="stat-value">${stats.added}</span>
+                        <span class="stat-label">Từ đã thêm</span>
+                    </div>
+                    <div class="day-stat">
+                        <span class="stat-value">${stats.reviewed}</span>
+                        <span class="stat-label">Từ đã ôn</span>
+                    </div>
+                </div>
+                
+                <div class="day-tabs">
+                    <button class="day-tab active" onclick="window.switchDayTab('added', this)" data-tab="added">
+                        <i class="fas fa-plus-circle"></i> Đã thêm (${addedWords.length})
+                    </button>
+                    <button class="day-tab" onclick="window.switchDayTab('reviewed', this)" data-tab="reviewed">
+                        <i class="fas fa-sync-alt"></i> Đã ôn (${reviewedWords.length})
+                    </button>
+                </div>
+                
+                <div id="day-tab-added" class="day-tab-content active">
+                    ${addedWords.length > 0 ? 
+                        addedWords.map(w => `
+                            <div class="day-word-item" onclick="window.openWordFromCalendar('${w.id}')">
+                                <div class="day-word-main">
+                                    <span class="word">${escapeHtml(w.word)}</span>
+                                    <span class="phonetic">${escapeHtml(w.phonetic || '')}</span>
+                                </div>
+                                <span class="meaning">${escapeHtml(w.meanings?.[0]?.defVi || w.meanings?.[0]?.defEn || '')}</span>
+                            </div>
+                        `).join('') 
+                        : '<p class="empty-message">Không có từ nào được thêm vào ngày này</p>'
+                    }
+                </div>
+                
+                <div id="day-tab-reviewed" class="day-tab-content">
+                    ${reviewedWords.length > 0 ? 
+                        reviewedWords.map(w => `
+                            <div class="day-word-item" onclick="window.openWordFromCalendar('${w.id}')">
+                                <div class="day-word-main">
+                                    <span class="word">${escapeHtml(w.word)}</span>
+                                    <span class="phonetic">${escapeHtml(w.phonetic || '')}</span>
+                                </div>
+                                <span class="meaning">${escapeHtml(w.meanings?.[0]?.defVi || w.meanings?.[0]?.defEn || '')}</span>
+                            </div>
+                        `).join('') 
+                        : '<p class="empty-message">Không có từ nào được ôn tập vào ngày này</p>'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('show');
 }
 
-function bindDayClickEvents() {
-    document.querySelectorAll('.calendar-day:not(.empty)').forEach(day => {
-        day.addEventListener('click', () => {
-            const dateStr = day.dataset.date;
-            
-            // Update selection
-            document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-            day.classList.add('selected');
-            selectedDate = dateStr;
-
-            // Show detail
-            renderDayDetail(dateStr);
-        });
-    });
+/* ===== SWITCH DAY TAB ===== */
+export function switchDayTab(tabName, btn) {
+    document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.querySelectorAll('.day-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`day-tab-${tabName}`)?.classList.add('active');
 }
 
-/* ===== DATA HELPERS ===== */
-function getDayStats(dateStr) {
-    const history = appData.history || [];
-    const dayHistory = history.filter(h => h.date === dateStr);
-
-    let wordsAdded = 0;
-    let wordsPracticed = 0;
-    let correctAnswers = 0;
-    let wrongAnswers = 0;
-
-    // Count words added on this date
-    appData.sets?.forEach(set => {
-        set.words?.forEach(word => {
-            if (word.addedAt && word.addedAt.startsWith(dateStr)) {
-                wordsAdded++;
-            }
-        });
-    });
-
-    // Also check vocabulary array
-    appData.vocabulary?.forEach(word => {
-        if (word.addedAt && word.addedAt.startsWith(dateStr)) {
-            wordsAdded++;
-        }
-    });
-
-    // Count from history
-    dayHistory.forEach(h => {
-        if (h.type === 'practice') {
-            wordsPracticed += h.wordsCount || 0;
-            correctAnswers += h.correct || 0;
-            wrongAnswers += h.wrong || 0;
-        }
-    });
-
-    return {
-        wordsAdded,
-        wordsPracticed,
-        correctAnswers,
-        wrongAnswers,
-        streak: appData.streak || 0
-    };
-}
-
-function getWordsAddedOnDate(dateStr) {
-    const words = [];
-
-    // From sets
-    appData.sets?.forEach(set => {
-        set.words?.forEach(word => {
-            if (word.addedAt && word.addedAt.startsWith(dateStr)) {
-                words.push(word);
-            }
-        });
-    });
-
-    // From vocabulary
-    appData.vocabulary?.forEach(word => {
-        if (word.addedAt && word.addedAt.startsWith(dateStr)) {
-            words.push(word);
-        }
-    });
-
-    return words;
-}
-
-function getActivityLevel(stats) {
-    const total = stats.wordsAdded + stats.wordsPracticed;
-    if (total === 0) return 0;
-    if (total <= 5) return 1;
-    if (total <= 15) return 2;
-    if (total <= 30) return 3;
-    return 4;
-}
-
-/* ===== UTILITIES ===== */
-function formatDate(year, month, day) {
-    const m = String(month + 1).padStart(2, '0');
-    const d = String(day).padStart(2, '0');
-    return `${year}-${m}-${d}`;
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/* ===== MODAL CONTROLS ===== */
+/* ===== CLOSE MODAL ===== */
 export function closeDayDetailModal() {
     const modal = document.getElementById('day-detail-modal');
     if (modal) {
@@ -349,6 +229,104 @@ export function closeDayDetailModal() {
     }
 }
 
-/* ===== EXPORTS ===== */
+/* ===== OPEN WORD FROM CALENDAR ===== */
+export function openWordFromCalendar(wordId) {
+    closeDayDetailModal();
+    
+    // Navigate to set view and select word
+    if (window.openSetDetail) {
+        window.openSetDetail('all');
+        setTimeout(() => {
+            if (window.selectWordInSet) {
+                window.selectWordInSet(wordId);
+            }
+        }, 200);
+    }
+}
+
+/* ===== DATA HELPERS ===== */
+function getDayStats(dateStr) {
+    let added = 0;
+    let reviewed = 0;
+    
+    // Count words added on this date
+    appData.vocabulary?.forEach(word => {
+        if (word.createdAt?.startsWith(dateStr)) {
+            added++;
+        }
+    });
+    
+    // Count from history
+    const historyEntry = appData.history?.find(h => h.date === dateStr);
+    if (historyEntry) {
+        if (historyEntry.addedWords) {
+            added = Math.max(added, historyEntry.addedWords.length);
+        }
+        if (historyEntry.reviewedWords) {
+            reviewed = historyEntry.reviewedWords.length;
+        }
+        // Fallback to numbers if arrays not available
+        if (historyEntry.added && !historyEntry.addedWords) {
+            added = Math.max(added, historyEntry.added);
+        }
+        if (historyEntry.reviewed && !historyEntry.reviewedWords) {
+            reviewed = Math.max(reviewed, historyEntry.reviewed);
+        }
+    }
+    
+    return { added, reviewed };
+}
+
+function getWordsAddedOnDate(dateStr) {
+    const words = [];
+    
+    // From vocabulary by createdAt
+    appData.vocabulary?.forEach(word => {
+        if (word.createdAt?.startsWith(dateStr)) {
+            words.push(word);
+        }
+    });
+    
+    // Also check history for word IDs
+    const historyEntry = appData.history?.find(h => h.date === dateStr);
+    if (historyEntry?.addedWords) {
+        historyEntry.addedWords.forEach(wordId => {
+            const word = appData.vocabulary?.find(w => w.id === wordId);
+            if (word && !words.find(w => w.id === word.id)) {
+                words.push(word);
+            }
+        });
+    }
+    
+    return words;
+}
+
+function getWordsReviewedOnDate(dateStr) {
+    const words = [];
+    
+    const historyEntry = appData.history?.find(h => h.date === dateStr);
+    if (historyEntry?.reviewedWords) {
+        historyEntry.reviewedWords.forEach(wordId => {
+            const word = appData.vocabulary?.find(w => w.id === wordId);
+            if (word) {
+                words.push(word);
+            }
+        });
+    }
+    
+    return words;
+}
+
+/* ===== UTILITIES ===== */
+function formatDateStr(year, month, day) {
+    const m = String(month + 1).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
+    return `${year}-${m}-${d}`;
+}
+
+/* ===== GLOBAL EXPORTS ===== */
 window.renderCalendar = renderCalendar;
+window.showDayWords = showDayWords;
+window.switchDayTab = switchDayTab;
 window.closeDayDetailModal = closeDayDetailModal;
+window.openWordFromCalendar = openWordFromCalendar;
