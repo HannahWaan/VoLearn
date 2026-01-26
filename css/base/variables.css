@@ -1,0 +1,73 @@
+/* ========================================
+   VoLearn - CSS Variables
+   Chứa tất cả biến màu sắc, kích thước
+   ======================================== */
+
+:root {
+    /* ===== COLORS ===== */
+    --primary-color: #e91e8c;
+    --primary-dark: #c4177a;
+    --primary-light: #f8a5d0;
+    --primary-hover: #d11a7d;
+    --secondary-color: #ff6b9d;
+    --accent-color: #8b5cf6;
+    
+    /* Status Colors */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    
+    /* Light Mode Backgrounds */
+    --bg-primary: #fdf2f8;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #fce7f3;
+    
+    /* Text Colors */
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    
+    /* ===== BORDERS & RADIUS ===== */
+    --border-color: #f9a8d4;
+    --border-radius: 12px;
+    --border-radius-sm: 8px;
+    --border-radius-lg: 16px;
+    --border-radius-xl: 24px;
+    
+    /* ===== SHADOWS ===== */
+    --shadow-sm: 0 1px 3px rgba(233, 30, 140, 0.1);
+    --shadow-md: 0 4px 12px rgba(233, 30, 140, 0.15);
+    --shadow-lg: 0 10px 40px rgba(233, 30, 140, 0.2);
+    
+    /* ===== LAYOUT ===== */
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --header-height: 64px;
+    
+    /* ===== TRANSITIONS ===== */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    
+    /* ===== GRADIENTS ===== */
+    --gradient-primary: linear-gradient(135deg, #e91e8c, #ff6b9d);
+    --gradient-secondary: linear-gradient(135deg, #8b5cf6, #e91e8c);
+    --gradient-card: linear-gradient(135deg, #fdf2f8, #fce7f3);
+    --gradient-success: linear-gradient(135deg, #10b981, #059669);
+    --gradient-warning: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* ===== DARK MODE ===== */
+body.dark-mode {
+    --bg-primary: #1a1025;
+    --bg-secondary: #2d1f3d;
+    --bg-tertiary: #3d2952;
+    --text-primary: #fdf2f8;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --border-color: #4c3663;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --gradient-card: linear-gradient(135deg, #2d1f3d, #3d2952);
+}
