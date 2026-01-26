@@ -481,4 +481,3 @@ window.deleteCurrentWord = deleteCurrentWord;
 window.speakWord = speakWord;
 window.selectWordInSet = selectWord;
 
-export { initSetView, renderSetView };
