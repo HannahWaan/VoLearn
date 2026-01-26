@@ -653,8 +653,7 @@ export function clearMeaningBlock(btn) {
     const block = btn.closest('.meaning-block');
     if (!block) return;
     
-    if (!confirm('Bạn có chắc muốn xóa nội dung nghĩa này?')) return;
-    
+    // Always allow clearing, even for first block
     ['.phonetic-us', '.phonetic-uk', '.pos-select', '.def-en', '.def-vi', 
      '.example-input', '.synonyms-input', '.antonyms-input'
     ].forEach(selector => {
@@ -672,12 +671,12 @@ export function removeMeaningBlock(btn) {
     const container = document.getElementById('meanings-container');
     const allBlocks = container.querySelectorAll('.meaning-block');
     
+    // Allow removing first block if there are multiple blocks
     if (allBlocks.length <= 1) {
-        showToast('Phải có ít nhất một nghĩa', 'error');
+        // If only 1 block, just clear it instead
+        clearMeaningBlock(btn);
         return;
     }
-    
-    if (!confirm('Bạn có chắc muốn xóa nghĩa này?')) return;
     
     block.remove();
     updateMeaningNumbers();
