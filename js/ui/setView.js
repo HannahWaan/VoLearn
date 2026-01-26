@@ -1,7 +1,8 @@
 /* ===== SET VIEW MODULE ===== */
 /* VoLearn v2.1.0 - Xem bộ từ vựng */
 
-import { appData, saveAppData } from '../core/state.js';
+import { appData } from '../core/state.js';
+import { saveData } from '../core/storage.js';
 import { showToast, showSuccess } from './toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { navigate } from '../core/router.js';
@@ -258,7 +259,7 @@ export function toggleMasteredInView(wordId) {
     if (!word) return;
     
     word.mastered = !word.mastered;
-    saveAppData();
+    saveData(appData);
     
     showToast(word.mastered ? 'Đã đánh dấu thuộc!' : 'Đã bỏ đánh dấu thuộc', 'success');
     renderSetView();
@@ -270,7 +271,7 @@ export function toggleBookmarkInView(wordId) {
     if (!word) return;
     
     word.bookmarked = !word.bookmarked;
-    saveAppData();
+    saveData(appData);
     
     showToast(word.bookmarked ? 'Đã đánh dấu!' : 'Đã bỏ đánh dấu', 'success');
     renderSetView();
@@ -289,7 +290,7 @@ function deleteWordInView(wordId) {
     const index = (appData.vocabulary || []).findIndex(w => w.id === wordId);
     if (index > -1) {
         appData.vocabulary.splice(index, 1);
-        saveAppData();
+        saveData(appData);
         showSuccess('Đã xóa từ vựng!');
         renderSetView();
     }
@@ -305,3 +306,4 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
