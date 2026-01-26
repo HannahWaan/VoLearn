@@ -149,7 +149,6 @@ export function getSetById(setId) {
 }
 
 /* ===== HISTORY HELPERS ===== */
-
 export function addToHistory(action, wordId) {
     if (!appData.history) appData.history = [];
     
@@ -164,6 +163,14 @@ export function addToHistory(action, wordId) {
             reviewed: []
         };
         appData.history.push(todayEntry);
+    }
+    
+    // Ensure added and reviewed are arrays (fix for old data format)
+    if (!Array.isArray(todayEntry.added)) {
+        todayEntry.added = [];
+    }
+    if (!Array.isArray(todayEntry.reviewed)) {
+        todayEntry.reviewed = [];
     }
     
     if (action === 'add' && !todayEntry.added.includes(wordId)) {
