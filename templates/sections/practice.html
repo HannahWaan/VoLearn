@@ -1,6 +1,5 @@
 <!-- ==================== PRACTICE SECTION ==================== -->
 <section id="practice-section" class="section">
-    <!-- Practice Modes Selection -->
     <div id="practice-modes" class="practice-modes">
         <!-- SRS Card -->
         <div class="srs-card">
@@ -15,7 +14,7 @@
                     <span id="srs-count" class="srs-count">0</span>
                 </div>
             </div>
-            <button id="btn-start-srs" class="btn-primary btn-srs-start">
+            <button id="btn-start-srs" class="btn-primary btn-srs-start" onclick="window.startSRSReview()">
                 <i class="fas fa-play"></i> Bắt đầu ôn tập
             </button>
         </div>
@@ -24,73 +23,64 @@
             <span>Các chế độ luyện tập</span>
         </div>
 
-        <!-- Practice Modes Grid -->
         <div class="practice-grid">
-            <!-- Flashcard -->
-            <div class="practice-mode-card" data-mode="flashcard">
+            <div class="practice-mode-card">
                 <div class="mode-icon flashcard-icon">
                     <i class="fas fa-clone"></i>
                 </div>
                 <h3>Flashcard</h3>
                 <p>Lật thẻ để học từ vựng</p>
-                <button class="btn-secondary btn-open-settings" data-mode="flashcard">
+                <button class="btn-secondary" onclick="window.openFlashcardSettings()">
                     <i class="fas fa-play"></i> Bắt đầu
                 </button>
             </div>
-            
-            <!-- Quiz -->
-            <div class="practice-mode-card" data-mode="quiz">
+            <div class="practice-mode-card">
                 <div class="mode-icon quiz-icon">
                     <i class="fas fa-question-circle"></i>
                 </div>
                 <h3>Trắc nghiệm</h3>
                 <p>Chọn đáp án đúng</p>
-                <button class="btn-secondary btn-open-settings" data-mode="quiz">
+                <button class="btn-secondary" onclick="window.openQuizSettings()">
                     <i class="fas fa-play"></i> Bắt đầu
                 </button>
             </div>
-            
-            <!-- Dictation -->
-            <div class="practice-mode-card" data-mode="dictation">
+            <div class="practice-mode-card">
                 <div class="mode-icon dictation-icon">
                     <i class="fas fa-headphones"></i>
                 </div>
                 <h3>Nghe - Viết</h3>
                 <p>Nghe và viết lại từ</p>
-                <button class="btn-secondary btn-open-settings" data-mode="dictation">
+                <button class="btn-secondary" onclick="window.openDictationSettings()">
                     <i class="fas fa-play"></i> Bắt đầu
                 </button>
             </div>
-            
-            <!-- Typing -->
-            <div class="practice-mode-card" data-mode="typing">
+            <div class="practice-mode-card">
                 <div class="mode-icon typing-icon">
                     <i class="fas fa-keyboard"></i>
                 </div>
                 <h3>Gõ từ</h3>
                 <p>Nhìn nghĩa, gõ từ tiếng Anh</p>
-                <button class="btn-secondary btn-open-settings" data-mode="typing">
+                <button class="btn-secondary" onclick="window.openTypingSettings()">
                     <i class="fas fa-play"></i> Bắt đầu
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Practice Area (hidden by default) -->
     <div id="practice-area" class="practice-area" style="display: none;">
         <div class="practice-header">
-            <button class="btn-back" id="btn-practice-back">
+            <button class="btn-back" onclick="window.handlePracticeBack()">
                 <i class="fas fa-arrow-left"></i> Quay lại
             </button>
             <div class="practice-progress">
                 <div class="progress-bar">
-                    <div id="practice-progress-bar" class="progress-fill" style="width: 0%;"></div>
+                    <div id="practice-progress-bar" class="progress-fill"></div>
                 </div>
                 <span id="practice-progress-text">0/0</span>
             </div>
         </div>
         <div id="practice-content" class="practice-content">
-            <!-- Practice content will be dynamically loaded here -->
+            <!-- Practice content rendered here -->
         </div>
     </div>
 </section>
