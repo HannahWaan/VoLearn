@@ -1,0 +1,26 @@
+<!-- ==================== DAY DETAIL MODAL ==================== -->
+<div id="day-detail-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="day-detail-title"><i class="fas fa-calendar-day"></i> Ngày</h3>
+            <button class="modal-close" data-modal="day-detail-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="day-stats" class="day-stats">
+                <div class="daily-stat">
+                    <span class="daily-stat-value" id="day-added-count">0</span>
+                    <span class="daily-stat-label">Từ đã thêm</span>
+                </div>
+                <div class="daily-stat">
+                    <span class="daily-stat-value" id="day-reviewed-count">0</span>
+                    <span class="daily-stat-label">Từ đã ôn</span>
+                </div>
+            </div>
+            <div id="day-words-list" class="day-words-list">
+                <!-- Words added/reviewed on this day -->
+            </div>
+        </div>
+    </div>
+</div>

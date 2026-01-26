@@ -1,0 +1,114 @@
+<!-- ==================== DICTATION SETTINGS MODAL ==================== -->
+<div id="dictation-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-headphones" style="color: var(--info-color);"></i> Cài đặt Nghe - Viết</h3>
+            <button class="modal-close" data-modal="dictation-settings-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Tabs -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="dict-target">Mục tiêu</button>
+                <button class="settings-tab" data-tab="dict-audio">Âm thanh</button>
+            </div>
+
+            <!-- Tab: Mục tiêu -->
+            <div id="dict-tab-target" class="settings-tab-content active">
+                <!-- Giới hạn -->
+                <div class="setting-section">
+                    <div class="setting-row">
+                        <span class="setting-label">Số từ</span>
+                        <div class="setting-value">
+                            <button class="btn-circle" id="dict-limit-minus"><i class="fas fa-minus"></i></button>
+                            <span id="dict-limit-value">Không giới hạn</span>
+                            <button class="btn-circle" id="dict-limit-plus"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <input type="range" id="dict-limit-slider" min="0" max="100" value="0" class="full-slider">
+                </div>
+
+                <!-- Phạm vi -->
+                <div class="setting-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-crosshairs"></i> Phạm vi</h4>
+                    </div>
+                    
+                    <div class="scope-option" id="dict-scope-set">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="dict-selected-set">Tất cả từ vựng</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Đánh dấu -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-include-unmarked" checked>
+                        <span class="checkbox-label">Chưa đánh dấu</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-include-mastered" checked>
+                        <span class="checkbox-label">Đã thuộc</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-include-learning" checked>
+                        <span class="checkbox-label">Chưa thuộc</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tab: Âm thanh -->
+            <div id="dict-tab-audio" class="settings-tab-content">
+                <!-- Giọng đọc -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-microphone"></i> Giọng đọc</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="dict-voice" value="en-US" checked>
+                            <span>🇺🇸 English (US)</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="dict-voice" value="en-GB">
+                            <span>🇬🇧 English (UK)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tốc độ -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-tachometer-alt"></i> Tốc độ đọc</h4>
+                    <div class="speed-control">
+                        <input type="range" id="dict-speed-slider" min="0.5" max="1.5" step="0.1" value="1">
+                        <span id="dict-speed-value">1x</span>
+                    </div>
+                </div>
+
+                <!-- Tùy chọn -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-cog"></i> Tùy chọn</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-auto-play" checked>
+                        <span class="checkbox-label">Tự động phát âm</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-repeat-on-error">
+                        <span class="checkbox-label">Lặp lại khi sai</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dict-show-hint">
+                        <span class="checkbox-label">Hiện gợi ý (nghĩa tiếng Việt)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn-primary" id="btn-start-dictation">
+                <i class="fas fa-play"></i> Bắt đầu
+            </button>
+        </div>
+    </div>
+</div>

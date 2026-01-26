@@ -1,0 +1,132 @@
+<!-- ==================== QUIZ SETTINGS MODAL ==================== -->
+<div id="quiz-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-question-circle" style="color: var(--success-color);"></i> Cài đặt Trắc nghiệm</h3>
+            <button class="modal-close" data-modal="quiz-settings-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Tabs -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="quiz-target">Mục tiêu</button>
+                <button class="settings-tab" data-tab="quiz-options">Tùy chọn</button>
+            </div>
+
+            <!-- Tab: Mục tiêu -->
+            <div id="quiz-tab-target" class="settings-tab-content active">
+                <!-- Giới hạn số câu -->
+                <div class="setting-section">
+                    <div class="setting-row">
+                        <span class="setting-label">Số câu hỏi</span>
+                        <div class="setting-value">
+                            <button class="btn-circle" id="quiz-limit-minus"><i class="fas fa-minus"></i></button>
+                            <span id="quiz-limit-value">Không giới hạn</span>
+                            <button class="btn-circle" id="quiz-limit-plus"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <input type="range" id="quiz-limit-slider" min="0" max="100" value="0" class="full-slider">
+                </div>
+
+                <!-- Phạm vi -->
+                <div class="setting-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-crosshairs"></i> Phạm vi</h4>
+                        <button class="btn-refresh" id="quiz-refresh-scope" title="Đặt lại">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="scope-option" id="quiz-scope-set">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="quiz-selected-set">Tất cả từ vựng</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="scope-option" id="quiz-scope-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="quiz-selected-date">Tất cả ngày</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Đánh dấu từ -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="quiz-include-unmarked" checked>
+                        <span class="checkbox-label">Chưa đánh dấu</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="quiz-include-mastered" checked>
+                        <span class="checkbox-label">Đã thuộc</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="quiz-include-learning" checked>
+                        <span class="checkbox-label">Chưa thuộc</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tab: Tùy chọn -->
+            <div id="quiz-tab-options" class="settings-tab-content">
+                <!-- Loại câu hỏi -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-exchange-alt"></i> Loại câu hỏi</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-type" value="en-vi" checked>
+                            <span>Tiếng Anh → Tiếng Việt</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-type" value="vi-en">
+                            <span>Tiếng Việt → Tiếng Anh</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-type" value="mixed">
+                            <span>Trộn lẫn</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Số đáp án -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-list-ol"></i> Số đáp án</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-options-count" value="3">
+                            <span>3 đáp án</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-options-count" value="4" checked>
+                            <span>4 đáp án</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="quiz-options-count" value="5">
+                            <span>5 đáp án</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tùy chọn khác -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-cog"></i> Khác</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="quiz-show-phonetic" checked>
+                        <span class="checkbox-label">Hiện phiên âm</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="quiz-instant-feedback" checked>
+                        <span class="checkbox-label">Phản hồi ngay</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn-primary" id="btn-start-quiz">
+                <i class="fas fa-play"></i> Bắt đầu
+            </button>
+        </div>
+    </div>
+</div>
