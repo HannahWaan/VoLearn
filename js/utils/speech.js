@@ -1,190 +1,108 @@
-/* ========================================
-   VoLearn - Text-to-Speech Module
-   ======================================== */
+/* ===== SPEECH MODULE ===== */
+/* VoLearn v2.1.0 - Text to Speech */
 
-import { appData } from '../core/state.js';
-
-let speechSynthesis = null;
+/* ===== STATE ===== */
 let voices = [];
-let isInitialized = false;
+let voicesLoaded = false;
 
-/**
- * Khởi tạo Speech module
- */
+/* ===== INITIALIZATION ===== */
 export function initSpeech() {
-    if (!('speechSynthesis' in window)) {
-        console.warn('Speech synthesis not supported');
-        return;
-    }
+    console.log('🔊 Đang tải giọng đọc...');
     
-    speechSynthesis = window.speechSynthesis;
+    const loadVoices = () => {
+        voices = speechSynthesis.getVoices();
+        voicesLoaded = voices.length > 0;
+        if (voicesLoaded) {
+            console.log(`✅ Đã tải ${voices.length} giọng đọc`);
+        }
+    };
     
-    // Load voices
     loadVoices();
     
-    // Voices có thể load async
-    speechSynthesis.onvoiceschanged = loadVoices;
-    
-    // Bind speak buttons
-    bindSpeakButtons();
-    
-    isInitialized = true;
-    console.log('✅ Speech system initialized');
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
 }
 
-/**
- * Load available voices
- */
-function loadVoices() {
-    voices = speechSynthesis.getVoices();
-    console.log(`  📢 Loaded ${voices.length} voices`);
-}
-
-/**
- * Get voice by language
- */
-function getVoice(lang = 'en-US') {
-    // Ưu tiên voices theo thứ tự
-    const preferredVoices = [
-        'Google US English',
-        'Google UK English Female',
-        'Google UK English Male',
-        'Microsoft David',
-        'Microsoft Zira',
-        'Samantha',
-        'Alex'
-    ];
-    
-    // Tìm preferred voice
-    for (const name of preferredVoices) {
-        const voice = voices.find(v => 
-            v.name.includes(name) && v.lang.startsWith(lang.split('-')[0])
-        );
-        if (voice) return voice;
+/* ===== GET VOICE ===== */
+function getVoice(lang) {
+    if (!lang || typeof lang !== 'string') {
+        // Default to English if lang is invalid
+        lang = 'en-US';
     }
     
-    // Fallback: tìm voice theo lang
-    return voices.find(v => v.lang.startsWith(lang.split('-')[0])) || voices[0];
+    const langPrefix = lang.split('-')[0];
+    
+    // Try exact match first
+    let voice = voices.find(v => v.lang === lang);
+    
+    // Then try prefix match
+    if (!voice) {
+        voice = voices.find(v => v.lang.startsWith(langPrefix));
+    }
+    
+    return voice;
 }
 
-/**
- * Phát âm text
- * @param {string} text - Text cần đọc
- * @param {string} lang - Ngôn ngữ (en-US, en-GB)
- * @param {number} rate - Tốc độ (0.5 - 2)
- */
-export function speak(text, lang = null, rate = null) {
-    if (!speechSynthesis || !text) return;
+/* ===== SPEAK ===== */
+export function speak(text, options = {}) {
+    if (!text || typeof text !== 'string') return;
     
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Settings từ appData hoặc params
-    const voiceLang = lang || appData.settings?.voice || 'en-US';
-    const speechRate = rate || appData.settings?.speed || 1;
-    
-    utterance.voice = getVoice(voiceLang);
-    utterance.rate = speechRate;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    
-    // Events
-    utterance.onstart = () => {
-        document.querySelectorAll('.speaking').forEach(el => el.classList.remove('speaking'));
-    };
-    
-    utterance.onend = () => {
-        document.querySelectorAll('.speaking').forEach(el => el.classList.remove('speaking'));
-    };
-    
-    utterance.onerror = (e) => {
-        console.error('Speech error:', e);
-    };
+    // Handle options
+    if (typeof options === 'string') {
+        // Old format: speak(text, voiceURI)
+        const voice = voices.find(v => v.voiceURI === options);
+        if (voice) utterance.voice = voice;
+    } else if (typeof options === 'object') {
+        // New format: speak(text, { lang, rate, pitch, volume })
+        if (options.lang) {
+            const voice = getVoice(options.lang);
+            if (voice) utterance.voice = voice;
+        }
+        utterance.rate = options.rate || 1;
+        utterance.pitch = options.pitch || 1;
+        utterance.volume = options.volume || 1;
+    }
     
     speechSynthesis.speak(utterance);
 }
 
-/**
- * Dừng phát âm
- */
+/* ===== SPEAK WORD ===== */
+export function speakWord(word, accentCode) {
+    if (!word) return;
+    speechSynthesis.cancel();
+    
+    const lang = accentCode || 'en-US';
+    speak(word, { lang });
+}
+
+/* ===== SPEAK WITH ACCENT ===== */
+export function speakWithAccent(text, accentCode) {
+    if (!text) return;
+    
+    // Ensure accentCode is a valid string
+    const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
+    speak(text, { lang });
+}
+
+/* ===== STOP SPEAKING ===== */
 export function stopSpeaking() {
-    if (speechSynthesis) {
-        speechSynthesis.cancel();
-    }
+    speechSynthesis.cancel();
 }
 
-/**
- * Bind click events cho các nút speak
- */
-function bindSpeakButtons() {
-    document.addEventListener('click', (e) => {
-        // Speak phonetic button
-        const phoneticBtn = e.target.closest('.btn-speak-phonetic');
-        if (phoneticBtn) {
-            e.preventDefault();
-            const accent = phoneticBtn.dataset.accent || 'en-US';
-            const input = phoneticBtn.closest('.phonetic-input-wrapper')?.querySelector('input');
-            const wordInput = document.getElementById('word-input');
-            
-            const text = wordInput?.value || input?.value || '';
-            if (text) {
-                phoneticBtn.classList.add('speaking');
-                speak(text, accent);
-            }
-            return;
-        }
-        
-        // Speak text button (textarea)
-        const textBtn = e.target.closest('.btn-speak-text');
-        if (textBtn) {
-            e.preventDefault();
-            const lang = textBtn.dataset.lang || 'en';
-            const textarea = textBtn.closest('.textarea-with-speaker')?.querySelector('textarea');
-            
-            const text = textarea?.value || '';
-            if (text) {
-                textBtn.classList.add('speaking');
-                speak(text, lang === 'en' ? 'en-US' : 'vi-VN');
-            }
-            return;
-        }
-        
-        // Speak word button
-        const speakWordBtn = e.target.closest('#btn-speak-word');
-        if (speakWordBtn) {
-            e.preventDefault();
-            const wordInput = document.getElementById('word-input');
-            const text = wordInput?.value || '';
-            if (text) {
-                speak(text);
-            }
-            return;
-        }
-        
-        // Small speak button (in badges)
-        const smallBtn = e.target.closest('.btn-speak-small');
-        if (smallBtn) {
-            e.preventDefault();
-            const text = smallBtn.dataset.word || '';
-            const accent = smallBtn.dataset.accent || 'en-US';
-            if (text) {
-                speak(text, accent);
-            }
-            return;
-        }
-    });
+/* ===== GET AVAILABLE VOICES ===== */
+export function getAvailableVoices() {
+    return [...voices];
 }
 
-/**
- * Test voice
- */
-export function testVoice() {
-    speak('Hello! This is a test of the text to speech system.', appData.settings?.voice);
-}
-
-// Expose to window
+/* ===== GLOBAL EXPORTS ===== */
+window.initSpeech = initSpeech;
 window.speak = speak;
+window.speakWord = speakWord;
+window.speakWithAccent = speakWithAccent;
 window.stopSpeaking = stopSpeaking;
-window.testVoice = testVoice;
+window.getAvailableVoices = getAvailableVoices;
