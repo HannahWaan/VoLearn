@@ -6,45 +6,46 @@
 }
 
 /* ===== SET CARDS GRID ===== */
-#sets-container {
+#sets-container,
+.sets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    padding: 20px 0;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
 }
 
-/* ===== SET CARD - TO HƠN ===== */
+/* ===== SET CARD ===== */
 .set-card {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
+    padding: 20px;
     background: var(--bg-secondary, #fff);
     border-radius: 16px;
     box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.08));
     transition: all 0.2s ease;
     cursor: pointer;
     border: 2px solid var(--border-color, transparent);
-    min-height: 80px;
+    min-height: 90px;
 }
 
 .set-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.15));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.12));
     border-color: var(--primary-color, #667eea);
 }
 
-/* ===== SET CARD MAIN CONTENT ===== */
+/* ===== SET CARD MAIN ===== */
 .set-card-main {
     display: flex;
     align-items: center;
     gap: 16px;
     flex: 1;
     min-width: 0;
+    cursor: pointer;
 }
 
-/* ===== SET COLOR ICON - TO HƠN ===== */
+/* ===== SET COLOR ICON ===== */
 .set-color-icon {
     width: 56px;
     height: 56px;
@@ -54,7 +55,7 @@
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
-    font-size: 24px;
+    font-size: 22px;
 }
 
 /* ===== SET INFO ===== */
@@ -68,7 +69,7 @@
 
 .set-name {
     font-weight: 700;
-    font-size: 17px;
+    font-size: 16px;
     color: var(--text-primary, #1a1a2e);
     white-space: nowrap;
     overflow: hidden;
@@ -82,16 +83,14 @@
     display: block;
 }
 
-/* ===== SET CARD ACTIONS - KHÔNG ĐÈ LÊN NHAU ===== */
+/* ===== SET CARD ACTIONS - NẰM DỌC ===== */
 .set-card-actions {
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
     opacity: 0;
     transition: opacity 0.2s ease;
     margin-left: 12px;
-    flex-shrink: 0;
 }
 
 .set-card:hover .set-card-actions {
@@ -110,8 +109,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 15px;
-    flex-shrink: 0;
+    font-size: 14px;
 }
 
 .btn-edit-set {
@@ -122,6 +120,7 @@
 .btn-edit-set:hover {
     background: var(--primary-color, #667eea);
     color: #fff;
+    transform: scale(1.1);
 }
 
 .btn-delete-set {
@@ -132,6 +131,7 @@
 .btn-delete-set:hover {
     background: #ef4444;
     color: #fff;
+    transform: scale(1.1);
 }
 
 /* ===== ALL WORDS CARD ===== */
@@ -156,16 +156,18 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    #sets-container {
+    #sets-container,
+    .sets-grid {
         grid-template-columns: 1fr;
     }
     
     .set-card-actions {
         opacity: 1;
+        flex-direction: row;
     }
     
     .set-card {
-        padding: 16px 20px;
+        padding: 16px;
     }
     
     .set-color-icon {
