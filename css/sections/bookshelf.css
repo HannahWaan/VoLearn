@@ -7,3 +7,84 @@
 #bookshelf-section .section-header {
     flex-wrap: wrap;
 }
+
+/* ===== SET CARD LAYOUT ===== */
+.set-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+
+.set-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.set-card-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+}
+
+/* ===== SET CARD ACTIONS (Edit & Delete) ===== */
+.set-card-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.set-card:hover .set-card-actions {
+    opacity: 1;
+}
+
+.btn-edit-set,
+.btn-delete-set {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-edit-set {
+    background: var(--primary-light, #e8f0fe);
+    color: var(--primary, #667eea);
+}
+
+.btn-edit-set:hover {
+    background: var(--primary, #667eea);
+    color: #fff;
+}
+
+.btn-delete-set {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.btn-delete-set:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* ===== ALL WORDS CARD (no actions) ===== */
+.set-card.all-words {
+    cursor: pointer;
+}
+
+.set-card.all-words .set-card-actions {
+    display: none;
+}
