@@ -1117,11 +1117,9 @@ export function loadWordForEdit(wordId) {
         let block;
         
         if (index === 0) {
-            // Use first existing block
             block = container.querySelector('.meaning-block');
         } else {
-            // Add new block
-            addMeaningBlockSilent();
+            addMeaningBlockSilent();  
             const blocks = container.querySelectorAll('.meaning-block');
             block = blocks[blocks.length - 1];
         }
@@ -1172,23 +1170,6 @@ export function loadWordForEdit(wordId) {
     }
     
     showToast(`Đang chỉnh sửa "${word.word}"`);
-}
-
-// Silent version of addMeaningBlock (if not exists)
-function addMeaningBlockSilent() {
-    const container = document.getElementById('meanings-container');
-    if (!container) return;
-    
-    const index = container.querySelectorAll('.meaning-block').length;
-    const block = document.createElement('div');
-    block.className = 'meaning-block';
-    block.setAttribute('data-index', index);
-    block.setAttribute('draggable', 'true');
-    
-    block.innerHTML = getMeaningBlockHTML(index + 1);
-    container.appendChild(block);
-    
-    initDragAndDropForBlock(block);
 }
 
 /* ===== GLOBAL EXPORTS ===== */
