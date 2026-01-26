@@ -1,5 +1,5 @@
 /* ===== TYPING MODE ===== */
-/* VoLearn v2.1.0 - Chế độ gõ từ */
+/* VoLearn v2 - Chế độ gõ từ */
 
 import { 
     initPractice, 
