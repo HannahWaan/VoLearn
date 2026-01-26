@@ -10,6 +10,7 @@ import { navigate } from '../core/router.js';
 
 /* ===== STATE ===== */
 let searchQuery = '';
+let editingSetId = null;
 
 /* ===== INIT ===== */
 export function initBookshelf() {
@@ -52,17 +53,24 @@ export function renderShelves() {
     sets.forEach(set => {
         const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
         html += `
-            <div class="set-card" onclick="window.openSetDetail('${set.id}')">
-                <div class="set-icon" style="background: ${set.color || '#667eea'}">
-                    <i class="fas fa-folder"></i>
+            <div class="set-card" data-set-id="${set.id}">
+                <div class="set-card-main" onclick="window.openSetDetail('${set.id}')">
+                    <div class="set-icon" style="background: ${set.color || '#667eea'}">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="set-info">
+                        <h3>${escapeHtml(set.name)}</h3>
+                        <span class="set-count">${count} từ</span>
+                    </div>
                 </div>
-                <div class="set-info">
-                    <h3>${escapeHtml(set.name)}</h3>
-                    <span class="set-count">${count} từ</span>
+                <div class="set-card-actions">
+                    <button class="btn-edit-set" onclick="event.stopPropagation(); window.openEditSetModal('${set.id}')" title="Sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
-                    <i class="fas fa-trash"></i>
-                </button>
             </div>
         `;
     });
@@ -102,18 +110,24 @@ function bindBookshelfEvents() {
     // Save set button (in modal)
     const saveSetBtn = document.getElementById('btn-save-set');
     if (saveSetBtn) {
-        saveSetBtn.addEventListener('click', saveNewSet);
+        saveSetBtn.addEventListener('click', saveSet);
     }
 }
 
 /* ===== CREATE SET MODAL ===== */
 export function openCreateSetModal() {
+    editingSetId = null;
+    
     // Reset form
     const nameInput = document.getElementById('set-name-input');
     const colorInput = document.getElementById('set-color-input');
+    const modalTitle = document.querySelector('#create-set-modal .modal-header h3');
+    const saveBtn = document.getElementById('btn-save-set');
     
     if (nameInput) nameInput.value = '';
     if (colorInput) colorInput.value = '#667eea';
+    if (modalTitle) modalTitle.textContent = 'Tạo bộ từ mới';
+    if (saveBtn) saveBtn.textContent = 'Tạo bộ từ';
     
     openModal('create-set-modal');
     
@@ -121,7 +135,32 @@ export function openCreateSetModal() {
     setTimeout(() => nameInput?.focus(), 100);
 }
 
-export function saveNewSet() {
+/* ===== EDIT SET MODAL ===== */
+export function openEditSetModal(setId) {
+    const set = appData.sets?.find(s => s.id === setId);
+    if (!set) return;
+    
+    editingSetId = setId;
+    
+    // Fill form with set data
+    const nameInput = document.getElementById('set-name-input');
+    const colorInput = document.getElementById('set-color-input');
+    const modalTitle = document.querySelector('#create-set-modal .modal-header h3');
+    const saveBtn = document.getElementById('btn-save-set');
+    
+    if (nameInput) nameInput.value = set.name;
+    if (colorInput) colorInput.value = set.color || '#667eea';
+    if (modalTitle) modalTitle.textContent = 'Sửa bộ từ';
+    if (saveBtn) saveBtn.textContent = 'Lưu thay đổi';
+    
+    openModal('create-set-modal');
+    
+    // Focus on name input
+    setTimeout(() => nameInput?.focus(), 100);
+}
+
+/* ===== SAVE SET (Create or Update) ===== */
+export function saveSet() {
     const nameInput = document.getElementById('set-name-input');
     const colorInput = document.getElementById('set-color-input');
     
@@ -133,34 +172,51 @@ export function saveNewSet() {
         return;
     }
     
-    // Check duplicate name
-    const exists = appData.sets?.some(s => s.name.toLowerCase() === name.toLowerCase());
+    // Check duplicate name (exclude current set if editing)
+    const exists = appData.sets?.some(s => 
+        s.name.toLowerCase() === name.toLowerCase() && s.id !== editingSetId
+    );
     if (exists) {
         showToast('Tên bộ từ đã tồn tại', 'error');
         return;
     }
     
-    // Create new set
-    const newSet = {
-        id: generateId(),
-        name,
-        color,
-        createdAt: new Date().toISOString()
-    };
+    if (editingSetId) {
+        // Update existing set
+        const set = appData.sets?.find(s => s.id === editingSetId);
+        if (set) {
+            set.name = name;
+            set.color = color;
+            set.updatedAt = new Date().toISOString();
+            
+            saveData(appData);
+            closeAllModals();
+            renderShelves();
+            populateSetSelect();
+            
+            showToast(`Đã cập nhật bộ từ "${name}"`);
+        }
+    } else {
+        // Create new set
+        const newSet = {
+            id: generateId(),
+            name,
+            color,
+            createdAt: new Date().toISOString()
+        };
+        
+        if (!appData.sets) appData.sets = [];
+        appData.sets.push(newSet);
+        
+        saveData(appData);
+        closeAllModals();
+        renderShelves();
+        populateSetSelect();
+        
+        showToast(`Đã tạo bộ từ "${name}"`);
+    }
     
-    if (!appData.sets) appData.sets = [];
-    appData.sets.push(newSet);
-    
-    saveData(appData);
-    
-    // Close modal FIRST
-    closeAllModals();
-    
-    // Then update UI
-    renderShelves();
-    populateSetSelect();
-    
-    showToast(`Đã tạo bộ từ "${name}"`);
+    editingSetId = null;
 }
 
 /* ===== DELETE SET ===== */
@@ -202,7 +258,9 @@ export function openSetDetail(setId) {
 
 /* ===== GLOBAL EXPORTS ===== */
 window.openCreateSetModal = openCreateSetModal;
-window.saveNewSet = saveNewSet;
+window.openEditSetModal = openEditSetModal;
+window.saveNewSet = saveSet; // Keep for backward compatibility
+window.saveSet = saveSet;
 window.confirmDeleteSet = confirmDeleteSet;
 window.deleteSet = deleteSet;
 window.openSetDetail = openSetDetail;
