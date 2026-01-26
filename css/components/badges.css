@@ -1,0 +1,122 @@
+/* ========================================
+   VoLearn - Badge Components
+   ======================================== */
+
+/* ===== BASE BADGE ===== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ===== BADGE COLORS ===== */
+.badge-primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success-color);
+}
+
+.badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning-color);
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger-color);
+}
+
+.badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info-color);
+}
+
+/* ===== POS BADGE ===== */
+.pos-badge,
+.suggestion-pos,
+.detail-pos-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ===== PHONETIC BADGE ===== */
+.phonetic-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.phonetic-badge .flag {
+    font-size: 1rem;
+}
+
+.phonetic-badge .ipa {
+    color: var(--text-secondary);
+    font-family: 'Noto Sans', sans-serif;
+}
+
+.phonetic-badge .btn-speak-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: var(--transition-fast);
+}
+
+.phonetic-badge .btn-speak-small:hover {
+    transform: scale(1.1);
+}
+
+/* ===== STATUS ICON ===== */
+.status-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+
+.status-icon.mastered {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success-color);
+}
+
+.status-icon.bookmarked {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning-color);
+}
+
+/* ===== COUNT BADGE ===== */
+.count-badge {
+    padding: 4px 10px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
