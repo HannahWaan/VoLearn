@@ -416,3 +416,30 @@
 .detail-extra-item strong {
     color: var(--primary-color);
 }
+
+/* ===== FIX SELECTED WORD TEXT COLOR ===== */
+.word-card.selected {
+    background: var(--primary-color, #667eea);
+    border-color: var(--primary-color, #667eea);
+}
+
+.word-card.selected .word-text,
+.word-card.selected .word-card-phonetic,
+.word-card.selected .word-card-meaning {
+    color: #fff;
+}
+
+.word-card.selected .word-actions .btn-icon,
+.word-card.selected .word-card-footer .btn-icon {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.word-card.selected .word-actions .btn-icon:hover,
+.word-card.selected .word-card-footer .btn-icon:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.word-card.selected .btn-icon.active {
+    color: #fff;
+}
