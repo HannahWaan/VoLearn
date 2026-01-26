@@ -391,7 +391,17 @@ function updateWordItemUI(wordId) {
 /* ===== EDIT WORD ===== */
 function editWordInView(wordId) {
     window.editingWordId = wordId;
-    navigate('add-word');
+    const addSection = document.getElementById('add-section');
+    if (addSection) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        addSection.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.section === 'add-word') {
+                item.classList.add('active');
+            }
+        });
+    }
 }
 
 /* ===== DELETE WORD ===== */
@@ -418,3 +428,4 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
