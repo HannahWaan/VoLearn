@@ -33,7 +33,7 @@ export function renderHome() {
 /**
  * Update statistics cards
  */
-function updateStats() {
+export function updateStats() {
     const stats = getStats();
     const todayStats = getTodayStats();
     
@@ -60,7 +60,7 @@ function updateStats() {
 /**
  * Render recent words list
  */
-function renderRecentWords() {
+export function renderRecentWords() {
     const container = document.getElementById('recent-words-list');
     if (!container) return;
     
@@ -101,3 +101,5 @@ function renderRecentWords() {
 
 // Expose for global use
 window.renderHome = renderHome;
+window.updateStats = updateStats;
+window.renderRecentWords = renderRecentWords;
