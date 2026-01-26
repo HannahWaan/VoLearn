@@ -390,18 +390,30 @@ function updateWordItemUI(wordId) {
 
 /* ===== EDIT WORD ===== */
 function editWordInView(wordId) {
+    // Lưu ID từ cần edit
     window.editingWordId = wordId;
+    
+    // Navigate đến trang add-word (section ID là 'add-section')
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     const addSection = document.getElementById('add-section');
     if (addSection) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         addSection.classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.dataset.section === 'add-word') {
-                item.classList.add('active');
-            }
-        });
     }
+    
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.section === 'add-word') {
+            item.classList.add('active');
+        }
+    });
+    
+    // Load từ vựng vào form để edit
+    setTimeout(() => {
+        if (window.loadWordForEdit) {
+            window.loadWordForEdit(wordId);
+        }
+    }, 100);
 }
 
 /* ===== DELETE WORD ===== */
@@ -428,4 +440,5 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
 
