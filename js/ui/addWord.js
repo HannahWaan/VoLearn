@@ -1083,6 +1083,114 @@ export function searchAlternativeWord(word) {
     }
 }
 
+/* ===== LOAD WORD FOR EDITING ===== */
+export function loadWordForEdit(wordId) {
+    const word = appData.vocabulary.find(w => w.id === wordId);
+    if (!word) {
+        showToast('Không tìm thấy từ vựng', 'error');
+        return;
+    }
+    
+    editingWordId = wordId;
+    currentFilledWord = word.word;
+    
+    // Fill word input
+    const wordInput = document.getElementById('word-input');
+    if (wordInput) wordInput.value = word.word;
+    
+    // Fill word formation
+    const wordFormGlobal = document.getElementById('word-formation-global');
+    if (wordFormGlobal) wordFormGlobal.value = word.wordFormation || word.formation || '';
+    
+    // Fill set select
+    const setSelect = document.getElementById('set-select');
+    if (setSelect) setSelect.value = word.setId || '';
+    
+    // Clear existing meaning blocks
+    clearAllMeaningBlocks();
+    
+    // Fill meanings
+    const meanings = word.meanings || [];
+    const container = document.getElementById('meanings-container');
+    
+    meanings.forEach((meaning, index) => {
+        let block;
+        
+        if (index === 0) {
+            // Use first existing block
+            block = container.querySelector('.meaning-block');
+        } else {
+            // Add new block
+            addMeaningBlockSilent();
+            const blocks = container.querySelectorAll('.meaning-block');
+            block = blocks[blocks.length - 1];
+        }
+        
+        if (!block) return;
+        
+        // Fill phonetics
+        const phoneticUS = block.querySelector('.phonetic-us');
+        const phoneticUK = block.querySelector('.phonetic-uk');
+        if (phoneticUS) phoneticUS.value = meaning.phoneticUS || meaning.phonetic || word.phonetic || '';
+        if (phoneticUK) phoneticUK.value = meaning.phoneticUK || meaning.phonetic || word.phonetic || '';
+        
+        // Fill POS
+        const posSelect = block.querySelector('.pos-select');
+        if (posSelect && meaning.pos) {
+            for (let i = 0; i < posSelect.options.length; i++) {
+                if (posSelect.options[i].value.toLowerCase() === meaning.pos.toLowerCase()) {
+                    posSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        // Fill other fields
+        const defEn = block.querySelector('.def-en');
+        const defVi = block.querySelector('.def-vi');
+        const example = block.querySelector('.example-input');
+        const synonyms = block.querySelector('.synonyms-input');
+        const antonyms = block.querySelector('.antonyms-input');
+        
+        if (defEn) defEn.value = meaning.defEn || meaning.definition || '';
+        if (defVi) defVi.value = meaning.defVi || '';
+        if (example) example.value = meaning.example || '';
+        if (synonyms) synonyms.value = meaning.synonyms || '';
+        if (antonyms) antonyms.value = meaning.antonyms || '';
+    });
+    
+    // Update save button text
+    const saveBtn = document.getElementById('btn-save-word');
+    if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật từ vựng';
+    }
+    
+    // Scroll to form
+    const addSection = document.getElementById('add-section');
+    if (addSection) {
+        addSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    showToast(`Đang chỉnh sửa "${word.word}"`);
+}
+
+// Silent version of addMeaningBlock (if not exists)
+function addMeaningBlockSilent() {
+    const container = document.getElementById('meanings-container');
+    if (!container) return;
+    
+    const index = container.querySelectorAll('.meaning-block').length;
+    const block = document.createElement('div');
+    block.className = 'meaning-block';
+    block.setAttribute('data-index', index);
+    block.setAttribute('draggable', 'true');
+    
+    block.innerHTML = getMeaningBlockHTML(index + 1);
+    container.appendChild(block);
+    
+    initDragAndDropForBlock(block);
+}
+
 /* ===== GLOBAL EXPORTS ===== */
 window.selectMeaning = selectMeaning;
 window.addMeaningBlock = addMeaningBlock;
