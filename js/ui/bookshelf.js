@@ -23,23 +23,55 @@ export function renderShelves() {
     const container = document.getElementById('sets-container');
     if (!container) return;
 
+    // Always show "All Words" card first
+    const allWordsCount = appData.vocabulary?.length || 0;
+    let html = `
+        <div class="set-card all-words" onclick="window.openSetDetail('all')">
+            <div class="set-icon" style="background: linear-gradient(135deg, #e91e8c, #ff6b9d)">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="set-info">
+                <h3>Tất cả từ vựng</h3>
+                <span class="set-count">${allWordsCount} từ</span>
+            </div>
+        </div>
+    `;
+
     const sets = getFilteredSets();
 
-    if (sets.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-folder-open"></i>
-                <p>Chưa có bộ từ nào</p>
-                <button class="btn-primary" onclick="window.openCreateSetModal()">
-                    <i class="fas fa-plus"></i> Tạo bộ từ mới
+    // Render other sets
+    sets.forEach(set => {
+        const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
+        html += `
+            <div class="set-card" onclick="window.viewSet('${set.id}')">
+                <div class="set-icon" style="background: ${set.color || '#e91e8c'}">
+                    <i class="${set.icon || 'fas fa-folder'}"></i>
+                </div>
+                <div class="set-info">
+                    <h3>${escapeHtml(set.name)}</h3>
+                    <span class="set-count">${count} từ</span>
+                </div>
+                <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         `;
-        return;
-    }
+    });
 
-    container.innerHTML = sets.map(set => renderSetCard(set)).join('');
-    bindSetCardEvents();
+    container.innerHTML = html;
+    
+    updateSetSelectDropdown();
+}
+
+/* ===== UPDATE SET SELECT DROPDOWN ===== */
+function updateSetSelectDropdown() {
+    const setSelect = document.getElementById('set-select');
+    if (!setSelect) return;
+    
+    setSelect.innerHTML = '<option value="">-- Không chọn bộ (Tất cả) --</option>';
+    appData.sets?.forEach(set => {
+        setSelect.innerHTML += `<option value="${set.id}">${escapeHtml(set.name)}</option>`;
+    });
 }
 
 /* ===== RENDER SET CARD ===== */
@@ -408,3 +440,4 @@ window.viewSet = viewSet;
 window.practiceSet = practiceSet;
 window.deleteSet = deleteSet;
 window.renderShelves = renderShelves;
+
