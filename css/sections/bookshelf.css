@@ -21,6 +21,7 @@
     align-items: center;
     gap: 16px;
     padding: 20px;
+    padding-right: 90px; /* Chừa chỗ cho nút actions */
     background: var(--bg-secondary, #1e1e2e);
     border-radius: 16px;
     box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.15));
@@ -28,6 +29,7 @@
     cursor: pointer;
     border: 2px solid transparent;
     min-height: 80px;
+    overflow: visible;
 }
 
 .set-card:hover {
@@ -47,6 +49,7 @@
     flex-shrink: 0;
     color: #fff;
     font-size: 20px;
+    background: var(--primary-color, #667eea);
 }
 
 /* ===== SET INFO ===== */
@@ -74,13 +77,18 @@
     display: block;
 }
 
-/* ===== SET CARD ACTIONS ===== */
+/* ===== SET CARD ACTIONS - QUAN TRỌNG ===== */
 .set-card-actions {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
     display: flex;
-    gap: 6px;
+    flex-direction: row;
+    gap: 8px;
     opacity: 0;
     transition: opacity 0.2s ease;
-    flex-shrink: 0;
+    z-index: 10;
 }
 
 .set-card:hover .set-card-actions {
@@ -89,42 +97,45 @@
 
 .btn-edit-set,
 .btn-delete-set {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 13px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(6px);
 }
 
 .btn-edit-set {
-    background: rgba(102, 126, 234, 0.2);
     color: var(--primary-color, #667eea);
 }
 
 .btn-edit-set:hover {
     background: var(--primary-color, #667eea);
     color: #fff;
+    transform: scale(1.1);
 }
 
 .btn-delete-set {
-    background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
 }
 
 .btn-delete-set:hover {
     background: #ef4444;
     color: #fff;
+    transform: scale(1.1);
 }
 
 /* ===== ALL WORDS CARD ===== */
 .set-card.all-words {
     background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
     border: none;
+    padding-right: 20px; /* Không có nút actions */
 }
 
 .set-card.all-words .set-name,
@@ -147,7 +158,11 @@
         grid-template-columns: 1fr;
     }
     
+    .set-card {
+        padding-right: 100px;
+    }
+    
     .set-card-actions {
-        opacity: 1;
+        opacity: 1; /* Luôn hiện trên mobile */
     }
 }
