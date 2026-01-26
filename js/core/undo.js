@@ -3,7 +3,7 @@
    ======================================== */
 
 import { saveData } from './storage.js';
-import { appData } from './state.js';  // THÊM IMPORT NÀY
+import { appData } from './state.js';
 
 const MAX_UNDO_STACK = 20;
 let undoStack = [];
@@ -28,7 +28,27 @@ export function initUndoSystem() {
 }
 
 /**
- * Push một action vào undo stack
+ * Push state vào undo stack (snapshot toàn bộ appData)
+ */
+export function pushUndoState() {
+    // Clone deep appData
+    const snapshot = JSON.parse(JSON.stringify(appData));
+    
+    undoStack.push({
+        type: 'snapshot',
+        data: snapshot,
+        timestamp: Date.now()
+    });
+    
+    if (undoStack.length > MAX_UNDO_STACK) {
+        undoStack.shift();
+    }
+    
+    redoStack = [];
+}
+
+/**
+ * Push một action cụ thể vào undo stack
  */
 export function pushUndo(action) {
     undoStack.push({
@@ -55,18 +75,26 @@ export function performUndo() {
     const action = undoStack.pop();
     
     try {
-        if (typeof action.undo === 'function') {
+        if (action.type === 'snapshot' && action.data) {
+            // Restore snapshot
+            Object.assign(appData, action.data);
+            saveData(appData);
+        } else if (typeof action.undo === 'function') {
             action.undo();
+            saveData(appData);
         }
         
         redoStack.push(action);
-        saveData(appData);  // SỬA: truyền appData
         
         window.dispatchEvent(new CustomEvent('volearn:undo', { detail: action }));
         
         if (window.showToast) {
             window.showToast('Đã hoàn tác', 'info', 2000);
         }
+        
+        // Refresh UI
+        if (window.renderShelves) window.renderShelves();
+        if (window.renderHome) window.renderHome();
         
         return true;
     } catch (error) {
@@ -92,7 +120,7 @@ export function performRedo() {
         }
         
         undoStack.push(action);
-        saveData(appData);  // SỬA: truyền appData
+        saveData(appData);
         
         window.dispatchEvent(new CustomEvent('volearn:redo', { detail: action }));
         
@@ -107,15 +135,24 @@ export function performRedo() {
     }
 }
 
+/**
+ * Clear undo/redo stacks
+ */
 export function clearUndoHistory() {
     undoStack = [];
     redoStack = [];
 }
 
+/**
+ * Check if can undo
+ */
 export function canUndo() {
     return undoStack.length > 0;
 }
 
+/**
+ * Check if can redo
+ */
 export function canRedo() {
     return redoStack.length > 0;
 }
