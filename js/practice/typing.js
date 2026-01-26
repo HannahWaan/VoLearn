@@ -1,45 +1,51 @@
 /* ===== TYPING MODE ===== */
-/* VoLearn v2.1.0 - Chế độ luyện gõ */
+/* VoLearn v2.1.0 - Chế độ gõ từ */
 
-import { appData } from '../core/state.js';
+import { 
+    initPractice, 
+    getCurrentWord, 
+    submitAnswer, 
+    checkAnswer,
+    finishPractice, 
+    getPracticeState,
+    getWordsByScope,
+    resetPractice
+} from './practiceEngine.js';
+import { speak } from '../utils/speech.js';
+import { showToast } from '../ui/toast.js';
 import { navigate } from '../core/router.js';
 
 /* ===== STATE ===== */
-let typingState = {
-    words: [],
-    currentIndex: 0,
-    score: 0,
-    wrong: 0,
-    startTime: null,
-    totalChars: 0,
-    correctChars: 0,
-    settings: {}
-};
+let typingTimer = null;
+let startTime = null;
+let charIndex = 0;
 
 /* ===== START TYPING ===== */
-export function startTyping(words, settings = {}) {
-    if (!words || words.length === 0) {
-        window.showToast?.('Không có từ để luyện tập!', 'warning');
+export function startTyping(scope, settings = {}) {
+    const words = getWordsByScope(scope);
+    
+    if (!words.length) {
+        showToast('Không có từ để luyện tập!', 'warning');
         return;
     }
 
-    typingState = {
-        words: settings.shuffle ? shuffleArray([...words]) : [...words],
-        currentIndex: 0,
-        score: 0,
-        wrong: 0,
-        startTime: Date.now(),
-        totalChars: 0,
-        correctChars: 0,
-        settings: {
-            showMeaning: true,
-            speakOnComplete: true,
-            ...settings
-        }
+    const defaultSettings = {
+        shuffle: true,
+        showMeaning: true,
+        showPhonetic: true,
+        timeLimit: 0,  // seconds per word, 0 = no limit
+        caseSensitive: false,
+        highlightErrors: true
     };
 
+    const mergedSettings = { ...defaultSettings, ...settings };
+    
+    if (!initPractice('typing', words, mergedSettings)) {
+        return;
+    }
+
     renderTypingUI();
-    showCurrentTypingWord();
+    showCurrentTyping();
 }
 
 /* ===== RENDER UI ===== */
@@ -50,222 +56,355 @@ function renderTypingUI() {
     container.innerHTML = `
         <div class="typing-container">
             <div class="typing-header">
-                <button class="btn-icon" onclick="window.exitTyping()">
+                <button class="btn-icon btn-back" onclick="window.exitTyping()">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <div class="progress-info">
-                    <span id="typing-progress">0 / ${typingState.words.length}</span>
+                <div class="typing-progress">
+                    <span id="typing-progress-text">1 / 10</span>
+                    <div class="progress-bar">
+                        <div id="typing-progress-bar" class="progress-fill"></div>
+                    </div>
                 </div>
-                <div class="wpm-info">
-                    <span id="typing-wpm">0</span> WPM
+                <div class="typing-stats">
+                    <span id="typing-score" class="stat-correct">0</span>
+                    <span>/</span>
+                    <span id="typing-wrong" class="stat-wrong">0</span>
                 </div>
             </div>
             
             <div class="typing-main">
-                <div class="meaning-display" id="meaning-display"></div>
-                <div class="word-display" id="word-display"></div>
-                
-                <div class="input-area">
-                    <input type="text" 
-                           id="typing-input" 
-                           placeholder="Gõ từ ở đây..."
-                           autocomplete="off"
-                           autocapitalize="off"
-                           autofocus>
+                <div class="typing-word-display">
+                    <div class="word-meaning" id="typing-meaning">
+                        <!-- Meaning will appear here -->
+                    </div>
+                    <div class="word-preview" id="word-preview">
+                        <!-- Word with highlighting will appear here -->
+                    </div>
                 </div>
                 
-                <div class="feedback-area" id="typing-feedback"></div>
+                <div class="typing-timer" id="typing-timer" style="display: none;">
+                    <i class="fas fa-clock"></i>
+                    <span id="timer-value">0:00</span>
+                </div>
+                
+                <div class="typing-input-area">
+                    <input type="text" 
+                           id="typing-input" 
+                           placeholder="Gõ từ vựng ở đây..." 
+                           autocomplete="off"
+                           autocapitalize="off"
+                           spellcheck="false">
+                </div>
+                
+                <div class="typing-feedback" id="typing-feedback"></div>
             </div>
             
-            <div class="typing-footer">
-                <button class="btn-icon" onclick="window.speakTypingWord()">
+            <div class="typing-controls">
+                <button class="btn-icon btn-speak" onclick="window.speakTypingWord()">
                     <i class="fas fa-volume-up"></i>
                 </button>
-                <button class="btn-secondary" onclick="window.skipTypingWord()">Bỏ qua</button>
+                <button class="btn-secondary" onclick="window.skipTyping()">
+                    Bỏ qua <i class="fas fa-forward"></i>
+                </button>
             </div>
         </div>
     `;
 
-    // Bind input event
-    document.getElementById('typing-input')?.addEventListener('input', handleTypingInput);
+    // Add input listeners
+    const input = document.getElementById('typing-input');
+    if (input) {
+        input.addEventListener('input', handleTypingInput);
+        input.addEventListener('keydown', handleTypingKeydown);
+    }
 }
 
-/* ===== SHOW CURRENT WORD ===== */
-function showCurrentTypingWord() {
-    if (typingState.currentIndex >= typingState.words.length) {
+/* ===== SHOW CURRENT TYPING ===== */
+function showCurrentTyping() {
+    const word = getCurrentWord();
+    
+    if (!word) {
         showTypingResults();
         return;
     }
 
-    const word = typingState.words[typingState.currentIndex];
+    charIndex = 0;
+    startTime = Date.now();
+    
+    const state = getPracticeState();
+    const settings = state.settings || {};
     
     // Show meaning
-    const meaningDisplay = document.getElementById('meaning-display');
-    if (meaningDisplay && typingState.settings.showMeaning) {
-        meaningDisplay.innerHTML = `<p>${word.meaning || ''}</p>`;
+    const meaningEl = document.getElementById('typing-meaning');
+    if (meaningEl && settings.showMeaning) {
+        meaningEl.innerHTML = `
+            <span class="meaning-text">${escapeHtml(word.meaning)}</span>
+            ${word.phonetic && settings.showPhonetic ? 
+                `<span class="phonetic-text">${escapeHtml(word.phonetic)}</span>` : ''}
+        `;
     }
     
-    // Show word display
-    renderWordDisplay(word.word, '');
+    // Show word preview with placeholders
+    updateWordPreview('');
     
     // Reset input
     const input = document.getElementById('typing-input');
+    const feedback = document.getElementById('typing-feedback');
+    
     if (input) {
         input.value = '';
         input.disabled = false;
+        input.classList.remove('correct', 'wrong');
         input.focus();
     }
+    if (feedback) feedback.innerHTML = '';
     
-    document.getElementById('typing-feedback').innerHTML = '';
+    // Start timer if enabled
+    if (settings.timeLimit > 0) {
+        startTypingTimer(settings.timeLimit);
+    }
     
     updateTypingProgress();
 }
 
-/* ===== RENDER WORD DISPLAY ===== */
-function renderWordDisplay(word, typed) {
-    const display = document.getElementById('word-display');
-    if (!display) return;
-
+/* ===== WORD PREVIEW ===== */
+function updateWordPreview(typed) {
+    const word = getCurrentWord();
+    if (!word) return;
+    
+    const previewEl = document.getElementById('word-preview');
+    if (!previewEl) return;
+    
+    const state = getPracticeState();
+    const settings = state.settings || {};
+    const wordText = word.word;
+    
     let html = '';
-    for (let i = 0; i < word.length; i++) {
-        const char = word[i];
-        const typedChar = typed[i] || '';
+    for (let i = 0; i < wordText.length; i++) {
+        const char = wordText[i];
+        const typedChar = typed[i];
         
-        let className = 'char';
         if (i < typed.length) {
-            className += typedChar.toLowerCase() === char.toLowerCase() ? ' correct' : ' wrong';
+            const isCorrect = settings.caseSensitive 
+                ? typedChar === char 
+                : typedChar?.toLowerCase() === char.toLowerCase();
+            
+            if (isCorrect) {
+                html += `<span class="char correct">${escapeHtml(char)}</span>`;
+            } else {
+                html += `<span class="char wrong">${escapeHtml(char)}</span>`;
+            }
         } else if (i === typed.length) {
-            className += ' current';
+            html += `<span class="char current">${escapeHtml(char)}</span>`;
+        } else {
+            html += `<span class="char pending">${escapeHtml(char)}</span>`;
         }
-        
-        html += `<span class="${className}">${char}</span>`;
     }
     
-    display.innerHTML = html;
+    previewEl.innerHTML = html;
 }
 
-/* ===== HANDLE INPUT ===== */
+/* ===== INPUT HANDLERS ===== */
 function handleTypingInput(e) {
-    const word = typingState.words[typingState.currentIndex];
+    const word = getCurrentWord();
     if (!word) return;
-
-    const typed = e.target.value;
     
-    // Update display
-    renderWordDisplay(word.word, typed);
+    const typed = e.target.value;
+    updateWordPreview(typed);
     
     // Check if complete
-    if (typed.length >= word.word.length) {
-        const isCorrect = typed.toLowerCase() === word.word.toLowerCase();
-        completeTypingWord(isCorrect, typed);
+    const state = getPracticeState();
+    const settings = state.settings || {};
+    
+    const isMatch = settings.caseSensitive 
+        ? typed === word.word 
+        : typed.toLowerCase() === word.word.toLowerCase();
+    
+    if (isMatch) {
+        completeTyping(true);
     }
 }
 
-/* ===== COMPLETE WORD ===== */
-function completeTypingWord(isCorrect, typed) {
-    const word = typingState.words[typingState.currentIndex];
-    
-    typingState.totalChars += word.word.length;
-    
-    if (isCorrect) {
-        typingState.score++;
-        typingState.correctChars += word.word.length;
+function handleTypingKeydown(e) {
+    if (e.key === 'Enter') {
+        const input = document.getElementById('typing-input');
+        const word = getCurrentWord();
         
-        // Speak if enabled
-        if (typingState.settings.speakOnComplete) {
-            speakTypingWord();
+        if (input && word && input.value.length > 0) {
+            const isCorrect = checkAnswer(input.value, word);
+            completeTyping(isCorrect);
         }
-    } else {
-        typingState.wrong++;
     }
+}
+
+/* ===== COMPLETE TYPING ===== */
+function completeTyping(isCorrect) {
+    const word = getCurrentWord();
+    if (!word) return;
+    
+    stopTypingTimer();
+    
+    const input = document.getElementById('typing-input');
+    const feedback = document.getElementById('typing-feedback');
+    
+    // Submit answer
+    submitAnswer(input?.value || '', isCorrect);
     
     // Show feedback
-    const feedback = document.getElementById('typing-feedback');
-    if (feedback) {
-        feedback.innerHTML = isCorrect 
-            ? '<div class="feedback correct"><i class="fas fa-check"></i> Đúng!</div>'
-            : `<div class="feedback wrong"><i class="fas fa-times"></i> Sai! Đáp án: ${word.word}</div>`;
+    if (input) {
+        input.disabled = true;
+        input.classList.add(isCorrect ? 'correct' : 'wrong');
     }
     
-    // Disable input
-    document.getElementById('typing-input').disabled = true;
-    
-    // Next word after delay
-    setTimeout(() => {
-        typingState.currentIndex++;
-        showCurrentTypingWord();
-    }, isCorrect ? 800 : 1500);
+    if (feedback) {
+        if (isCorrect) {
+            const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+            feedback.innerHTML = `
+                <div class="feedback-correct">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Tuyệt vời! (${timeTaken}s)</span>
+                </div>
+            `;
+        } else {
+            feedback.innerHTML = `
+                <div class="feedback-wrong">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Đáp án đúng: <strong>${escapeHtml(word.word)}</strong></span>
+                </div>
+            `;
+        }
+    }
     
     updateTypingProgress();
+    
+    // Auto move to next after delay
+    setTimeout(() => showCurrentTyping(), isCorrect ? 1000 : 2000);
 }
 
-/* ===== SKIP WORD ===== */
-export function skipTypingWord() {
-    typingState.wrong++;
-    typingState.currentIndex++;
-    showCurrentTypingWord();
+/* ===== TIMER ===== */
+function startTypingTimer(seconds) {
+    const timerEl = document.getElementById('typing-timer');
+    const timerValue = document.getElementById('timer-value');
+    
+    if (timerEl) timerEl.style.display = 'flex';
+    
+    let remaining = seconds;
+    updateTimerDisplay(remaining);
+    
+    typingTimer = setInterval(() => {
+        remaining--;
+        updateTimerDisplay(remaining);
+        
+        if (remaining <= 0) {
+            stopTypingTimer();
+            completeTyping(false);
+        }
+    }, 1000);
 }
 
-/* ===== SPEAK WORD ===== */
+function stopTypingTimer() {
+    if (typingTimer) {
+        clearInterval(typingTimer);
+        typingTimer = null;
+    }
+}
+
+function updateTimerDisplay(seconds) {
+    const timerValue = document.getElementById('timer-value');
+    if (timerValue) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerValue.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        
+        // Color warning when low
+        timerValue.classList.toggle('warning', seconds <= 5);
+    }
+}
+
+/* ===== SKIP ===== */
+export function skipTyping() {
+    stopTypingTimer();
+    completeTyping(false);
+}
+
+/* ===== SPEAK ===== */
 export function speakTypingWord() {
-    const word = typingState.words[typingState.currentIndex];
-    if (!word) return;
-
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en-US';
-    speechSynthesis.speak(utterance);
+    const word = getCurrentWord();
+    if (word) {
+        speak(word.word);
+    }
 }
 
 /* ===== UPDATE PROGRESS ===== */
 function updateTypingProgress() {
-    const progressEl = document.getElementById('typing-progress');
-    const wpmEl = document.getElementById('typing-wpm');
+    const state = getPracticeState();
     
-    if (progressEl) {
-        progressEl.textContent = `${typingState.currentIndex + 1} / ${typingState.words.length}`;
+    const progressText = document.getElementById('typing-progress-text');
+    const progressBar = document.getElementById('typing-progress-bar');
+    const scoreEl = document.getElementById('typing-score');
+    const wrongEl = document.getElementById('typing-wrong');
+    
+    if (progressText) {
+        progressText.textContent = `${state.currentIndex + 1} / ${state.total}`;
     }
     
-    // Calculate WPM
-    if (wpmEl && typingState.correctChars > 0) {
-        const minutes = (Date.now() - typingState.startTime) / 60000;
-        const wpm = Math.round((typingState.correctChars / 5) / minutes);
-        wpmEl.textContent = wpm || 0;
+    if (progressBar) {
+        progressBar.style.width = `${state.progress}%`;
+    }
+    
+    if (scoreEl) {
+        scoreEl.textContent = state.score;
+    }
+    
+    if (wrongEl) {
+        wrongEl.textContent = state.wrong;
     }
 }
 
 /* ===== SHOW RESULTS ===== */
 function showTypingResults() {
+    stopTypingTimer();
+    const result = finishPractice();
+    
     const container = document.getElementById('practice-area');
     if (!container) return;
 
-    const total = typingState.words.length;
-    const accuracy = total > 0 ? Math.round((typingState.score / total) * 100) : 0;
-    const minutes = (Date.now() - typingState.startTime) / 60000;
-    const wpm = Math.round((typingState.correctChars / 5) / minutes) || 0;
+    const wpm = result.duration > 0 
+        ? Math.round((result.total * 5) / (result.duration / 60))  // Estimate WPM
+        : 0;
 
     container.innerHTML = `
-        <div class="practice-results">
+        <div class="practice-results typing-results">
             <div class="results-header">
-                <span class="emoji">⌨️</span>
-                <h2>Kết quả Luyện gõ</h2>
+                <i class="fas fa-keyboard"></i>
+                <h2>Kết quả luyện gõ</h2>
             </div>
             
             <div class="results-stats">
-                <div class="stat-circle">
-                    <span class="value">${accuracy}%</span>
+                <div class="stat-circle ${result.accuracy >= 70 ? 'good' : result.accuracy >= 50 ? 'medium' : 'low'}">
+                    <svg viewBox="0 0 36 36">
+                        <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100" 
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span class="stat-value">${result.accuracy}%</span>
                 </div>
-                <div class="stats-detail">
-                    <div class="stat-row">
-                        <span>Đúng:</span>
-                        <span class="correct">${typingState.score}</span>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="value">${result.total}</span>
+                        <span class="label">Tổng số</span>
                     </div>
-                    <div class="stat-row">
-                        <span>Sai:</span>
-                        <span class="wrong">${typingState.wrong}</span>
+                    <div class="stat-item correct">
+                        <span class="value">${result.score}</span>
+                        <span class="label">Đúng</span>
                     </div>
-                    <div class="stat-row highlight">
-                        <span>Tốc độ:</span>
-                        <span>${wpm} WPM</span>
+                    <div class="stat-item wrong">
+                        <span class="value">${result.wrong}</span>
+                        <span class="label">Sai</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="value">${formatDuration(result.duration)}</span>
+                        <span class="label">Thời gian</span>
                     </div>
                 </div>
             </div>
@@ -282,40 +421,38 @@ function showTypingResults() {
     `;
 }
 
-/* ===== EXIT ===== */
+/* ===== NAVIGATION ===== */
 export function exitTyping() {
-    typingState = {
-        words: [],
-        currentIndex: 0,
-        score: 0,
-        wrong: 0,
-        startTime: null,
-        totalChars: 0,
-        correctChars: 0,
-        settings: {}
-    };
+    stopTypingTimer();
+    resetPractice();
     navigate('practice');
 }
 
-/* ===== RESTART ===== */
 export function restartTyping() {
-    const words = [...typingState.words];
-    const settings = { ...typingState.settings };
-    startTyping(words, settings);
+    const scope = window.practiceScope;
+    const settings = window.typingSettings;
+    startTyping(scope, settings);
 }
 
 /* ===== UTILITIES ===== */
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
 /* ===== EXPORTS ===== */
+export { startTyping as run };
+
 window.startTyping = startTyping;
+window.skipTyping = skipTyping;
 window.speakTypingWord = speakTypingWord;
-window.skipTypingWord = skipTypingWord;
 window.exitTyping = exitTyping;
 window.restartTyping = restartTyping;
