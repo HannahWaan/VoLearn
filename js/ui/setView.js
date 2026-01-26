@@ -3,49 +3,70 @@
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
-import { pushUndoState } from '../core/undo.js';
 import { showToast } from './toast.js';
 import { navigate } from '../core/router.js';
 import { speak } from '../utils/speech.js';
+import { escapeHtml } from '../utils/helpers.js';
 
 /* ===== STATE ===== */
 let currentSetId = null;
 let selectedWordId = null;
-let viewMode = 'list'; // 'list' | 'grid'
+let viewMode = 'list';
 let sortBy = 'added';
 let searchQuery = '';
 
 /* ===== INIT ===== */
 export function initSetView() {
     currentSetId = window.currentSetId;
+    
     if (!currentSetId) {
         navigate('bookshelf');
         return;
     }
     
+    selectedWordId = null; // Reset selected word
     renderSetView();
     bindSetViewEvents();
+    
+    console.log('✅ SetView initialized for:', currentSetId);
 }
 
-/* ===== GET CURRENT SET ===== */
-function getCurrentSet() {
-    return appData.sets.find(s => s.id === currentSetId);
+/* ===== GET WORDS FOR CURRENT SET ===== */
+function getWordsForSet() {
+    if (currentSetId === 'all') {
+        return appData.vocabulary || [];
+    }
+    return (appData.vocabulary || []).filter(w => w.setId === currentSetId);
+}
+
+/* ===== GET SET INFO ===== */
+function getSetInfo() {
+    if (currentSetId === 'all') {
+        return {
+            id: 'all',
+            name: 'Tất cả từ vựng',
+            color: 'linear-gradient(135deg, #e91e8c, #ff6b9d)',
+            icon: 'fas fa-layer-group'
+        };
+    }
+    return appData.sets?.find(s => s.id === currentSetId) || null;
 }
 
 /* ===== RENDER SET VIEW ===== */
 export function renderSetView() {
-    const set = getCurrentSet();
+    const set = getSetInfo();
     if (!set) {
         navigate('bookshelf');
         return;
     }
 
     renderSetHeader(set);
-    renderWordsList(set);
+    renderWordsList();
     
-    // Select first word by default
-    if (set.words?.length > 0 && !selectedWordId) {
-        selectWord(set.words[0].id);
+    // Select first word if available
+    const words = getFilteredWords();
+    if (words.length > 0 && !selectedWordId) {
+        selectWord(words[0].id);
     } else if (selectedWordId) {
         renderWordDetail();
     } else {
@@ -58,8 +79,13 @@ function renderSetHeader(set) {
     const header = document.getElementById('set-view-header');
     if (!header) return;
 
-    const wordCount = set.words?.length || 0;
-    const masteredCount = set.words?.filter(w => w.mastered).length || 0;
+    const words = getWordsForSet();
+    const wordCount = words.length;
+    const masteredCount = words.filter(w => w.mastered).length;
+    
+    const bgStyle = set.color?.includes('gradient') 
+        ? set.color 
+        : (set.color || 'var(--primary)');
 
     header.innerHTML = `
         <div class="set-header-left">
@@ -67,7 +93,7 @@ function renderSetHeader(set) {
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="set-header-info">
-                <div class="set-icon" style="background: ${set.color || 'var(--primary)'}">
+                <div class="set-icon" style="background: ${bgStyle}">
                     <i class="${set.icon || 'fas fa-folder'}"></i>
                 </div>
                 <div>
@@ -78,7 +104,7 @@ function renderSetHeader(set) {
         </div>
         
         <div class="set-header-actions">
-            <button class="btn-secondary" onclick="window.addWordToSet()">
+            <button class="btn-secondary" onclick="window.addWordToCurrentSet()">
                 <i class="fas fa-plus"></i> Thêm từ
             </button>
             <button class="btn-primary" onclick="window.practiceCurrentSet()">
@@ -98,14 +124,48 @@ function renderSetHeader(set) {
     `;
 }
 
+/* ===== GET FILTERED WORDS ===== */
+function getFilteredWords() {
+    let words = getWordsForSet();
+    
+    // Filter by search
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        words = words.filter(w => 
+            w.word?.toLowerCase().includes(query) ||
+            w.meanings?.[0]?.defVi?.toLowerCase().includes(query) ||
+            w.meanings?.[0]?.defEn?.toLowerCase().includes(query)
+        );
+    }
+    
+    // Sort
+    switch (sortBy) {
+        case 'alpha':
+            words.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
+            break;
+        case 'alpha-desc':
+            words.sort((a, b) => (b.word || '').localeCompare(a.word || ''));
+            break;
+        case 'mastered':
+            words.sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0));
+            break;
+        case 'added':
+        default:
+            words.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            break;
+    }
+    
+    return words;
+}
+
 /* ===== RENDER WORDS LIST ===== */
-function renderWordsList(set) {
+function renderWordsList() {
     const container = document.getElementById('words-list-container');
     if (!container) return;
 
-    const words = getFilteredWords(set);
+    const words = getFilteredWords();
 
-    if (words.length === 0) {
+    if (words.length === 0 && !searchQuery) {
         container.innerHTML = `
             <div class="search-bar">
                 <i class="fas fa-search"></i>
@@ -114,7 +174,7 @@ function renderWordsList(set) {
             <div class="empty-list">
                 <i class="fas fa-inbox"></i>
                 <p>Chưa có từ nào</p>
-                <button class="btn-primary" onclick="window.addWordToSet()">
+                <button class="btn-primary" onclick="window.addWordToCurrentSet()">
                     <i class="fas fa-plus"></i> Thêm từ đầu tiên
                 </button>
             </div>
@@ -136,7 +196,8 @@ function renderWordsList(set) {
         </div>
         
         <div class="words-list ${viewMode}">
-            ${words.map(word => renderWordItem(word)).join('')}
+            ${words.length > 0 ? words.map(word => renderWordItem(word)).join('') : 
+                '<p class="empty-search">Không tìm thấy từ nào</p>'}
         </div>
     `;
 
@@ -150,18 +211,21 @@ function renderWordItem(word) {
     const isSelected = word.id === selectedWordId;
     const masteredClass = word.mastered ? 'mastered' : '';
     const selectedClass = isSelected ? 'selected' : '';
+    
+    // Get meaning text
+    const meaning = word.meanings?.[0]?.defVi || word.meanings?.[0]?.defEn || '';
 
     return `
         <div class="word-item ${masteredClass} ${selectedClass}" data-word-id="${word.id}">
             <div class="word-item-main">
-                <span class="word-text">${escapeHtml(word.word)}</span>
+                <span class="word-text">${escapeHtml(word.word || '')}</span>
                 ${word.phonetic ? `<span class="word-phonetic">${escapeHtml(word.phonetic)}</span>` : ''}
             </div>
             <div class="word-item-sub">
-                <span class="word-meaning">${escapeHtml(truncate(word.meaning, 50))}</span>
+                <span class="word-meaning">${escapeHtml(truncate(meaning, 50))}</span>
             </div>
             <div class="word-item-actions">
-                <button class="btn-icon btn-speak" data-word="${escapeHtml(word.word)}" title="Phát âm">
+                <button class="btn-icon btn-speak" data-word="${escapeHtml(word.word || '')}" title="Phát âm">
                     <i class="fas fa-volume-up"></i>
                 </button>
                 ${word.mastered ? 
@@ -173,44 +237,62 @@ function renderWordItem(word) {
     `;
 }
 
+/* ===== SELECT WORD ===== */
+function selectWord(wordId) {
+    selectedWordId = wordId;
+    
+    // Update list selection
+    document.querySelectorAll('.word-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.wordId === wordId);
+    });
+    
+    renderWordDetail();
+}
+
 /* ===== RENDER WORD DETAIL ===== */
 function renderWordDetail() {
     const container = document.getElementById('word-detail-container');
     if (!container) return;
 
-    const set = getCurrentSet();
-    const word = set?.words?.find(w => w.id === selectedWordId);
+    const words = getWordsForSet();
+    const word = words.find(w => w.id === selectedWordId);
 
     if (!word) {
         renderEmptyDetail();
         return;
     }
+    
+    // Get first meaning
+    const firstMeaning = word.meanings?.[0] || {};
 
     container.innerHTML = `
         <div class="word-detail-card">
             <div class="word-detail-header">
                 <div class="word-main">
-                    <h2>${escapeHtml(word.word)}</h2>
-                    <button class="btn-icon btn-speak-large" onclick="window.speakWord('${escapeHtml(word.word)}')">
+                    <h2>${escapeHtml(word.word || '')}</h2>
+                    <button class="btn-icon btn-speak-large" onclick="window.speakWord('${escapeHtml(word.word || '')}')">
                         <i class="fas fa-volume-up"></i>
                     </button>
                 </div>
                 ${word.phonetic ? `<p class="word-phonetic-large">${escapeHtml(word.phonetic)}</p>` : ''}
-                ${word.partOfSpeech ? `<span class="word-pos">${escapeHtml(word.partOfSpeech)}</span>` : ''}
+                ${firstMeaning.pos ? `<span class="word-pos">${escapeHtml(firstMeaning.pos)}</span>` : ''}
             </div>
             
             <div class="word-detail-body">
-                <div class="detail-section">
-                    <h3><i class="fas fa-book"></i> Nghĩa</h3>
-                    <p>${escapeHtml(word.meaning)}</p>
-                </div>
-                
-                ${word.example ? `
-                    <div class="detail-section">
-                        <h3><i class="fas fa-quote-left"></i> Ví dụ</h3>
-                        <p class="example-text">"${escapeHtml(word.example)}"</p>
+                ${word.meanings?.map((m, i) => `
+                    <div class="detail-section meaning-section">
+                        <h3><i class="fas fa-book"></i> Nghĩa ${word.meanings.length > 1 ? (i + 1) : ''}</h3>
+                        ${m.pos ? `<span class="pos-tag">${escapeHtml(m.pos)}</span>` : ''}
+                        ${m.defVi ? `<p class="def-vi">${escapeHtml(m.defVi)}</p>` : ''}
+                        ${m.defEn ? `<p class="def-en">${escapeHtml(m.defEn)}</p>` : ''}
+                        ${m.example ? `
+                            <div class="example-box">
+                                <i class="fas fa-quote-left"></i>
+                                <p>"${escapeHtml(m.example)}"</p>
+                            </div>
+                        ` : ''}
                     </div>
-                ` : ''}
+                `).join('') || '<p>Chưa có nghĩa</p>'}
                 
                 ${word.synonyms?.length ? `
                     <div class="detail-section">
@@ -266,6 +348,7 @@ function renderWordDetail() {
     }
 }
 
+/* ===== RENDER EMPTY DETAIL ===== */
 function renderEmptyDetail() {
     const container = document.getElementById('word-detail-container');
     if (!container) return;
@@ -280,16 +363,15 @@ function renderEmptyDetail() {
 
 /* ===== BIND EVENTS ===== */
 function bindSetViewEvents() {
-    // Will be called on init
+    // Events are bound inline or in render functions
 }
 
 function bindSearchEvent() {
     const searchInput = document.getElementById('word-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value.toLowerCase();
-            const set = getCurrentSet();
-            if (set) renderWordsList(set);
+            searchQuery = e.target.value;
+            renderWordsList();
         });
     }
 }
@@ -299,172 +381,104 @@ function bindSortEvent() {
     if (sortSelect) {
         sortSelect.addEventListener('change', (e) => {
             sortBy = e.target.value;
-            const set = getCurrentSet();
-            if (set) renderWordsList(set);
+            renderWordsList();
         });
     }
 }
 
 function bindWordItemEvents() {
-    // Click to select
+    // Click to select word
     document.querySelectorAll('.word-item').forEach(item => {
         item.addEventListener('click', (e) => {
+            // Don't select if clicking speak button
             if (e.target.closest('.btn-speak')) return;
-            const wordId = item.dataset.wordId;
-            selectWord(wordId);
+            selectWord(item.dataset.wordId);
         });
     });
-
-    // Speak button
+    
+    // Speak buttons
     document.querySelectorAll('.btn-speak').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const word = btn.dataset.word;
-            speak(word);
+            if (word) speak(word);
         });
     });
 }
 
-/* ===== ACTIONS ===== */
-export function selectWord(wordId) {
-    selectedWordId = wordId;
-    
-    // Update selection in list
-    document.querySelectorAll('.word-item').forEach(item => {
-        item.classList.toggle('selected', item.dataset.wordId === wordId);
-    });
-    
-    renderWordDetail();
-}
-
-export function toggleWordMastered(wordId, mastered) {
-    const set = getCurrentSet();
-    if (!set) return;
-
-    const word = set.words?.find(w => w.id === wordId);
-    if (!word) return;
-
-    pushUndoState();
-    word.mastered = mastered;
-    saveData(appData);
-
-    // Update UI
-    const wordItem = document.querySelector(`.word-item[data-word-id="${wordId}"]`);
-    if (wordItem) {
-        wordItem.classList.toggle('mastered', mastered);
+/* ===== TOGGLE MASTERED ===== */
+function toggleWordMastered(wordId, mastered) {
+    const word = appData.vocabulary?.find(w => w.id === wordId);
+    if (word) {
+        word.mastered = mastered;
+        saveData(appData);
+        renderWordsList();
+        renderSetHeader(getSetInfo());
+        showToast(mastered ? 'Đã đánh dấu thuộc' : 'Đã bỏ đánh dấu thuộc');
     }
-
-    showToast(mastered ? 'Đã đánh dấu thuộc' : 'Đã bỏ đánh dấu', 'success');
 }
 
-export function addWordToSet() {
-    window.targetSetId = currentSetId;
+/* ===== VIEW MODE ===== */
+function setViewMode(mode) {
+    viewMode = mode;
+    renderSetView();
+}
+
+/* ===== ADD WORD TO SET ===== */
+function addWordToCurrentSet() {
+    // Store the current set ID for the add word form
+    window.preSelectedSetId = currentSetId === 'all' ? '' : currentSetId;
     navigate('add-word');
 }
 
-export function practiceCurrentSet() {
-    const set = getCurrentSet();
-    if (!set || !set.words?.length) {
-        showToast('Bộ từ trống!', 'warning');
-        return;
-    }
-    
-    window.practiceScope = { type: 'set', setId: currentSetId };
+/* ===== PRACTICE CURRENT SET ===== */
+function practiceCurrentSet() {
+    window.practiceSetId = currentSetId;
     navigate('practice');
 }
 
-export function editCurrentWord() {
+/* ===== EDIT CURRENT WORD ===== */
+function editCurrentWord() {
     if (!selectedWordId) return;
-    
-    window.editWordId = selectedWordId;
-    window.targetSetId = currentSetId;
+    window.editingWordId = selectedWordId;
     navigate('add-word');
 }
 
-export function deleteCurrentWord() {
+/* ===== DELETE CURRENT WORD ===== */
+function deleteCurrentWord() {
     if (!selectedWordId) return;
-
-    const set = getCurrentSet();
-    if (!set) return;
-
-    const word = set.words?.find(w => w.id === selectedWordId);
+    
+    const word = appData.vocabulary?.find(w => w.id === selectedWordId);
     if (!word) return;
-
-    if (!confirm(`Bạn có chắc muốn xóa từ "${word.word}"?`)) return;
-
-    pushUndoState();
-
-    const index = set.words.findIndex(w => w.id === selectedWordId);
-    if (index !== -1) {
-        set.words.splice(index, 1);
+    
+    if (confirm(`Bạn có chắc muốn xóa từ "${word.word}"?`)) {
+        appData.vocabulary = appData.vocabulary.filter(w => w.id !== selectedWordId);
         saveData(appData);
         
         selectedWordId = null;
         renderSetView();
-        showToast('Đã xóa từ', 'success');
+        showToast('Đã xóa từ');
     }
 }
 
-export function setViewMode(mode) {
-    viewMode = mode;
-    const set = getCurrentSet();
-    if (set) renderWordsList(set);
-    renderSetHeader(set);
-}
-
-/* ===== FILTER & SORT ===== */
-function getFilteredWords(set) {
-    if (!set?.words) return [];
-    
-    let words = [...set.words];
-
-    // Search
-    if (searchQuery) {
-        words = words.filter(w => 
-            w.word.toLowerCase().includes(searchQuery) ||
-            w.meaning?.toLowerCase().includes(searchQuery)
-        );
-    }
-
-    // Sort
-    switch (sortBy) {
-        case 'alpha':
-            words.sort((a, b) => a.word.localeCompare(b.word));
-            break;
-        case 'alpha-desc':
-            words.sort((a, b) => b.word.localeCompare(a.word));
-            break;
-        case 'mastered':
-            words.sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0));
-            break;
-        case 'added':
-        default:
-            // Keep original order (newest first assumed)
-            break;
-    }
-
-    return words;
+/* ===== SPEAK WORD ===== */
+function speakWord(word) {
+    speak(word);
 }
 
 /* ===== UTILITIES ===== */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function truncate(str, len) {
+    if (!str) return '';
+    return str.length > len ? str.substring(0, len) + '...' : str;
 }
 
-function truncate(text, length) {
-    if (!text) return '';
-    if (text.length <= length) return text;
-    return text.substring(0, length) + '...';
-}
-
-/* ===== EXPORTS ===== */
-window.addWordToSet = addWordToSet;
+/* ===== GLOBAL EXPORTS ===== */
+window.setViewMode = setViewMode;
+window.addWordToCurrentSet = addWordToCurrentSet;
 window.practiceCurrentSet = practiceCurrentSet;
 window.editCurrentWord = editCurrentWord;
 window.deleteCurrentWord = deleteCurrentWord;
-window.setViewMode = setViewMode;
-window.selectWord = selectWord;
-window.speakWord = speak;
+window.speakWord = speakWord;
+window.selectWordInSet = selectWord;
+
+export { initSetView, renderSetView };
