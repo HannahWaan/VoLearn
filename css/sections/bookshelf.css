@@ -16,17 +16,16 @@
 
 /* ===== SET CARD ===== */
 .set-card {
-    position: relative;
     display: flex;
-    align-items: center;
-    padding: 20px;
+    flex-direction: column;
+    padding: 0;
     background: var(--bg-secondary, #fff);
     border-radius: 16px;
     box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.08));
     transition: all 0.2s ease;
     cursor: pointer;
     border: 2px solid var(--border-color, transparent);
-    min-height: 90px;
+    overflow: hidden;
 }
 
 .set-card:hover {
@@ -35,14 +34,79 @@
     border-color: var(--primary-color, #667eea);
 }
 
-/* ===== SET CARD MAIN ===== */
-.set-card-main {
+/* ===== SET CARD HEADER - Chứa tên + nút edit/xóa ===== */
+.set-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-tertiary, #f8f9fa);
+    border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.set-card-header .set-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary, #1a1a2e);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin: 0;
+}
+
+/* ===== NÚT EDIT/XÓA TRONG HEADER ===== */
+.set-card-header .set-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.set-card:hover .set-card-header .set-actions {
+    opacity: 1;
+}
+
+.set-card-header .btn-edit-set,
+.set-card-header .btn-delete-set {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.set-card-header .btn-edit-set {
+    background: var(--primary-light, #e8f0fe);
+    color: var(--primary-color, #667eea);
+}
+
+.set-card-header .btn-edit-set:hover {
+    background: var(--primary-color, #667eea);
+    color: #fff;
+}
+
+.set-card-header .btn-delete-set {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.set-card-header .btn-delete-set:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* ===== SET CARD BODY - Chứa icon + số từ ===== */
+.set-card-body {
     display: flex;
     align-items: center;
     gap: 16px;
-    flex: 1;
-    min-width: 0;
-    cursor: pointer;
+    padding: 20px;
 }
 
 /* ===== SET COLOR ICON ===== */
@@ -59,85 +123,15 @@
 }
 
 /* ===== SET INFO ===== */
-.set-info {
+.set-card-body .set-info {
     flex: 1;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
-.set-name {
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--text-primary, #1a1a2e);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-}
-
-.set-count {
+.set-card-body .set-count {
     font-size: 14px;
     color: var(--text-secondary, #6b7280);
     display: block;
-}
-
-/* ===== SET CARD ACTIONS - NẰM DỌC TRÊN DƯỚI ===== */
-.set-card-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.set-card:hover .set-card-actions {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* ===== ACTION BUTTONS ===== */
-.btn-edit-set,
-.btn-delete-set {
-    width: 34px;
-    height: 34px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    font-size: 13px;
-}
-
-.btn-edit-set {
-    background: var(--primary-light, #e8f0fe);
-    color: var(--primary-color, #667eea);
-}
-
-.btn-edit-set:hover {
-    background: var(--primary-color, #667eea);
-    color: #fff;
-    transform: scale(1.1);
-}
-
-.btn-delete-set {
-    background: #fef2f2;
-    color: #ef4444;
-}
-
-.btn-delete-set:hover {
-    background: #ef4444;
-    color: #fff;
-    transform: scale(1.1);
 }
 
 /* ===== ALL WORDS CARD ===== */
@@ -147,8 +141,13 @@
     border: none;
 }
 
-.set-card.all-words .set-name,
-.set-card.all-words .set-count {
+.set-card.all-words .set-card-header {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.set-card.all-words .set-card-header .set-name,
+.set-card.all-words .set-card-body .set-count {
     color: #fff;
 }
 
@@ -156,7 +155,7 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
-.set-card.all-words .set-card-actions {
+.set-card.all-words .set-actions {
     display: none;
 }
 
@@ -167,22 +166,7 @@
         grid-template-columns: 1fr;
     }
     
-    .set-card-actions {
+    .set-card-header .set-actions {
         opacity: 1;
-        visibility: visible;
-        position: static;
-        transform: none;
-        flex-direction: row;
-        margin-left: auto;
-    }
-    
-    .set-card {
-        padding: 16px;
-    }
-    
-    .set-color-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
     }
 }
