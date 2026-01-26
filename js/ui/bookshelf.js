@@ -30,12 +30,14 @@ export function renderShelves() {
     // Always show "All Words" card first
     let html = `
         <div class="set-card all-words" onclick="window.openSetDetail('all')">
-            <div class="set-icon" style="background: linear-gradient(135deg, #e91e8c, #ff6b9d)">
-                <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="set-info">
-                <h3>Tất cả từ vựng</h3>
-                <span class="set-count">${allWordsCount} từ</span>
+            <div class="set-card-main">
+                <div class="set-icon" style="background: linear-gradient(135deg, #e91e8c, #ff6b9d)">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="set-info">
+                    <h3>Tất cả từ vựng</h3>
+                    <span class="set-count">${allWordsCount} từ</span>
+                </div>
             </div>
         </div>
     `;
@@ -52,10 +54,12 @@ export function renderShelves() {
     // Render each set
     sets.forEach(set => {
         const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
+        const bgColor = set.color || '#667eea';
+        
         html += `
             <div class="set-card" data-set-id="${set.id}">
                 <div class="set-card-main" onclick="window.openSetDetail('${set.id}')">
-                    <div class="set-icon" style="background: ${set.color || '#667eea'}">
+                    <div class="set-icon" style="background: ${bgColor}">
                         <i class="fas fa-folder"></i>
                     </div>
                     <div class="set-info">
@@ -259,7 +263,7 @@ export function openSetDetail(setId) {
 /* ===== GLOBAL EXPORTS ===== */
 window.openCreateSetModal = openCreateSetModal;
 window.openEditSetModal = openEditSetModal;
-window.saveNewSet = saveSet; // Keep for backward compatibility
+window.saveNewSet = saveSet;
 window.saveSet = saveSet;
 window.confirmDeleteSet = confirmDeleteSet;
 window.deleteSet = deleteSet;
