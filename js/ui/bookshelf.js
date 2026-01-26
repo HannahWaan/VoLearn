@@ -27,7 +27,6 @@ export function renderShelves() {
 
     const allWordsCount = appData.vocabulary?.length || 0;
     
-    // Always show "All Words" card first - giống code cũ
     let html = `
         <div class="set-card all-words" onclick="window.openSetView('all')">
             <div class="set-card-main">
@@ -42,7 +41,6 @@ export function renderShelves() {
         </div>
     `;
 
-    // Get and filter sets
     let sets = appData.sets || [];
     
     if (searchQuery) {
@@ -51,14 +49,13 @@ export function renderShelves() {
         );
     }
 
-    // Render each set - với actions wrapper
     sets.forEach(set => {
         const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
         const bgColor = set.color || 'var(--primary-color)';
         
         html += `
-            <div class="set-card" onclick="window.openSetView('${set.id}')">
-                <div class="set-card-main">
+            <div class="set-card" data-set-id="${set.id}">
+                <div class="set-card-main" onclick="window.openSetView('${set.id}')">
                     <div class="set-color-icon" style="background: ${bgColor}">
                         <i class="fas fa-folder"></i>
                     </div>
@@ -69,7 +66,7 @@ export function renderShelves() {
                 </div>
                 <div class="set-card-actions">
                     <button class="btn-edit-set" onclick="event.stopPropagation(); window.openEditSetModal('${set.id}')" title="Sửa">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-pen"></i>
                     </button>
                     <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
                         <i class="fas fa-trash"></i>
@@ -109,23 +106,20 @@ function bindBookshelfEvents() {
         createBtn.addEventListener('click', openCreateSetModal);
     }
     
-    const saveSetBtn = document.getElementById('btn-save-set');
-    if (saveSetBtn) {
-        saveSetBtn.addEventListener('click', saveSet);
-    }
+    // Bind save button via event delegation
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-save-set')) {
+            saveSet();
+        }
+    });
 }
 
 /* ===== OPEN SET VIEW ===== */
 export function openSetView(setId) {
-    // Lưu setId vào window để setView.js đọc
     window.currentSetViewId = setId;
-    
-    // Navigate đến trang set-view
     navigate('set-view');
     
-    // Đợi DOM update rồi render
     setTimeout(() => {
-        // Gọi initSetView hoặc renderSetView
         if (window.initSetView) {
             window.initSetView();
         } else if (window.renderSetView) {
@@ -144,9 +138,9 @@ export function openCreateSetModal() {
     const saveBtn = document.getElementById('btn-save-set');
     
     if (nameInput) nameInput.value = '';
-    if (colorInput) colorInput.value = '#667eea';
-    if (modalTitle) modalTitle.textContent = 'Tạo bộ từ mới';
-    if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Tạo bộ từ';
+    if (colorInput) colorInput.value = '#e91e8c';
+    if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-folder-plus"></i> Tạo bộ từ mới';
+    if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-check"></i> Tạo bộ từ';
     
     openModal('create-set-modal');
     setTimeout(() => nameInput?.focus(), 100);
@@ -155,7 +149,10 @@ export function openCreateSetModal() {
 /* ===== EDIT SET MODAL ===== */
 export function openEditSetModal(setId) {
     const set = appData.sets?.find(s => s.id === setId);
-    if (!set) return;
+    if (!set) {
+        showToast('Không tìm thấy bộ từ', 'error');
+        return;
+    }
     
     editingSetId = setId;
     
@@ -165,8 +162,8 @@ export function openEditSetModal(setId) {
     const saveBtn = document.getElementById('btn-save-set');
     
     if (nameInput) nameInput.value = set.name;
-    if (colorInput) colorInput.value = set.color || '#667eea';
-    if (modalTitle) modalTitle.textContent = 'Sửa bộ từ';
+    if (colorInput) colorInput.value = set.color || '#e91e8c';
+    if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-edit"></i> Sửa bộ từ';
     if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
     
     openModal('create-set-modal');
@@ -179,7 +176,7 @@ export function saveSet() {
     const colorInput = document.getElementById('set-color-input');
     
     const name = nameInput?.value?.trim();
-    const color = colorInput?.value || '#667eea';
+    const color = colorInput?.value || '#e91e8c';
     
     if (!name) {
         showToast('Vui lòng nhập tên bộ từ', 'error');
@@ -200,7 +197,7 @@ export function saveSet() {
             set.name = name;
             set.color = color;
             set.updatedAt = new Date().toISOString();
-            showToast(`Đã cập nhật bộ từ "${name}"`);
+            showToast(`Đã cập nhật bộ từ "${name}"`, 'success');
         }
     } else {
         const newSet = {
@@ -212,7 +209,7 @@ export function saveSet() {
         
         if (!appData.sets) appData.sets = [];
         appData.sets.push(newSet);
-        showToast(`Đã tạo bộ từ "${name}"`);
+        showToast(`Đã tạo bộ từ "${name}"`, 'success');
     }
     
     saveData(appData);
@@ -244,7 +241,7 @@ export function deleteSet(setId) {
     saveData(appData);
     renderShelves();
     populateSetSelect();
-    showToast('Đã xóa bộ từ');
+    showToast('Đã xóa bộ từ', 'success');
 }
 
 /* ===== GLOBAL EXPORTS ===== */
@@ -259,5 +256,3 @@ window.renderShelves = renderShelves;
 window.populateSetSelect = populateSetSelect;
 
 export { searchQuery };
-
-
