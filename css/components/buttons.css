@@ -1,0 +1,271 @@
+/* ========================================
+   VoLearn - Button Components
+   ======================================== */
+
+/* ===== PRIMARY BUTTON ===== */
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    filter: brightness(1.1);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== SECONDARY BUTTON ===== */
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-dark);
+}
+
+/* ===== DANGER BUTTON ===== */
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* ===== ICON BUTTON ===== */
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-sm);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+}
+
+.btn-icon.active {
+    background: var(--warning-color);
+    color: white;
+    border-color: transparent;
+}
+
+/* ===== CIRCLE BUTTON ===== */
+.btn-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.btn-circle:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: transparent;
+}
+
+/* ===== BACK BUTTON ===== */
+.btn-back {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.btn-back:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+/* ===== CLEAR BUTTON ===== */
+.btn-clear {
+    background: none;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    transition: var(--transition-fast);
+    cursor: pointer;
+}
+
+.btn-clear:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* ===== REFRESH BUTTON ===== */
+.btn-refresh {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.btn-refresh:hover {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+/* ===== INPUT ICON BUTTON ===== */
+.btn-input-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--border-radius-sm);
+    background: var(--primary-light);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-input-icon:hover {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+/* ===== SPEAK BUTTONS ===== */
+.btn-speak-phonetic,
+.btn-speak-text {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-speak-phonetic {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-speak-phonetic:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.btn-speak-text {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.btn-speak-text:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-speak-phonetic.speaking,
+.btn-speak-text.speaking {
+    animation: pulse-speak 0.5s ease infinite;
+    background: var(--success-color);
+}
+
+/* ===== BUTTON SIZES ===== */
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+}
+
+.btn-full {
+    width: 100%;
+}
