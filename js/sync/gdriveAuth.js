@@ -1,5 +1,5 @@
 /* ===== GOOGLE DRIVE AUTH ===== */
-/* VoLearn v2.1.0 - Google Drive Authentication */
+/* VoLearn v2 - Google Drive Authentication */
 
 import { showToast } from '../ui/toast.js';
 
