@@ -1,64 +1,58 @@
-/* ========================================
-   VoLearn - Bookshelf Section
-   ======================================== */
+/* ===== BOOKSHELF SECTION ===== */
+/* VoLearn v2.1.0 */
 
 #bookshelf-section .section-header {
     flex-wrap: wrap;
 }
 
-/* ===== SETS GRID ===== */
+/* ===== SET CARDS GRID ===== */
 .sets-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    gap: 16px;
+    padding: 16px 0;
 }
 
-/* ===== SET CARD - Giống code cũ ===== */
+/* ===== SET CARD ===== */
 .set-card {
-    background: var(--bg-secondary);
-    border-radius: var(--border-radius-lg);
-    padding: 20px;
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: var(--shadow-sm);
+    padding: 16px;
+    background: var(--card-bg, var(--bg-secondary, #fff));
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.08));
+    transition: all 0.2s ease;
     cursor: pointer;
-    transition: var(--transition-fast);
-    position: relative;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color, transparent);
 }
 
 .set-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.12));
+    border-color: var(--primary-color, #667eea);
 }
 
-.set-card.all-words {
-    background: var(--gradient-primary);
-    color: white;
-    border: none;
+/* ===== SET CARD MAIN CONTENT ===== */
+.set-card-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
 }
 
-.set-card.all-words .set-count {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.set-card.all-words .set-icon {
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* ===== SET ICON ===== */
-.set-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: var(--border-radius-sm);
+/* ===== SET COLOR ICON ===== */
+.set-color-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
-    color: white;
     flex-shrink: 0;
+    color: #fff;
+    font-size: 18px;
 }
 
 /* ===== SET INFO ===== */
@@ -67,65 +61,97 @@
     min-width: 0;
 }
 
-.set-info h3 {
-    font-size: 1rem;
+.set-name {
     font-weight: 600;
-    margin-bottom: 4px;
+    font-size: 15px;
+    color: var(--text-primary, #1a1a2e);
+    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .set-count {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
 }
 
-/* ===== EDIT & DELETE BUTTONS ===== */
-.btn-edit-set,
-.btn-delete-set {
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--border-radius-sm);
-    background: rgba(0, 0, 0, 0.1);
-    color: var(--text-secondary);
+/* ===== SET CARD ACTIONS ===== */
+.set-card-actions {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: row;
+    gap: 4px;
     opacity: 0;
-    transition: var(--transition-fast);
-    border: none;
-    cursor: pointer;
+    transition: opacity 0.2s ease;
+    margin-left: 8px;
 }
 
-.btn-edit-set {
-    top: 12px;
-    right: 50px;
-}
-
-.btn-delete-set {
-    top: 12px;
-    right: 12px;
-}
-
-.set-card:hover .btn-edit-set,
-.set-card:hover .btn-delete-set {
+.set-card:hover .set-card-actions {
     opacity: 1;
 }
 
+/* ===== ACTION BUTTONS ===== */
+.btn-edit-set,
+.btn-delete-set {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-edit-set {
+    background: var(--primary-light, #e8f0fe);
+    color: var(--primary-color, #667eea);
+}
+
 .btn-edit-set:hover {
-    background: var(--info-color);
-    color: white;
+    background: var(--primary-color, #667eea);
+    color: #fff;
+}
+
+.btn-delete-set {
+    background: #fef2f2;
+    color: #ef4444;
 }
 
 .btn-delete-set:hover {
-    background: var(--danger-color);
-    color: white;
+    background: #ef4444;
+    color: #fff;
 }
 
-/* Hide buttons on all-words card */
-.set-card.all-words .btn-edit-set,
-.set-card.all-words .btn-delete-set {
+/* ===== ALL WORDS CARD ===== */
+.set-card.all-words {
+    background: var(--gradient-primary, linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%));
+    color: #fff;
+    border: none;
+}
+
+.set-card.all-words .set-name,
+.set-card.all-words .set-count {
+    color: #fff;
+}
+
+.set-card.all-words .set-color-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.set-card.all-words .set-card-actions {
     display: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .sets-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .set-card-actions {
+        opacity: 1;
+    }
 }
