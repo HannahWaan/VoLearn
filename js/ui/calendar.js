@@ -322,5 +322,3 @@ window.showDayWords = showDayWords;
 window.switchDayTab = switchDayTab;
 window.closeDayDetailModal = closeDayDetailModal;
 window.openWordFromCalendar = openWordFromCalendar;
-
-export { renderTodayStats };
