@@ -1199,6 +1199,7 @@ window.removeMeaningBlock = removeMeaningBlock;
 window.clearWordForm = clearWordForm;
 window.searchAlternativeWord = searchAlternativeWord;
 window.saveWord = saveWord;
+window.loadWordForEdit = loadWordForEdit;
 
 export {
     editingWordId,
