@@ -1,116 +1,146 @@
-/* ========================================
-   VoLearn - Google Drive Authentication
-   ======================================== */
+/* ===== GOOGLE DRIVE AUTH ===== */
+/* VoLearn v2.1.0 - Google Drive Authentication */
 
-// Google API Config
-const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
-const API_KEY = 'YOUR_API_KEY';
+import { showToast } from '../ui/toast.js';
+
+/* ===== CONFIG ===== */
+// Replace with your actual Google Client ID
+const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 /* ===== STATE ===== */
-export let accessToken = null;
-export let isSignedIn = false;
+let accessToken = null;
+let tokenClient = null;
+let gapiInited = false;
+let gisInited = false;
+let isSignedIn = false;
 
-/* ===== INIT DRIVE ===== */
-export function initDrive() {
+/* ===== INIT ===== */
+export async function initDrive() {
     return new Promise((resolve, reject) => {
-        gapi.load('client:auth2', async () => {
+        // Check if Google APIs are loaded
+        if (typeof gapi === 'undefined') {
+            console.warn('Google API not loaded - Drive sync disabled');
+            resolve(false);
+            return;
+        }
+
+        // Initialize GAPI client
+        gapi.load('client', async () => {
             try {
                 await gapi.client.init({
-                    apiKey: API_KEY,
-                    clientId: CLIENT_ID,
-                    discoveryDocs: DISCOVERY_DOCS,
-                    scope: SCOPES
+                    discoveryDocs: DISCOVERY_DOCS
                 });
-
-                // Listen for sign-in state changes
-                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-                
-                // Handle initial sign-in state
-                updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-                
-                console.log('✅ Google Drive initialized');
+                gapiInited = true;
+                console.log('✅ GAPI client initialized');
+                maybeEnableButtons();
                 resolve(true);
             } catch (error) {
-                console.error('❌ Google Drive init error:', error);
+                console.error('GAPI init error:', error);
                 reject(error);
             }
         });
+
+        // Initialize Google Identity Services
+        if (typeof google !== 'undefined' && google.accounts) {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: handleTokenResponse
+            });
+            gisInited = true;
+            console.log('✅ GIS initialized');
+            maybeEnableButtons();
+        }
     });
 }
 
-/* ===== UPDATE SIGN IN STATUS ===== */
-function updateSignInStatus(signedIn) {
-    isSignedIn = signedIn;
-    
-    if (signedIn) {
-        const user = gapi.auth2.getAuthInstance().currentUser.get();
-        accessToken = user.getAuthResponse().access_token;
-        
-        // Update UI
-        updateDriveUI(true, user.getBasicProfile().getName());
-    } else {
-        accessToken = null;
-        updateDriveUI(false);
+function maybeEnableButtons() {
+    if (gapiInited && gisInited) {
+        updateAuthUI();
     }
 }
 
-/* ===== LOGIN GOOGLE ===== */
+/* ===== LOGIN ===== */
 export function loginGoogle() {
-    if (!gapi.auth2) {
-        window.showToast?.('Google API chưa sẵn sàng. Vui lòng thử lại.', 'warning');
+    if (!tokenClient) {
+        showToast('Google API chưa sẵn sàng', 'error');
         return;
     }
-    
-    gapi.auth2.getAuthInstance().signIn().then(() => {
-        window.showToast?.('Đăng nhập Google thành công!', 'success');
-    }).catch((error) => {
-        console.error('Login error:', error);
-        window.showToast?.('Đăng nhập thất bại', 'error');
-    });
-}
 
-/* ===== LOGOUT GOOGLE ===== */
-export function logoutGoogle() {
-    if (!gapi.auth2) return;
-    
-    gapi.auth2.getAuthInstance().signOut().then(() => {
-        window.showToast?.('Đã đăng xuất', 'info');
-    });
-}
-
-/* ===== UPDATE DRIVE UI ===== */
-function updateDriveUI(signedIn, userName = '') {
-    const loginBtn = document.getElementById('btn-google-login');
-    const logoutBtn = document.getElementById('btn-google-logout');
-    const userInfo = document.getElementById('google-user-info');
-    const backupBtns = document.querySelectorAll('.drive-action-btn');
-    
-    if (signedIn) {
-        if (loginBtn) loginBtn.style.display = 'none';
-        if (logoutBtn) logoutBtn.style.display = 'block';
-        if (userInfo) userInfo.textContent = `Đã kết nối: ${userName}`;
-        backupBtns.forEach(btn => btn.disabled = false);
+    if (accessToken === null) {
+        // Prompt user to select account and consent
+        tokenClient.requestAccessToken({ prompt: 'consent' });
     } else {
-        if (loginBtn) loginBtn.style.display = 'block';
-        if (logoutBtn) logoutBtn.style.display = 'none';
-        if (userInfo) userInfo.textContent = 'Chưa đăng nhập';
-        backupBtns.forEach(btn => btn.disabled = true);
+        // Skip consent if already have token
+        tokenClient.requestAccessToken({ prompt: '' });
     }
 }
 
-/* ===== CHECK SIGNED IN ===== */
-export function checkSignedIn() {
-    return isSignedIn;
+function handleTokenResponse(response) {
+    if (response.error !== undefined) {
+        console.error('Token error:', response);
+        showToast('Đăng nhập thất bại', 'error');
+        return;
+    }
+
+    accessToken = response.access_token;
+    isSignedIn = true;
+    
+    console.log('✅ Google logged in');
+    showToast('Đã đăng nhập Google', 'success');
+    updateAuthUI();
+    
+    // Dispatch event
+    window.dispatchEvent(new CustomEvent('volearn:googleSignedIn', { detail: { accessToken } }));
 }
 
-/* ===== GET ACCESS TOKEN ===== */
+/* ===== LOGOUT ===== */
+export function logoutGoogle() {
+    if (accessToken) {
+        google.accounts.oauth2.revoke(accessToken, () => {
+            accessToken = null;
+            isSignedIn = false;
+            console.log('✅ Google logged out');
+            showToast('Đã đăng xuất Google', 'info');
+            updateAuthUI();
+        });
+    }
+}
+
+/* ===== UI UPDATE ===== */
+function updateAuthUI() {
+    const loginBtn = document.getElementById('btn-google-login');
+    const logoutBtn = document.getElementById('btn-google-logout');
+    const syncSection = document.getElementById('google-sync-section');
+    const statusEl = document.getElementById('google-status');
+
+    if (loginBtn) loginBtn.style.display = isSignedIn ? 'none' : 'inline-flex';
+    if (logoutBtn) logoutBtn.style.display = isSignedIn ? 'inline-flex' : 'none';
+    if (syncSection) syncSection.style.display = isSignedIn ? 'block' : 'none';
+    if (statusEl) {
+        statusEl.innerHTML = isSignedIn 
+            ? '<i class="fas fa-check-circle text-success"></i> Đã kết nối'
+            : '<i class="fas fa-times-circle text-muted"></i> Chưa kết nối';
+    }
+}
+
+/* ===== GETTERS ===== */
 export function getAccessToken() {
     return accessToken;
 }
 
+export function isGoogleSignedIn() {
+    return isSignedIn;
+}
+
+export function isGapiReady() {
+    return gapiInited && gisInited;
+}
+
 /* ===== EXPORTS ===== */
+export { accessToken };
+
 window.loginGoogle = loginGoogle;
 window.logoutGoogle = logoutGoogle;
-window.initDrive = initDrive;
