@@ -1,145 +1,298 @@
-/* ========================================
-   VoLearn - Main Application Entry
-   File: js/app.js
-   ======================================== */
+/* ===== VOLEARN APP - MAIN ENTRY ===== */
+/* VoLearn v2.1.0 - Module Entry Point */
 
 // ===== CORE IMPORTS =====
-import { 
-    loadAllTemplates, 
-    hideLoadingScreen, 
-    showLoadingError 
-} from './core/templateLoader.js';
+import { loadAllTemplates, hideLoadingScreen, showLoadingError } from './core/templateLoader.js';
+import { loadData, saveData, exportToJSON, exportToCSV, importFromJSON, clearData } from './core/storage.js';
+import { appData, setAppData, DEFAULT_DATA } from './core/state.js';
 import { initRouter, navigate } from './core/router.js';
-import { bootApp } from './core/boot.js';
-import { loadData } from './core/storage.js';
 import { initUndoSystem, performUndo } from './core/undo.js';
+import { emit, EVENTS } from './core/eventBus.js';
 
 // ===== UI IMPORTS =====
 import { initSidebar } from './ui/sidebar.js';
-import { initModals } from './ui/modalEngine.js';
-import { initToast, showToast } from './ui/toast.js';
+import { initModals, openModal, closeAllModals } from './ui/modalEngine.js';
+import { initToast, showToast, showSuccess, showError } from './ui/toast.js';
+import { initHome, updateStats, renderRecentWords } from './ui/home.js';
+import { initAddWord } from './ui/addWord.js';
+import { initBookshelf, renderShelves } from './ui/bookshelf.js';
+import { initSetView } from './ui/setView.js';
+import { initCalendar, renderCalendar } from './ui/calendar.js';
+import { initSettings, applySettings } from './ui/settings.js';
 
 // ===== PRACTICE IMPORTS =====
-import { startSRSReview, answerSRS, flipCard, updateSRSCount } from './practice/srsEngine.js';
+import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
+import { startSRSReview, answerSRS, flipCard as srsFlipCard } from './practice/srsEngine.js';
+import { startFlashcard } from './practice/flashcard.js';
+import { startQuiz } from './practice/quiz.js';
+import { startDictation } from './practice/dictation.js';
+import { startTyping } from './practice/typing.js';
 
 // ===== SYNC IMPORTS =====
-import * as DriveAuth from './sync/gdriveAuth.js';
-import * as DriveBackup from './sync/gdriveBackup.js';
+import { initDrive, loginGoogle } from './sync/gdriveAuth.js';
+import { backupToDrive, restoreFromDrive, initDriveBackup } from './sync/gdriveBackup.js';
 
+// ===== UTILS IMPORTS =====
+import { initSpeech, speak, stopSpeaking } from './utils/speech.js';
+import { escapeHtml, generateId, formatDate, debounce } from './utils/helpers.js';
 
-/* ========================================
-   KHỞI ĐỘNG ỨNG DỤNG
-   ======================================== */
+/* ===== CONSTANTS ===== */
+const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
+const MW_THESAURUS_KEY = '74724826-02fe-4e5d-a402-1139eece1765';
 
+/* ===== APP STATE ===== */
+let currentSection = 'home';
+let isInitialized = false;
+
+/* ===== MAIN INITIALIZATION ===== */
 async function initApp() {
-    console.log('🚀 VoLearn starting...');
-    console.log('================================');
-
+    console.log('🚀 VoLearn v2.1.0 Starting...');
+    
     try {
-        // BƯỚC 1: Load tất cả HTML templates
-        console.log('\n📦 Step 1: Loading templates...');
+        // Step 1: Load templates
+        console.log('📄 Step 1: Loading templates...');
         const templatesLoaded = await loadAllTemplates();
-        
         if (!templatesLoaded) {
             throw new Error('Failed to load templates');
         }
-
-        // BƯỚC 2: Load dữ liệu từ localStorage
-        console.log('\n💾 Step 2: Loading data...');
+        
+        // Step 2: Load data from localStorage
+        console.log('💾 Step 2: Loading data...');
         loadData();
-        console.log('  ✅ Data loaded from localStorage');
-
-        // BƯỚC 3: Khởi tạo Router
-        console.log('\n🧭 Step 3: Initializing router...');
+        
+        // Step 3: Initialize core systems
+        console.log('⚙️ Step 3: Initializing core systems...');
         initRouter();
-        console.log('  ✅ Router initialized');
-
-        // BƯỚC 4: Khởi tạo Sidebar
-        console.log('\n📱 Step 4: Initializing sidebar...');
-        initSidebar();
-        console.log('  ✅ Sidebar initialized');
-
-        // BƯỚC 5: Khởi tạo Modal System
-        console.log('\n🪟 Step 5: Initializing modals...');
-        initModals();
-        console.log('  ✅ Modals initialized');
-
-        // BƯỚC 6: Khởi tạo Toast System
-        console.log('\n🔔 Step 6: Initializing toast...');
-        initToast();
-        console.log('  ✅ Toast initialized');
-
-        // BƯỚC 7: Khởi tạo Undo System
-        console.log('\n↩️ Step 7: Initializing undo system...');
         initUndoSystem();
-        console.log('  ✅ Undo system initialized');
-
-        // BƯỚC 8: Boot các hệ thống khác
-        console.log('\n⚙️ Step 8: Booting app systems...');
-        bootApp();
-        console.log('  ✅ App systems booted');
-
-        // BƯỚC 9: Expose global functions
-        console.log('\n🌐 Step 9: Exposing global functions...');
-        exposeGlobalFunctions();
-        console.log('  ✅ Global functions exposed');
-
-        // BƯỚC 10: Điều hướng đến trang chủ
-        console.log('\n🏠 Step 10: Navigating to home...');
+        
+        // Step 4: Initialize UI components
+        console.log('🎨 Step 4: Initializing UI...');
+        initSidebar();
+        initModals();
+        initToast();
+        initSpeech();
+        
+        // Step 5: Initialize sections
+        console.log('📑 Step 5: Initializing sections...');
+        initHome();
+        initAddWord();
+        initBookshelf();
+        initSetView();
+        initCalendar();
+        initSettings();
+        
+        // Step 6: Initialize practice
+        console.log('🏋️ Step 6: Initializing practice...');
+        initPracticeEngine();
+        
+        // Step 7: Initialize sync (optional)
+        console.log('☁️ Step 7: Initializing sync...');
+        try {
+            await initDrive();
+            initDriveBackup();
+        } catch (e) {
+            console.warn('Google Drive sync not available:', e.message);
+        }
+        
+        // Step 8: Apply settings
+        console.log('🎯 Step 8: Applying settings...');
+        applySettings();
+        
+        // Step 9: Setup global functions
+        console.log('🌐 Step 9: Setting up globals...');
+        setupGlobalFunctions();
+        
+        // Step 10: Navigate to home & show app
+        console.log('🏠 Step 10: Navigating to home...');
         navigate('home');
-        console.log('  ✅ Navigated to home');
-
-        // BƯỚC 11: Ẩn loading screen, hiện app
-        console.log('\n✨ Step 11: Showing app...');
+        
+        // Hide loading screen
         hideLoadingScreen();
+        isInitialized = true;
         
-        // Update SRS count
-        updateSRSCount();
+        console.log('✅ VoLearn ready!');
+        emit(EVENTS.DATA_LOADED, appData);
         
-        console.log('\n================================');
-        console.log('🎉 VoLearn ready!');
-        console.log('================================\n');
-
     } catch (error) {
-        console.error('\n❌ Failed to initialize app:', error);
-        showLoadingError('Không thể tải ứng dụng. Vui lòng thử lại.');
+        console.error('❌ Init error:', error);
+        showLoadingError(error.message);
     }
 }
 
-
-/* ========================================
-   EXPOSE FUNCTIONS TO WINDOW
-   ======================================== */
-
-function exposeGlobalFunctions() {
+/* ===== GLOBAL FUNCTIONS SETUP ===== */
+function setupGlobalFunctions() {
     // Navigation
     window.navigate = navigate;
-
-    // SRS functions
-    window.startSRSReview = startSRSReview;
-    window.answerSRS = answerSRS;
-    window.flipCard = flipCard;
-
-    // Undo function
-    window.performUndo = performUndo;
-
+    window.navigateTo = navigate;
+    
     // Toast
     window.showToast = showToast;
-
-    // Google Drive functions
-    window.loginGoogle = DriveAuth.loginGoogle;
-    window.initDrive = DriveAuth.initDrive;
-    window.backupToDrive = DriveBackup.backupToDrive;
-    window.restoreFromDrive = DriveBackup.restoreFromDrive;
+    window.showSuccess = showSuccess;
+    window.showError = showError;
+    
+    // Speech
+    window.speak = speak;
+    window.stopSpeaking = stopSpeaking;
+    window.speakPhonetic = speakPhonetic;
+    window.speakTextarea = speakTextarea;
+    window.speakWithAccent = speakWithAccent;
+    
+    // Modals
+    window.openModal = openModal;
+    window.closeAllModals = closeAllModals;
+    
+    // Data
+    window.saveData = () => saveData(appData);
+    window.exportJSON = exportToJSON;
+    window.exportCSV = exportToCSV;
+    window.importData = importFromJSON;
+    window.clearAllData = clearData;
+    
+    // Practice
+    window.startSRSReview = startSRSReview;
+    window.answerSRS = answerSRS;
+    window.flipCard = srsFlipCard;
+    window.startFlashcard = startFlashcard;
+    window.startQuiz = startQuiz;
+    window.startDictation = startDictation;
+    window.startTyping = startTyping;
+    window.updateSRSCount = updateSRSCount;
+    
+    // Undo
+    window.performUndo = performUndo;
+    
+    // Sync
+    window.loginGoogle = loginGoogle;
+    window.backupToDrive = backupToDrive;
+    window.restoreFromDrive = restoreFromDrive;
+    
+    // Bookshelf & Sets
+    window.renderShelves = renderShelves;
+    window.openSetDetail = (setId) => {
+        import('./ui/setView.js').then(m => m.openSetDetail(setId));
+    };
+    window.backToBookshelf = () => {
+        import('./ui/setView.js').then(m => m.backToBookshelf());
+    };
+    
+    // Calendar
+    window.renderCalendar = renderCalendar;
+    window.showDayWords = (date) => {
+        import('./ui/calendar.js').then(m => m.showDayWords(date));
+    };
+    
+    // Add Word
+    window.selectMeaning = (index) => {
+        import('./ui/addWord.js').then(m => m.selectMeaning(index));
+    };
+    window.addMeaningBlock = () => {
+        import('./ui/addWord.js').then(m => m.addMeaningBlock());
+    };
+    window.removeMeaningBlock = (btn) => {
+        import('./ui/addWord.js').then(m => m.removeMeaningBlock(btn));
+    };
+    window.clearMeaningBlock = (btn) => {
+        import('./ui/addWord.js').then(m => m.clearMeaningBlock(btn));
+    };
+    window.clearWordForm = () => {
+        import('./ui/addWord.js').then(m => m.clearWordForm());
+    };
+    window.searchAlternativeWord = (word) => {
+        import('./ui/addWord.js').then(m => m.searchAlternativeWord(word));
+    };
+    
+    // Word Detail
+    window.editWord = (wordId) => {
+        import('./ui/wordDetail.js').then(m => m.editWord(wordId));
+    };
+    window.deleteWord = (wordId) => {
+        import('./ui/wordDetail.js').then(m => m.deleteWord(wordId));
+    };
+    window.toggleMasteredInView = (wordId) => {
+        import('./ui/setView.js').then(m => m.toggleMasteredInView(wordId));
+    };
+    window.toggleBookmarkInView = (wordId) => {
+        import('./ui/setView.js').then(m => m.toggleBookmarkInView(wordId));
+    };
+    
+    // Helpers
+    window.escapeHtml = escapeHtml;
+    window.generateId = generateId;
+    window.formatDate = formatDate;
+    
+    // API Keys (for addWord.js)
+    window.MW_LEARNER_KEY = MW_LEARNER_KEY;
+    window.MW_THESAURUS_KEY = MW_THESAURUS_KEY;
+    
+    // Practice Settings
+    window.openFlashcardSettings = () => {
+        import('./practice/flashcard.js').then(m => m.openFlashcardSettings && m.openFlashcardSettings());
+    };
+    window.openQuizSettings = () => {
+        import('./practice/quiz.js').then(m => m.openQuizSettings && m.openQuizSettings());
+    };
+    window.openDictationSettings = () => {
+        import('./practice/dictation.js').then(m => m.openDictationSettings && m.openDictationSettings());
+    };
+    window.openTypingSettings = () => {
+        import('./practice/typing.js').then(m => m.openTypingSettings && m.openTypingSettings());
+    };
+    
+    // Practice handlers
+    window.handlePracticeBack = () => {
+        import('./practice/practiceEngine.js').then(m => m.handlePracticeBack && m.handlePracticeBack());
+    };
+    window.hidePracticeArea = () => {
+        import('./practice/practiceEngine.js').then(m => m.hidePracticeArea && m.hidePracticeArea());
+    };
 }
 
+/* ===== SPEECH HELPERS ===== */
+function speakPhonetic(btn, lang) {
+    const block = btn.closest('.meaning-block');
+    const wordInput = document.getElementById('word-input');
+    const word = wordInput?.value.trim();
+    
+    if (!word) {
+        showToast('Vui lòng nhập từ vựng trước', 'error');
+        return;
+    }
+    
+    speak(word, { lang, rate: appData.settings?.speed || 1 });
+    btn.classList.add('speaking');
+    setTimeout(() => btn.classList.remove('speaking'), 1000);
+}
 
-/* ========================================
-   START APP WHEN DOM READY
-   ======================================== */
+function speakTextarea(btn, lang) {
+    const wrapper = btn.closest('.textarea-with-speaker');
+    const textarea = wrapper?.querySelector('textarea');
+    const text = textarea?.value.trim();
+    
+    if (text) {
+        const speechLang = lang === 'en' ? (appData.settings?.voice || 'en-US') : 'vi-VN';
+        speak(text, { lang: speechLang, rate: appData.settings?.speed || 1 });
+    } else {
+        showToast('Không có nội dung để đọc', 'error');
+    }
+}
 
+function speakWithAccent(text, accent) {
+    if (!text) return;
+    speak(text, { lang: accent, rate: appData.settings?.speed || 1 });
+}
+
+/* ===== START APP ===== */
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
     initApp();
 }
+
+/* ===== EXPORTS ===== */
+export {
+    initApp,
+    currentSection,
+    isInitialized,
+    MW_LEARNER_KEY,
+    MW_THESAURUS_KEY
+};
