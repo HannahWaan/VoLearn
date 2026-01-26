@@ -17,7 +17,6 @@ export function loadData() {
         if (saved) {
             const parsed = JSON.parse(saved);
             
-            // Merge với default để đảm bảo có đủ fields
             const merged = {
                 ...DEFAULT_DATA,
                 ...parsed,
@@ -42,16 +41,12 @@ export function loadData() {
 
 /**
  * Lưu dữ liệu vào localStorage
- * @param {Object} data - Dữ liệu cần lưu (optional, mặc định dùng appData)
  */
 export function saveData(data) {
     try {
         const dataToSave = data || appData;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-        
-        // Dispatch event
         window.dispatchEvent(new CustomEvent('volearn:dataSaved'));
-        
         return true;
     } catch (error) {
         console.error('Error saving data:', error);
@@ -66,9 +61,7 @@ export function clearAllData() {
     try {
         localStorage.removeItem(STORAGE_KEY);
         setAppData({ ...DEFAULT_DATA });
-        
         window.dispatchEvent(new CustomEvent('volearn:dataCleared'));
-        
         return true;
     } catch (error) {
         console.error('Error clearing data:', error);
@@ -76,8 +69,12 @@ export function clearAllData() {
     }
 }
 
-// Alias cho clearAllData (để tương thích với các file khác)
-export const clearData = clearAllData;
+/**
+ * Xóa tất cả dữ liệu (alias cho clearAllData)
+ */
+export function clearData() {
+    return clearAllData();
+}
 
 /**
  * Export dữ liệu ra JSON
@@ -106,10 +103,8 @@ export function exportToCSV() {
         return;
     }
     
-    // CSV header
     let csv = 'Word,Phonetic US,Phonetic UK,POS,Definition EN,Definition VI,Example,Synonyms,Antonyms,Set,Mastered,Bookmarked\n';
     
-    // CSV rows
     vocabulary.forEach(word => {
         const meanings = word.meanings || [];
         meanings.forEach(m => {
@@ -153,12 +148,10 @@ export function importFromJSON(file) {
             try {
                 const imported = JSON.parse(e.target.result);
                 
-                // Validate
                 if (!imported.vocabulary || !Array.isArray(imported.vocabulary)) {
                     throw new Error('Invalid data format');
                 }
                 
-                // Merge hoặc replace
                 const merged = {
                     ...DEFAULT_DATA,
                     ...imported,
