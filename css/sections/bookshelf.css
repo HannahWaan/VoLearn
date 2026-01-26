@@ -83,33 +83,39 @@
     display: block;
 }
 
-/* ===== SET CARD ACTIONS - NẰM DỌC ===== */
+/* ===== SET CARD ACTIONS - NẰM DỌC TRÊN DƯỚI ===== */
 .set-card-actions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
     opacity: 0;
-    transition: opacity 0.2s ease;
-    margin-left: 12px;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .set-card:hover .set-card-actions {
     opacity: 1;
+    visibility: visible;
 }
 
 /* ===== ACTION BUTTONS ===== */
 .btn-edit-set,
 .btn-delete-set {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .btn-edit-set {
@@ -163,7 +169,11 @@
     
     .set-card-actions {
         opacity: 1;
+        visibility: visible;
+        position: static;
+        transform: none;
         flex-direction: row;
+        margin-left: auto;
     }
     
     .set-card {
