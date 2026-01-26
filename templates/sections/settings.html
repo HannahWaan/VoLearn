@@ -1,0 +1,114 @@
+<!-- ==================== SETTINGS SECTION ==================== -->
+<section id="settings-section" class="section">
+    <div class="settings-grid">
+        <!-- Appearance Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-palette"></i> Giao diện</h2>
+            </div>
+            <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Chế độ tối</span>
+                        <span class="setting-desc">Bật/tắt giao diện tối</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Phông chữ</span>
+                        <span class="setting-desc">Chọn font hiển thị</span>
+                    </div>
+                    <select id="font-select" class="setting-select">
+                        <option value="Be Vietnam Pro">Be Vietnam Pro</option>
+                        <option value="Noto Sans">Noto Sans</option>
+                        <option value="Inter">Inter</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-volume-up"></i> Giọng đọc</h2>
+            </div>
+            <div class="card-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Giọng tiếng Anh</span>
+                        <span class="setting-desc">Chọn giọng US hoặc UK</span>
+                    </div>
+                    <select id="voice-select" class="setting-select">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Tốc độ đọc</span>
+                        <span class="setting-desc">Điều chỉnh tốc độ phát âm</span>
+                    </div>
+                    <div class="speed-control">
+                        <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+                        <span id="speed-value">1x</span>
+                    </div>
+                </div>
+                <button id="btn-test-voice" class="btn-secondary btn-full">
+                    <i class="fas fa-play"></i> Test giọng đọc
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Management Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-database"></i> Quản lý dữ liệu</h2>
+            </div>
+            <div class="card-body">
+                <div class="data-buttons">
+                    <button id="btn-export-json" class="btn-secondary">
+                        <i class="fas fa-download"></i> Xuất JSON
+                    </button>
+                    <button id="btn-export-csv" class="btn-secondary">
+                        <i class="fas fa-file-csv"></i> Xuất CSV
+                    </button>
+                    <button id="btn-import" class="btn-secondary">
+                        <i class="fas fa-upload"></i> Nhập dữ liệu
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+                <button id="btn-clear-data" class="btn-danger btn-full">
+                    <i class="fas fa-trash"></i> Xóa tất cả dữ liệu
+                </button>
+            </div>
+        </div>
+
+        <!-- Google Drive Sync Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fab fa-google-drive"></i> Google Drive</h2>
+            </div>
+            <div class="card-body">
+                <p style="margin-bottom: 12px; color: var(--text-secondary);">
+                    Sao lưu và khôi phục dữ liệu qua Google Drive
+                </p>
+                <div class="data-buttons">
+                    <button id="btn-login-google" class="btn-secondary">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                    </button>
+                    <button id="btn-backup-drive" class="btn-secondary">
+                        <i class="fas fa-cloud-upload-alt"></i> Sao lưu
+                    </button>
+                    <button id="btn-restore-drive" class="btn-secondary">
+                        <i class="fas fa-cloud-download-alt"></i> Khôi phục
+                    </button>
+                </div>
+                <div id="gdrive-status" style="margin-top: 12px; font-size: 14px; color: var(--text-secondary);"></div>
+            </div>
+        </div>
+    </div>
+</section>

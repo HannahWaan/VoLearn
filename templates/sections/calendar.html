@@ -1,0 +1,41 @@
+<!-- ==================== CALENDAR SECTION ==================== -->
+<section id="calendar-section" class="section">
+    <!-- Daily Summary -->
+    <div class="daily-summary">
+        <h2><i class="fas fa-chart-line"></i> Hôm nay</h2>
+        <div class="daily-stats">
+            <div class="daily-stat">
+                <span class="daily-stat-value" id="daily-added">0</span>
+                <span class="daily-stat-label">Từ đã thêm</span>
+            </div>
+            <div class="daily-stat">
+                <span class="daily-stat-value" id="daily-reviewed">0</span>
+                <span class="daily-stat-label">Từ đã ôn</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Card -->
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <button id="prev-month" class="btn-icon">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <h3 id="current-month">Tháng 1, 2026</h3>
+            <button id="next-month" class="btn-icon">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid">
+            <!-- Calendar days will be dynamically generated -->
+            <div class="calendar-day-header">CN</div>
+            <div class="calendar-day-header">T2</div>
+            <div class="calendar-day-header">T3</div>
+            <div class="calendar-day-header">T4</div>
+            <div class="calendar-day-header">T5</div>
+            <div class="calendar-day-header">T6</div>
+            <div class="calendar-day-header">T7</div>
+            <!-- Day cells will be added dynamically -->
+        </div>
+    </div>
+</section>

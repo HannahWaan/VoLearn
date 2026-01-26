@@ -1,0 +1,26 @@
+<!-- ==================== BOOKSHELF SECTION ==================== -->
+<section id="bookshelf-section" class="section">
+    <div class="section-header">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="bookshelf-search" placeholder="Tìm bộ từ vựng...">
+        </div>
+        <button id="btn-create-set" class="btn-primary">
+            <i class="fas fa-plus"></i> Tạo bộ từ mới
+        </button>
+    </div>
+    
+    <div id="sets-container" class="sets-grid">
+        <!-- All Words Card -->
+        <div class="set-card all-words" data-set-id="all">
+            <div class="set-icon" style="background: var(--gradient-primary);">
+                <i class="fas fa-globe"></i>
+            </div>
+            <div class="set-info">
+                <h3>Tất cả từ vựng</h3>
+                <span class="set-count"><span id="all-words-count">0</span> từ</span>
+            </div>
+        </div>
+        <!-- Dynamic set cards will be added here -->
+    </div>
+</section>
