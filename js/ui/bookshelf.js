@@ -27,14 +27,17 @@ export function renderShelves() {
 
     const allWordsCount = appData.vocabulary?.length || 0;
     
+    // Card "Tất cả từ vựng" - không có nút edit/xóa
     let html = `
         <div class="set-card all-words" onclick="window.openSetView('all')">
-            <div class="set-card-main">
-                <div class="set-color-icon" style="background: var(--gradient-primary)">
+            <div class="set-card-header">
+                <span class="set-name">Tất cả từ vựng</span>
+            </div>
+            <div class="set-card-body">
+                <div class="set-color-icon" style="background: rgba(255,255,255,0.2)">
                     <i class="fas fa-layer-group"></i>
                 </div>
                 <div class="set-info">
-                    <span class="set-name">Tất cả từ vựng</span>
                     <span class="set-count">${allWordsCount} từ</span>
                 </div>
             </div>
@@ -49,28 +52,31 @@ export function renderShelves() {
         );
     }
 
+    // Render từng bộ từ với layout mới
     sets.forEach(set => {
         const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
         const bgColor = set.color || 'var(--primary-color)';
         
         html += `
             <div class="set-card" data-set-id="${set.id}">
-                <div class="set-card-main" onclick="window.openSetView('${set.id}')">
+                <div class="set-card-header">
+                    <span class="set-name">${escapeHtml(set.name)}</span>
+                    <div class="set-actions">
+                        <button class="btn-edit-set" onclick="event.stopPropagation(); window.openEditSetModal('${set.id}')" title="Sửa">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="set-card-body" onclick="window.openSetView('${set.id}')">
                     <div class="set-color-icon" style="background: ${bgColor}">
                         <i class="fas fa-folder"></i>
                     </div>
                     <div class="set-info">
-                        <span class="set-name">${escapeHtml(set.name)}</span>
                         <span class="set-count">${count} từ</span>
                     </div>
-                </div>
-                <div class="set-card-actions">
-                    <button class="btn-edit-set" onclick="event.stopPropagation(); window.openEditSetModal('${set.id}')" title="Sửa">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button class="btn-delete-set" onclick="event.stopPropagation(); window.confirmDeleteSet('${set.id}')" title="Xóa">
-                        <i class="fas fa-trash"></i>
-                    </button>
                 </div>
             </div>
         `;
@@ -256,3 +262,4 @@ window.renderShelves = renderShelves;
 window.populateSetSelect = populateSetSelect;
 
 export { searchQuery };
+
