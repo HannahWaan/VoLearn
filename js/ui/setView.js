@@ -10,7 +10,6 @@ import { navigate } from '../core/router.js';
 /* ===== STATE ===== */
 let currentSetId = null;
 let selectedWordId = null;
-let viewMode = 'grid';
 let eventsBound = false;
 
 /* ===== INITIALIZATION ===== */
@@ -29,50 +28,45 @@ export function initSetView() {
 
 /* ===== BIND EVENTS ===== */
 function bindSetViewEvents() {
-    // Back button - dùng ID từ template
     document.addEventListener('click', (e) => {
         if (e.target.closest('#btn-back-bookshelf')) {
             backToBookshelf();
         }
     });
     
-    // Search trong set view
     document.addEventListener('input', (e) => {
         if (e.target.id === 'set-view-search-input') {
             filterWords(e.target.value);
         }
     });
     
-    // Resizer cho split view
     initResizer();
 }
 
 /* ===== INIT RESIZER ===== */
 function initResizer() {
-    const resizer = document.getElementById('split-resizer');
-    const leftPanel = document.getElementById('split-left');
-    const rightPanel = document.getElementById('split-right');
-    
-    if (!resizer || !leftPanel || !rightPanel) return;
-    
     let isResizing = false;
     
-    resizer.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
+    document.addEventListener('mousedown', (e) => {
+        if (e.target.closest('#split-resizer')) {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        }
     });
     
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
         
-        const container = leftPanel.parentElement;
+        const container = document.querySelector('.split-view-container');
+        const leftPanel = document.getElementById('split-left');
+        if (!container || !leftPanel) return;
+        
         const containerRect = container.getBoundingClientRect();
         const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
         
-        if (newLeftWidth > 20 && newLeftWidth < 80) {
+        if (newLeftWidth > 20 && newLeftWidth < 60) {
             leftPanel.style.width = `${newLeftWidth}%`;
-            rightPanel.style.width = `${100 - newLeftWidth}%`;
         }
     });
     
@@ -88,10 +82,7 @@ export function openSetDetail(setId) {
     window.currentSetViewId = setId;
     currentSetId = setId;
     navigate('set-view');
-    
-    setTimeout(() => {
-        renderSetView();
-    }, 50);
+    setTimeout(() => renderSetView(), 50);
 }
 
 /* ===== BACK TO BOOKSHELF ===== */
@@ -123,11 +114,7 @@ function getWordsForSet(setId) {
 /* ===== GET SET INFO ===== */
 function getSetInfo(setId) {
     if (!setId || setId === 'all') {
-        return {
-            id: 'all',
-            name: 'Tất cả từ vựng',
-            color: 'var(--primary-color)'
-        };
+        return { id: 'all', name: 'Tất cả từ vựng', color: 'var(--primary-color)' };
     }
     const set = (appData.sets || []).find(s => s.id === setId);
     return set || { id: setId, name: 'Bộ từ vựng', color: 'var(--primary-color)' };
@@ -138,7 +125,6 @@ export function renderSetView() {
     const setInfo = getSetInfo(currentSetId);
     const words = getWordsForSet(currentSetId);
     
-    // Update header - dùng ID từ template
     const setTitleEl = document.getElementById('set-view-title');
     const wordCountEl = document.getElementById('set-view-count');
     
@@ -149,10 +135,7 @@ export function renderSetView() {
         wordCountEl.textContent = `${words.length} từ`;
     }
     
-    // Render word list
     renderWordList(words);
-    
-    // Reset detail panel
     resetDetailPanel();
 }
 
@@ -174,41 +157,29 @@ function renderWordList(words) {
         return;
     }
     
-    wordListEl.innerHTML = words.map(word => renderWordCard(word)).join('');
-}
-
-/* ===== RENDER WORD CARD ===== */
-function renderWordCard(word) {
-    const isSelected = selectedWordId === word.id;
-    const isMastered = word.mastered || false;
-    const isBookmarked = word.bookmarked || false;
-    
-    const firstMeaning = word.meanings?.[0] || {};
-    const defVi = firstMeaning.defVi || firstMeaning.definition || '';
-    
-    return `
-        <div class="word-item ${isSelected ? 'selected' : ''} ${isMastered ? 'mastered' : ''}" 
-             data-word-id="${word.id}"
-             onclick="window.selectWordInView('${word.id}')">
-            <div class="word-item-main">
-                <span class="word-text">${escapeHtml(word.word || '')}</span>
-                <span class="word-phonetic">${escapeHtml(word.phonetic || '')}</span>
-                <span class="word-meaning">${escapeHtml(defVi)}</span>
+    wordListEl.innerHTML = words.map(word => {
+        const isSelected = selectedWordId === word.id;
+        const isMastered = word.mastered || false;
+        const isBookmarked = word.bookmarked || false;
+        const firstMeaning = word.meanings?.[0] || {};
+        const defVi = firstMeaning.defVi || firstMeaning.definition || '';
+        
+        return `
+            <div class="word-item ${isSelected ? 'selected' : ''} ${isMastered ? 'mastered' : ''}" 
+                 data-word-id="${word.id}"
+                 onclick="window.selectWordInView('${word.id}')">
+                <div class="word-item-main">
+                    <span class="word-text">${escapeHtml(word.word || '')}</span>
+                    <span class="word-phonetic">${escapeHtml(word.phonetic || '')}</span>
+                    <span class="word-meaning">${escapeHtml(defVi)}</span>
+                </div>
+                <div class="word-item-status">
+                    ${isBookmarked ? '<i class="fas fa-bookmark text-warning"></i>' : ''}
+                    ${isMastered ? '<i class="fas fa-check-circle text-success"></i>' : ''}
+                </div>
             </div>
-            <div class="word-item-actions">
-                <button class="btn-icon ${isBookmarked ? 'active' : ''}" 
-                        onclick="event.stopPropagation(); window.toggleBookmarkInView('${word.id}')"
-                        title="Đánh dấu">
-                    <i class="fa${isBookmarked ? 's' : 'r'} fa-bookmark"></i>
-                </button>
-                <button class="btn-icon ${isMastered ? 'active' : ''}" 
-                        onclick="event.stopPropagation(); window.toggleMasteredInView('${word.id}')"
-                        title="Đã thuộc">
-                    <i class="fa${isMastered ? 's' : 'r'} fa-check-circle"></i>
-                </button>
-            </div>
-        </div>
-    `;
+        `;
+    }).join('');
 }
 
 /* ===== SELECT WORD ===== */
@@ -245,41 +216,130 @@ function showWordDetail(word) {
     if (!detailPanel) return;
     
     const meanings = word.meanings || [];
+    const isMastered = word.mastered || false;
+    const isBookmarked = word.bookmarked || false;
+    
+    // Get phonetics
+    const phoneticUS = word.phoneticUS || word.phonetic || '';
+    const phoneticUK = word.phoneticUK || word.phonetic || '';
     
     detailPanel.innerHTML = `
         <div class="word-detail-content">
-            <div class="detail-header">
-                <h2>${escapeHtml(word.word || '')}</h2>
-                <span class="phonetic">${escapeHtml(word.phonetic || '')}</span>
-                <button class="btn-speak" onclick="window.speakWord && window.speakWord('${escapeHtml(word.word)}', 'en-US')">
-                    <i class="fas fa-volume-up"></i>
-                </button>
+            <!-- Header: Từ vựng + nút Edit/Delete bên phải -->
+            <div class="detail-top-header">
+                <div class="detail-word-info">
+                    <h2 class="detail-word">${escapeHtml(word.word || '')}</h2>
+                </div>
+                <div class="detail-top-actions">
+                    <button class="btn-icon-sm ${isBookmarked ? 'active' : ''}" 
+                            onclick="window.toggleBookmarkInView('${word.id}')" title="Đánh dấu">
+                        <i class="fa${isBookmarked ? 's' : 'r'} fa-bookmark"></i>
+                    </button>
+                    <button class="btn-icon-sm ${isMastered ? 'active mastered' : ''}" 
+                            onclick="window.toggleMasteredInView('${word.id}')" title="Đã thuộc">
+                        <i class="fa${isMastered ? 's' : 'r'} fa-check-circle"></i>
+                    </button>
+                    <button class="btn-icon-sm edit" onclick="window.editWordInView('${word.id}')" title="Chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon-sm delete" onclick="window.deleteWordInView('${word.id}')" title="Xóa">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
             
-            <div class="detail-meanings">
+            <!-- Phonetics với 2 nút loa US/UK -->
+            <div class="detail-phonetics">
+                <div class="phonetic-item">
+                    <span class="phonetic-label">US</span>
+                    <span class="phonetic-text">${escapeHtml(phoneticUS)}</span>
+                    <button class="btn-speak-sm" onclick="window.speakWord && window.speakWord('${escapeHtml(word.word)}', 'en-US')" title="Phát âm US">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="phonetic-item">
+                    <span class="phonetic-label">UK</span>
+                    <span class="phonetic-text">${escapeHtml(phoneticUK)}</span>
+                    <button class="btn-speak-sm" onclick="window.speakWord && window.speakWord('${escapeHtml(word.word)}', 'en-GB')" title="Phát âm UK">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Word Formation nếu có -->
+            ${word.formation ? `
+                <div class="detail-formation">
+                    <span class="formation-label">Word Formation:</span>
+                    <span class="formation-text">${escapeHtml(word.formation)}</span>
+                </div>
+            ` : ''}
+            
+            <!-- Meanings -->
+            <div class="detail-meanings-list">
                 ${meanings.map((m, i) => `
-                    <div class="meaning-item">
-                        <span class="pos">${escapeHtml(m.pos || '')}</span>
-                        <p class="def-en">${escapeHtml(m.defEn || m.definition || '')}</p>
-                        <p class="def-vi">${escapeHtml(m.defVi || '')}</p>
-                        ${m.example ? `<p class="example"><em>"${escapeHtml(m.example)}"</em></p>` : ''}
+                    <div class="detail-meaning-block">
+                        <div class="meaning-header-row">
+                            <span class="meaning-number">Nghĩa ${i + 1}</span>
+                            ${m.pos ? `<span class="meaning-pos">${escapeHtml(m.pos)}</span>` : ''}
+                        </div>
+                        
+                        ${m.defVi ? `
+                            <div class="meaning-row">
+                                <span class="meaning-label">Tiếng Việt:</span>
+                                <p class="meaning-text-vi">${escapeHtml(m.defVi)}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${m.defEn || m.definition ? `
+                            <div class="meaning-row">
+                                <span class="meaning-label">English:</span>
+                                <p class="meaning-text-en">${escapeHtml(m.defEn || m.definition || '')}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${m.example ? `
+                            <div class="meaning-row example-row">
+                                <span class="meaning-label">Ví dụ:</span>
+                                <p class="meaning-example">"${escapeHtml(m.example)}"</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${m.exampleVi ? `
+                            <div class="meaning-row">
+                                <span class="meaning-label">Dịch:</span>
+                                <p class="meaning-example-vi">${escapeHtml(m.exampleVi)}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${m.synonyms ? `
+                            <div class="meaning-row">
+                                <span class="meaning-label">Đồng nghĩa:</span>
+                                <p class="meaning-synonyms">${escapeHtml(m.synonyms)}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${m.antonyms ? `
+                            <div class="meaning-row">
+                                <span class="meaning-label">Trái nghĩa:</span>
+                                <p class="meaning-antonyms">${escapeHtml(m.antonyms)}</p>
+                            </div>
+                        ` : ''}
                     </div>
                 `).join('')}
             </div>
             
-            <div class="detail-actions">
-                <button class="btn btn-primary" onclick="window.editWordInView('${word.id}')">
-                    <i class="fas fa-edit"></i> Chỉnh sửa
-                </button>
-                <button class="btn btn-danger" onclick="window.deleteWordInView('${word.id}')">
-                    <i class="fas fa-trash"></i> Xóa
-                </button>
-            </div>
+            <!-- Notes nếu có -->
+            ${word.notes ? `
+                <div class="detail-notes">
+                    <span class="notes-label">Ghi chú:</span>
+                    <p class="notes-text">${escapeHtml(word.notes)}</p>
+                </div>
+            ` : ''}
         </div>
     `;
 }
 
-/* ===== TOGGLE MASTERED ===== */
+/* ===== TOGGLE MASTERED - Không re-render toàn bộ ===== */
 export function toggleMasteredInView(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (!word) return;
@@ -288,10 +348,13 @@ export function toggleMasteredInView(wordId) {
     saveData(appData);
     
     showToast(word.mastered ? 'Đã đánh dấu thuộc!' : 'Đã bỏ đánh dấu thuộc', 'success');
-    renderSetView();
+    
+    // Chỉ update UI, không reset detail panel
+    updateWordItemUI(wordId);
+    showWordDetail(word);
 }
 
-/* ===== TOGGLE BOOKMARK ===== */
+/* ===== TOGGLE BOOKMARK - Không re-render toàn bộ ===== */
 export function toggleBookmarkInView(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (!word) return;
@@ -300,7 +363,29 @@ export function toggleBookmarkInView(wordId) {
     saveData(appData);
     
     showToast(word.bookmarked ? 'Đã đánh dấu!' : 'Đã bỏ đánh dấu', 'success');
-    renderSetView();
+    
+    // Chỉ update UI, không reset detail panel
+    updateWordItemUI(wordId);
+    showWordDetail(word);
+}
+
+/* ===== UPDATE WORD ITEM UI ===== */
+function updateWordItemUI(wordId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    const item = document.querySelector(`.word-item[data-word-id="${wordId}"]`);
+    if (!item) return;
+    
+    item.classList.toggle('mastered', word.mastered);
+    
+    const statusEl = item.querySelector('.word-item-status');
+    if (statusEl) {
+        statusEl.innerHTML = `
+            ${word.bookmarked ? '<i class="fas fa-bookmark text-warning"></i>' : ''}
+            ${word.mastered ? '<i class="fas fa-check-circle text-success"></i>' : ''}
+        `;
+    }
 }
 
 /* ===== EDIT WORD ===== */
@@ -318,6 +403,7 @@ function deleteWordInView(wordId) {
         appData.vocabulary.splice(index, 1);
         saveData(appData);
         showSuccess('Đã xóa từ vựng!');
+        selectedWordId = null;
         renderSetView();
     }
 }
