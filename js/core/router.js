@@ -3,10 +3,19 @@
    Handle page navigation
    ============================================= */
 
-// Lưu section hiện tại
 let currentSection = 'home';
 
-// Mapping section -> page title
+// Mapping section name -> actual DOM ID
+const sectionIdMap = {
+    'home': 'home-section',
+    'add-word': 'add-section',  // FIX: add-section không phải add-word-section
+    'bookshelf': 'bookshelf-section',
+    'set-view': 'set-view-section',
+    'practice': 'practice-section',
+    'calendar': 'calendar-section',
+    'settings': 'settings-section'
+};
+
 const pageTitles = {
     'home': 'Trang chủ',
     'add-word': 'Thêm từ vựng',
@@ -17,12 +26,8 @@ const pageTitles = {
     'settings': 'Cài đặt'
 };
 
-// Callbacks khi navigate
 const navigationCallbacks = {};
 
-/**
- * Đăng ký callback khi navigate đến section
- */
 export function onNavigate(section, callback) {
     if (!navigationCallbacks[section]) {
         navigationCallbacks[section] = [];
@@ -30,21 +35,20 @@ export function onNavigate(section, callback) {
     navigationCallbacks[section].push(callback);
 }
 
-/**
- * Điều hướng đến một section
- */
 export function navigate(sectionName) {
     // Ẩn tất cả sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
 
-    // Hiện section được chọn
-    const targetSection = document.getElementById(`${sectionName}-section`);
+    // Lấy ID thực của section
+    const sectionId = sectionIdMap[sectionName] || `${sectionName}-section`;
+    const targetSection = document.getElementById(sectionId);
+    
     if (targetSection) {
         targetSection.classList.add('active');
     } else {
-        console.warn(`Section not found: ${sectionName}-section`);
+        console.warn(`Section not found: ${sectionId}`);
         return;
     }
 
@@ -62,11 +66,10 @@ export function navigate(sectionName) {
         pageTitle.textContent = pageTitles[sectionName];
     }
 
-    // Lưu section hiện tại
     const previousSection = currentSection;
     currentSection = sectionName;
 
-    // GỌI TRỰC TIẾP initSetView khi navigate đến set-view
+    // Gọi initSetView khi navigate đến set-view
     if (sectionName === 'set-view' && window.initSetView) {
         setTimeout(() => {
             window.initSetView();
@@ -86,37 +89,22 @@ export function navigate(sectionName) {
 
     // Emit custom event
     window.dispatchEvent(new CustomEvent('volearn:navigate', { 
-        detail: { 
-            from: previousSection,
-            to: sectionName 
-        } 
+        detail: { from: previousSection, to: sectionName } 
     }));
 
-    // Scroll to top
     window.scrollTo(0, 0);
-
     console.log(`📍 Navigate: ${previousSection} → ${sectionName}`);
 }
 
-/**
- * Lấy section hiện tại
- */
 export function getCurrentSection() {
     return currentSection;
 }
 
-/**
- * Quay lại section trước
- */
 export function goBack() {
     navigate('home');
 }
 
-/**
- * Khởi tạo navigation
- */
 export function initRouter() {
-    // Gắn event click cho nav items
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -131,9 +119,6 @@ export function initRouter() {
     console.log('✅ Router initialized');
 }
 
-/**
- * Đóng sidebar trên mobile
- */
 function closeMobileSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -144,6 +129,5 @@ function closeMobileSidebar() {
     }
 }
 
-// Expose to window
 window.navigate = navigate;
 window.goBack = goBack;
