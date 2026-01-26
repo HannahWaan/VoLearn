@@ -10,53 +10,49 @@ import { navigate } from '../core/router.js';
 /* ===== STATE ===== */
 let currentSetId = null;
 let selectedWordId = null;
-let viewMode = 'grid'; // 'grid' or 'list'
+let viewMode = 'grid';
+let eventsbound = false;
 
 /* ===== INITIALIZATION ===== */
 export function initSetView() {
-    // Get set ID from window (set by bookshelf)
-    currentSetId = window.currentSetViewId || null;
-    
-    if (!currentSetId) {
-        console.warn('No set ID provided, returning to bookshelf');
-        navigate('bookshelf');
-        return;
+    // Bind events chỉ 1 lần khi app khởi động
+    if (!eventsbound) {
+        bindSetViewEvents();
+        eventsbound = true;
     }
     
-    // Bind events
-    bindSetViewEvents();
+    // Lấy setId từ window (được set bởi openSetDetail)
+    currentSetId = window.currentSetViewId || null;
     
-    // Render the view
-    renderSetView();
+    // Chỉ render nếu có setId
+    if (currentSetId) {
+        renderSetView();
+    }
+    // Không navigate về bookshelf ở đây - để router xử lý
 }
 
 /* ===== BIND EVENTS ===== */
 function bindSetViewEvents() {
     // View mode toggle
-    const gridBtn = document.getElementById('view-grid-btn');
-    const listBtn = document.getElementById('view-list-btn');
-    
-    if (gridBtn) {
-        gridBtn.addEventListener('click', () => setViewMode('grid'));
-    }
-    if (listBtn) {
-        listBtn.addEventListener('click', () => setViewMode('list'));
-    }
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#view-grid-btn')) {
+            setViewMode('grid');
+        }
+        if (e.target.closest('#view-list-btn')) {
+            setViewMode('list');
+        }
+        if (e.target.closest('.btn-back-to-bookshelf')) {
+            backToBookshelf();
+        }
+    });
     
     // Scale slider
-    const scaleSlider = document.getElementById('word-scale-slider');
-    if (scaleSlider) {
-        scaleSlider.addEventListener('input', (e) => {
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'word-scale-slider') {
             const scale = e.target.value;
             document.documentElement.style.setProperty('--word-card-scale', scale);
-        });
-    }
-    
-    // Back button
-    const backBtn = document.querySelector('.btn-back-to-bookshelf');
-    if (backBtn) {
-        backBtn.addEventListener('click', backToBookshelf);
-    }
+        }
+    });
 }
 
 /* ===== OPEN SET DETAIL ===== */
@@ -64,6 +60,11 @@ export function openSetDetail(setId) {
     window.currentSetViewId = setId;
     currentSetId = setId;
     navigate('set-view');
+    
+    // Render sau khi navigate
+    setTimeout(() => {
+        renderSetView();
+    }, 50);
 }
 
 /* ===== BACK TO BOOKSHELF ===== */
@@ -306,4 +307,5 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
 
