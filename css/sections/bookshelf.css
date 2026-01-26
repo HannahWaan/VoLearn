@@ -6,121 +6,126 @@
     flex-wrap: wrap;
 }
 
-/* ===== SET CARD LAYOUT ===== */
+/* ===== SETS GRID ===== */
+.sets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* ===== SET CARD - Giống code cũ ===== */
 .set-card {
-    position: relative;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    background: var(--card-bg, #fff);
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease;
-    gap: 12px;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    position: relative;
+    border: 1px solid var(--border-color);
 }
 
 .set-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
 }
 
-.set-card-main {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    cursor: pointer;
-    min-width: 0;
+.set-card.all-words {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
 }
 
-.set-card .set-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+.set-card.all-words .set-count {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.set-card.all-words .set-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ===== SET ICON ===== */
+.set-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--border-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.3rem;
+    color: white;
     flex-shrink: 0;
 }
 
-.set-card .set-icon i {
-    font-size: 20px;
-    color: #fff;
-}
-
-.set-card .set-info {
+/* ===== SET INFO ===== */
+.set-info {
     flex: 1;
     min-width: 0;
 }
 
-.set-card .set-info h3 {
-    margin: 0 0 4px 0;
-    font-size: 16px;
+.set-info h3 {
+    font-size: 1rem;
     font-weight: 600;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.set-card .set-count {
-    font-size: 13px;
-    color: var(--text-secondary, #666);
+.set-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
 }
 
-/* ===== SET CARD ACTIONS (Edit & Delete) ===== */
-.set-card-actions {
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    flex-shrink: 0;
-}
-
-.set-card:hover .set-card-actions {
-    opacity: 1;
-}
-
+/* ===== EDIT & DELETE BUTTONS ===== */
 .btn-edit-set,
 .btn-delete-set {
+    position: absolute;
     width: 32px;
     height: 32px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    font-size: 14px;
-}
-
-.btn-edit-set {
-    background: var(--primary-light, #e8f0fe);
-    color: var(--primary, #667eea);
-}
-
-.btn-edit-set:hover {
-    background: var(--primary, #667eea);
-    color: #fff;
-}
-
-.btn-delete-set {
-    background: #fef2f2;
-    color: #ef4444;
-}
-
-.btn-delete-set:hover {
-    background: #ef4444;
-    color: #fff;
-}
-
-/* ===== ALL WORDS CARD ===== */
-.set-card.all-words {
+    opacity: 0;
+    transition: var(--transition-fast);
+    border: none;
     cursor: pointer;
 }
 
-.set-card.all-words .set-card-actions {
+.btn-edit-set {
+    top: 12px;
+    right: 50px;
+}
+
+.btn-delete-set {
+    top: 12px;
+    right: 12px;
+}
+
+.set-card:hover .btn-edit-set,
+.set-card:hover .btn-delete-set {
+    opacity: 1;
+}
+
+.btn-edit-set:hover {
+    background: var(--info-color);
+    color: white;
+}
+
+.btn-delete-set:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* Hide buttons on all-words card */
+.set-card.all-words .btn-edit-set,
+.set-card.all-words .btn-delete-set {
     display: none;
 }
