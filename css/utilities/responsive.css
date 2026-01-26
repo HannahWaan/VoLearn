@@ -1,0 +1,178 @@
+/* ========================================
+   VoLearn - Responsive Styles
+   ======================================== */
+
+/* ===== TABLET ===== */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .split-view-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .split-left {
+        width: 100%;
+        max-height: 300px;
+    }
+
+    .split-right {
+        width: 100%;
+    }
+
+    .split-resizer {
+        display: none;
+    }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    /* Sidebar */
+    .sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width);
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+        display: none;
+    }
+
+    .sidebar-close {
+        display: flex;
+    }
+
+    /* Main content */
+    .main-content {
+        margin-left: 0;
+    }
+
+    body.sidebar-collapsed .main-content {
+        margin-left: 0;
+    }
+
+    /* Header */
+    .menu-toggle {
+        display: flex;
+    }
+
+    /* Stats */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Section */
+    .section {
+        padding: 16px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    /* Forms */
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .phonetic-row {
+        flex-direction: column;
+    }
+
+    /* Cards */
+    .sets-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .practice-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Modal */
+    .modal-content {
+        margin: 10px;
+        max-height: calc(100vh - 20px);
+    }
+
+    .modal-content.modal-large,
+    .modal-content.modal-xl {
+        max-width: calc(100% - 20px);
+    }
+
+    /* Practice */
+    .srs-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .srs-info {
+        text-align: center;
+    }
+
+    .quiz-options {
+        grid-template-columns: 1fr;
+    }
+
+    /* Calendar */
+    .daily-stats {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Settings */
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .data-buttons {
+        flex-direction: column;
+    }
+
+    .data-buttons .btn-secondary {
+        width: 100%;
+    }
+}
+
+/* ===== SMALL MOBILE ===== */
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 1.2rem;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .flashcard-word {
+        font-size: 1.5rem;
+    }
+
+    .practice-content {
+        padding: 20px;
+    }
+
+    .summary-stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
