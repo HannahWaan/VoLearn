@@ -6,30 +6,32 @@
 }
 
 /* ===== SET CARDS GRID ===== */
-.sets-grid {
+#sets-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    padding: 16px 0;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
 }
 
-/* ===== SET CARD ===== */
+/* ===== SET CARD - TO HƠN ===== */
 .set-card {
     position: relative;
     display: flex;
     align-items: center;
-    padding: 16px;
-    background: var(--card-bg, var(--bg-secondary, #fff));
-    border-radius: 12px;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: var(--bg-secondary, #fff);
+    border-radius: 16px;
     box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.08));
     transition: all 0.2s ease;
     cursor: pointer;
-    border: 1px solid var(--border-color, transparent);
+    border: 2px solid var(--border-color, transparent);
+    min-height: 80px;
 }
 
 .set-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.12));
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.15));
     border-color: var(--primary-color, #667eea);
 }
 
@@ -37,53 +39,59 @@
 .set-card-main {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     flex: 1;
     min-width: 0;
 }
 
-/* ===== SET COLOR ICON ===== */
+/* ===== SET COLOR ICON - TO HƠN ===== */
 .set-color-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
-    font-size: 18px;
+    font-size: 24px;
 }
 
 /* ===== SET INFO ===== */
 .set-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .set-name {
-    font-weight: 600;
-    font-size: 15px;
+    font-weight: 700;
+    font-size: 17px;
     color: var(--text-primary, #1a1a2e);
-    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: block;
 }
 
 .set-count {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary, #6b7280);
+    display: block;
 }
 
-/* ===== SET CARD ACTIONS ===== */
+/* ===== SET CARD ACTIONS - KHÔNG ĐÈ LÊN NHAU ===== */
 .set-card-actions {
     display: flex;
     flex-direction: row;
-    gap: 4px;
+    align-items: center;
+    gap: 8px;
     opacity: 0;
     transition: opacity 0.2s ease;
-    margin-left: 8px;
+    margin-left: 12px;
+    flex-shrink: 0;
 }
 
 .set-card:hover .set-card-actions {
@@ -93,16 +101,17 @@
 /* ===== ACTION BUTTONS ===== */
 .btn-edit-set,
 .btn-delete-set {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 14px;
+    font-size: 15px;
+    flex-shrink: 0;
 }
 
 .btn-edit-set {
@@ -147,11 +156,21 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .sets-grid {
+    #sets-container {
         grid-template-columns: 1fr;
     }
     
     .set-card-actions {
         opacity: 1;
+    }
+    
+    .set-card {
+        padding: 16px 20px;
+    }
+    
+    .set-color-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
     }
 }
