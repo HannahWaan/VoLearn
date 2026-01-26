@@ -1,322 +1,279 @@
 /* ===== SET VIEW MODULE ===== */
-/* VoLearn v2.1.0 - Split view chi tiết bộ từ */
+/* VoLearn v2.1.0 - Xem bộ từ vựng */
 
-import { appData } from '../core/state.js';
-import { saveData } from '../core/storage.js';
-import { showToast } from './toast.js';
-import { navigate } from '../core/router.js';
-import { speak } from '../utils/speech.js';
+import { appData, saveAppData } from '../core/state.js';
+import { showToast, showSuccess } from './toast.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { navigate } from '../core/router.js';
 
-/* ===== STATE - Giống code cũ ===== */
-let currentSetViewId = null;
-let currentSetWords = [];
+/* ===== STATE ===== */
+let currentSetId = null;
 let selectedWordId = null;
+let viewMode = 'grid'; // 'grid' or 'list'
 
-/* ===== INIT ===== */
+/* ===== INITIALIZATION ===== */
 export function initSetView() {
-    // Lấy setId từ window (được set bởi bookshelf)
-    currentSetViewId = window.currentSetViewId || null;
+    // Get set ID from window (set by bookshelf)
+    currentSetId = window.currentSetViewId || null;
     
-    if (!currentSetViewId) {
-        console.log('No set ID, returning to bookshelf');
+    if (!currentSetId) {
+        console.warn('No set ID provided, returning to bookshelf');
         navigate('bookshelf');
         return;
     }
     
-    console.log('✅ InitSetView for:', currentSetViewId);
-    
-    selectedWordId = null;
-    loadSetWords();
-    renderSetView();
+    // Bind events
     bindSetViewEvents();
+    
+    // Render the view
+    renderSetView();
 }
 
-/* ===== LOAD SET WORDS ===== */
-function loadSetWords() {
-    if (currentSetViewId === 'all') {
-        currentSetWords = appData.vocabulary || [];
-    } else {
-        currentSetWords = (appData.vocabulary || []).filter(w => w.setId === currentSetViewId);
+/* ===== BIND EVENTS ===== */
+function bindSetViewEvents() {
+    // View mode toggle
+    const gridBtn = document.getElementById('view-grid-btn');
+    const listBtn = document.getElementById('view-list-btn');
+    
+    if (gridBtn) {
+        gridBtn.addEventListener('click', () => setViewMode('grid'));
     }
+    if (listBtn) {
+        listBtn.addEventListener('click', () => setViewMode('list'));
+    }
+    
+    // Scale slider
+    const scaleSlider = document.getElementById('word-scale-slider');
+    if (scaleSlider) {
+        scaleSlider.addEventListener('input', (e) => {
+            const scale = e.target.value;
+            document.documentElement.style.setProperty('--word-card-scale', scale);
+        });
+    }
+    
+    // Back button
+    const backBtn = document.querySelector('.btn-back-to-bookshelf');
+    if (backBtn) {
+        backBtn.addEventListener('click', backToBookshelf);
+    }
+}
+
+/* ===== OPEN SET DETAIL ===== */
+export function openSetDetail(setId) {
+    window.currentSetViewId = setId;
+    currentSetId = setId;
+    navigate('set-view');
+}
+
+/* ===== BACK TO BOOKSHELF ===== */
+export function backToBookshelf() {
+    window.currentSetViewId = null;
+    currentSetId = null;
+    selectedWordId = null;
+    navigate('bookshelf');
+}
+
+/* ===== SET VIEW MODE ===== */
+function setViewMode(mode) {
+    viewMode = mode;
+    
+    const gridBtn = document.getElementById('view-grid-btn');
+    const listBtn = document.getElementById('view-list-btn');
+    const wordList = document.querySelector('.word-list-grid');
+    
+    if (gridBtn) gridBtn.classList.toggle('active', mode === 'grid');
+    if (listBtn) listBtn.classList.toggle('active', mode === 'list');
+    if (wordList) {
+        wordList.classList.toggle('grid-view', mode === 'grid');
+        wordList.classList.toggle('list-view', mode === 'list');
+    }
+}
+
+/* ===== GET WORDS FOR SET ===== */
+function getWordsForSet(setId) {
+    if (!setId || setId === 'all') {
+        return appData.vocabulary || [];
+    }
+    
+    return (appData.vocabulary || []).filter(word => word.setId === setId);
 }
 
 /* ===== GET SET INFO ===== */
-function getSetInfo() {
-    if (currentSetViewId === 'all') {
-        return { id: 'all', name: 'Tất cả từ vựng', color: 'var(--gradient-primary)' };
+function getSetInfo(setId) {
+    if (!setId || setId === 'all') {
+        return {
+            id: 'all',
+            name: 'Tất cả từ vựng',
+            color: 'var(--primary-color)'
+        };
     }
-    return appData.sets?.find(s => s.id === currentSetViewId) || null;
+    
+    const set = (appData.sets || []).find(s => s.id === setId);
+    return set || { id: setId, name: 'Bộ từ vựng', color: 'var(--primary-color)' };
 }
 
-/* ===== RENDER SET VIEW - Giống code cũ ===== */
+/* ===== RENDER SET VIEW ===== */
 export function renderSetView() {
-    const set = getSetInfo();
-    if (!set) {
-        navigate('bookshelf');
+    const setInfo = getSetInfo(currentSetId);
+    const words = getWordsForSet(currentSetId);
+    
+    // Update header
+    const setNameEl = document.getElementById('current-set-name');
+    const wordCountEl = document.getElementById('set-word-count');
+    const setColorEl = document.querySelector('.set-color-indicator');
+    
+    if (setNameEl) setNameEl.textContent = setInfo.name;
+    if (wordCountEl) wordCountEl.textContent = `${words.length} từ`;
+    if (setColorEl) setColorEl.style.backgroundColor = setInfo.color;
+    
+    // Render word list
+    const wordListEl = document.querySelector('.word-list-grid');
+    if (!wordListEl) return;
+    
+    if (words.length === 0) {
+        wordListEl.innerHTML = `
+            <div class="empty-set-message">
+                <i class="fas fa-book-open"></i>
+                <p>Chưa có từ vựng nào trong bộ này</p>
+                <button class="btn btn-primary" onclick="navigate('add-word')">
+                    <i class="fas fa-plus"></i> Thêm từ mới
+                </button>
+            </div>
+        `;
         return;
     }
     
-    renderSetViewHeader(set);
-    renderSetViewWords();
-    
-    if (currentSetWords.length > 0 && !selectedWordId) {
-        selectWord(currentSetWords[0].id);
-    } else if (selectedWordId) {
-        renderWordDetail();
-    } else {
-        renderEmptyDetail();
-    }
+    wordListEl.innerHTML = words.map(word => renderWordCard(word)).join('');
 }
 
-/* ===== RENDER HEADER ===== */
-function renderSetViewHeader(set) {
-    const header = document.querySelector('.set-view-header');
-    if (!header) return;
+/* ===== RENDER WORD CARD ===== */
+function renderWordCard(word) {
+    const isSelected = selectedWordId === word.id;
+    const isMastered = word.mastered || false;
+    const isBookmarked = word.bookmarked || false;
     
-    const wordCount = currentSetWords.length;
-    const masteredCount = currentSetWords.filter(w => w.mastered).length;
+    // Get first meaning
+    const firstMeaning = word.meanings?.[0] || {};
+    const defVi = firstMeaning.defVi || firstMeaning.definition || '';
     
-    header.innerHTML = `
-        <button class="btn-back-set" onclick="window.backToBookshelf()">
-            <i class="fas fa-arrow-left"></i> Quay lại
-        </button>
-        <h2 class="set-view-title">
-            <i class="fas fa-folder" style="color: ${set.color || 'var(--primary-color)'}"></i>
-            ${escapeHtml(set.name)}
-        </h2>
-        <span class="set-view-count">${wordCount} từ • ${masteredCount} đã thuộc</span>
+    return `
+        <div class="word-card ${isSelected ? 'selected' : ''} ${isMastered ? 'mastered' : ''}" 
+             data-word-id="${word.id}"
+             onclick="window.selectWordInView && window.selectWordInView('${word.id}')">
+            <div class="word-card-header">
+                <span class="word-text">${escapeHtml(word.word || '')}</span>
+                <div class="word-actions">
+                    <button class="btn-icon ${isBookmarked ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); window.toggleBookmarkInView && window.toggleBookmarkInView('${word.id}')"
+                            title="Đánh dấu">
+                        <i class="fa${isBookmarked ? 's' : 'r'} fa-bookmark"></i>
+                    </button>
+                    <button class="btn-icon ${isMastered ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); window.toggleMasteredInView && window.toggleMasteredInView('${word.id}')"
+                            title="Đã thuộc">
+                        <i class="fa${isMastered ? 's' : 'r'} fa-check-circle"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="word-card-phonetic">${escapeHtml(word.phonetic || '')}</div>
+            <div class="word-card-meaning">${escapeHtml(defVi)}</div>
+            <div class="word-card-footer">
+                <button class="btn-icon btn-speak" 
+                        onclick="event.stopPropagation(); window.speakWord && window.speakWord('${escapeHtml(word.word)}', 'en-US')"
+                        title="Phát âm">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="btn-icon btn-edit" 
+                        onclick="event.stopPropagation(); window.editWordInView && window.editWordInView('${word.id}')"
+                        title="Chỉnh sửa">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-delete" 
+                        onclick="event.stopPropagation(); window.deleteWordInView && window.deleteWordInView('${word.id}')"
+                        title="Xóa">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
     `;
-}
-
-/* ===== RENDER WORDS LIST ===== */
-function renderSetViewWords() {
-    const container = document.querySelector('.set-view-words');
-    if (!container) return;
-    
-    if (currentSetWords.length === 0) {
-        container.innerHTML = `
-            <div class="set-view-empty">
-                <i class="fas fa-inbox"></i>
-                <h3>Chưa có từ nào</h3>
-                <p>Thêm từ vựng để bắt đầu học</p>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    currentSetWords.forEach(word => {
-        const isActive = word.id === selectedWordId;
-        const meaning = word.meanings?.[0]?.defVi || word.meanings?.[0]?.defEn || '';
-        
-        html += `
-            <div class="set-word-card ${isActive ? 'active' : ''} ${word.mastered ? 'mastered' : ''}" 
-                 data-word-id="${word.id}" onclick="window.selectWordInView('${word.id}')">
-                <div class="set-word-main">
-                    <div class="set-word-text">${escapeHtml(word.word || '')}</div>
-                    <div class="set-word-brief">${escapeHtml(truncate(meaning, 40))}</div>
-                </div>
-                <div class="set-word-status">
-                    ${word.mastered ? '<span class="status-icon mastered"><i class="fas fa-check"></i></span>' : ''}
-                    ${word.bookmarked ? '<span class="status-icon bookmarked"><i class="fas fa-star"></i></span>' : ''}
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
 }
 
 /* ===== SELECT WORD ===== */
 function selectWord(wordId) {
     selectedWordId = wordId;
     
-    document.querySelectorAll('.set-word-card').forEach(card => {
-        card.classList.toggle('active', card.dataset.wordId === wordId);
+    // Update UI
+    document.querySelectorAll('.word-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.wordId === wordId);
     });
     
-    renderWordDetail();
+    // Show word detail
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (word) {
+        showWordDetail(word);
+    }
 }
 
-/* ===== RENDER WORD DETAIL - Giống code cũ ===== */
-function renderWordDetail() {
-    const container = document.querySelector('.word-detail-panel');
-    if (!container) return;
+/* ===== SHOW WORD DETAIL ===== */
+function showWordDetail(word) {
+    const detailPanel = document.querySelector('.word-detail-panel');
+    if (!detailPanel) return;
     
-    const word = currentSetWords.find(w => w.id === selectedWordId);
-    if (!word) {
-        renderEmptyDetail();
-        return;
-    }
+    const meanings = word.meanings || [];
     
-    const firstMeaning = word.meanings?.[0] || {};
-    
-    // Build phonetics HTML
-    let phoneticsHtml = '';
-    if (firstMeaning.phoneticUS || firstMeaning.phoneticUK || word.phonetic) {
-        const us = firstMeaning.phoneticUS || word.phonetic || '';
-        const uk = firstMeaning.phoneticUK || word.phonetic || '';
-        
-        phoneticsHtml = `
-            <div class="word-detail-phonetics">
-                ${us ? `
-                    <span class="phonetic-badge">
-                        <span class="flag">🇺🇸</span>
-                        <span class="ipa">${escapeHtml(us)}</span>
-                        <button class="btn-speak-small" onclick="window.speakWithAccent('${escapeHtml(word.word)}', 'en-US')">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
-                    </span>
-                ` : ''}
-                ${uk && uk !== us ? `
-                    <span class="phonetic-badge">
-                        <span class="flag">🇬🇧</span>
-                        <span class="ipa">${escapeHtml(uk)}</span>
-                        <button class="btn-speak-small" onclick="window.speakWithAccent('${escapeHtml(word.word)}', 'en-GB')">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
-                    </span>
-                ` : ''}
-            </div>
-        `;
-    }
-    
-    // Build meanings HTML
-    let meaningsHtml = '';
-    (word.meanings || []).forEach((m, i) => {
-        meaningsHtml += `
-            <div class="detail-meaning-block">
-                <div class="detail-meaning-header">
-                    ${m.pos ? `<span class="detail-pos-badge">${escapeHtml(m.pos)}</span>` : ''}
+    detailPanel.innerHTML = `
+        <div class="detail-header">
+            <h3>${escapeHtml(word.word || '')}</h3>
+            <span class="phonetic">${escapeHtml(word.phonetic || '')}</span>
+            <button class="btn-speak" onclick="window.speakWord && window.speakWord('${escapeHtml(word.word)}', 'en-US')">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+        <div class="detail-meanings">
+            ${meanings.map((m, i) => `
+                <div class="meaning-item">
+                    <span class="pos">${escapeHtml(m.pos || '')}</span>
+                    <p class="def-en">${escapeHtml(m.defEn || m.definition || '')}</p>
+                    <p class="def-vi">${escapeHtml(m.defVi || '')}</p>
+                    ${m.example ? `<p class="example"><em>"${escapeHtml(m.example)}"</em></p>` : ''}
                 </div>
-                ${m.defVi ? `<div class="detail-def-vi">${escapeHtml(m.defVi)}</div>` : ''}
-                ${m.defEn ? `<div class="detail-def-en">${escapeHtml(m.defEn)}</div>` : ''}
-                ${m.example ? `
-                    <div class="detail-example-box">
-                        <p>"${escapeHtml(m.example)}"</p>
-                    </div>
-                ` : ''}
-                ${(m.synonyms || m.antonyms) ? `
-                    <div class="detail-extra-info">
-                        ${m.synonyms ? `<div class="detail-extra-item"><strong>Đồng nghĩa:</strong> ${escapeHtml(m.synonyms)}</div>` : ''}
-                        ${m.antonyms ? `<div class="detail-extra-item"><strong>Trái nghĩa:</strong> ${escapeHtml(m.antonyms)}</div>` : ''}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    });
-    
-    container.innerHTML = `
-        <div class="word-detail-content">
-            <div class="word-detail-top">
-                <div class="word-detail-title">
-                    <h2>${escapeHtml(word.word || '')}</h2>
-                    ${phoneticsHtml}
-                </div>
-                <div class="word-detail-actions">
-                    <button class="btn-action mastered-btn ${word.mastered ? 'active' : ''}" 
-                            onclick="window.toggleMasteredInView('${word.id}')" title="Đã thuộc">
-                        <i class="fas fa-check-circle"></i>
-                    </button>
-                    <button class="btn-action bookmark-btn ${word.bookmarked ? 'active' : ''}" 
-                            onclick="window.toggleBookmarkInView('${word.id}')" title="Đánh dấu">
-                        <i class="fas fa-star"></i>
-                    </button>
-                    <button class="btn-action edit-btn" onclick="window.editWordInView('${word.id}')" title="Sửa">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-action delete-btn" onclick="window.deleteWordInView('${word.id}')" title="Xóa">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            
-            ${word.wordFormation ? `
-                <div class="detail-word-formation">
-                    <strong>Word forms:</strong> ${escapeHtml(word.wordFormation)}
-                </div>
-            ` : ''}
-            
-            ${meaningsHtml || '<p>Chưa có nghĩa</p>'}
-            
-            <div class="detail-srs-box">
-                <div class="srs-stat">
-                    <div class="srs-stat-value">${word.srsLevel || 0}</div>
-                    <div class="srs-stat-label">SRS Level</div>
-                </div>
-                <div class="srs-stat">
-                    <div class="srs-stat-value">${word.reviewCount || 0}</div>
-                    <div class="srs-stat-label">Đã ôn</div>
-                </div>
-            </div>
+            `).join('')}
+        </div>
+        <div class="detail-actions">
+            <button class="btn btn-edit" onclick="window.editWordInView && window.editWordInView('${word.id}')">
+                <i class="fas fa-edit"></i> Chỉnh sửa
+            </button>
+            <button class="btn btn-delete" onclick="window.deleteWordInView && window.deleteWordInView('${word.id}')">
+                <i class="fas fa-trash"></i> Xóa
+            </button>
         </div>
     `;
-}
-
-/* ===== RENDER EMPTY DETAIL ===== */
-function renderEmptyDetail() {
-    const container = document.querySelector('.word-detail-panel');
-    if (!container) return;
     
-    container.innerHTML = `
-        <div class="word-detail-placeholder">
-            <i class="fas fa-hand-pointer"></i>
-            <h3>Chọn một từ</h3>
-            <p>Chọn từ bên trái để xem chi tiết</p>
-        </div>
-    `;
-}
-
-/* ===== BIND EVENTS ===== */
-function bindSetViewEvents() {
-    // Search
-    const searchInput = document.querySelector('.set-view-search input');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            document.querySelectorAll('.set-word-card').forEach(card => {
-                const wordId = card.dataset.wordId;
-                const word = currentSetWords.find(w => w.id === wordId);
-                if (word) {
-                    const match = word.word?.toLowerCase().includes(query) ||
-                                  word.meanings?.[0]?.defVi?.toLowerCase().includes(query);
-                    card.style.display = match ? '' : 'none';
-                }
-            });
-        });
-    }
-}
-
-/* ===== BACK TO BOOKSHELF ===== */
-function backToBookshelf() {
-    currentSetViewId = null;
-    window.currentSetViewId = null;
-    selectedWordId = null;
-    navigate('bookshelf');
+    detailPanel.classList.add('active');
 }
 
 /* ===== TOGGLE MASTERED ===== */
-function toggleMasteredInView(wordId) {
-    const word = appData.vocabulary?.find(w => w.id === wordId);
-    if (word) {
-        word.mastered = !word.mastered;
-        saveData(appData);
-        loadSetWords();
-        renderSetView();
-        showToast(word.mastered ? 'Đã đánh dấu thuộc' : 'Đã bỏ đánh dấu');
-    }
+export function toggleMasteredInView(wordId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    word.mastered = !word.mastered;
+    saveAppData();
+    
+    showToast(word.mastered ? 'Đã đánh dấu thuộc!' : 'Đã bỏ đánh dấu thuộc', 'success');
+    renderSetView();
 }
 
 /* ===== TOGGLE BOOKMARK ===== */
-function toggleBookmarkInView(wordId) {
-    const word = appData.vocabulary?.find(w => w.id === wordId);
-    if (word) {
-        word.bookmarked = !word.bookmarked;
-        saveData(appData);
-        loadSetWords();
-        renderSetView();
-    }
+export function toggleBookmarkInView(wordId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    word.bookmarked = !word.bookmarked;
+    saveAppData();
+    
+    showToast(word.bookmarked ? 'Đã đánh dấu!' : 'Đã bỏ đánh dấu', 'success');
+    renderSetView();
 }
 
 /* ===== EDIT WORD ===== */
@@ -327,31 +284,20 @@ function editWordInView(wordId) {
 
 /* ===== DELETE WORD ===== */
 function deleteWordInView(wordId) {
-    const word = appData.vocabulary?.find(w => w.id === wordId);
-    if (!word) return;
+    if (!confirm('Bạn có chắc muốn xóa từ này?')) return;
     
-    if (confirm(`Bạn có chắc muốn xóa từ "${word.word}"?`)) {
-        appData.vocabulary = appData.vocabulary.filter(w => w.id !== wordId);
-        saveData(appData);
-        
-        if (selectedWordId === wordId) {
-            selectedWordId = null;
-        }
-        
-        loadSetWords();
+    const index = (appData.vocabulary || []).findIndex(w => w.id === wordId);
+    if (index > -1) {
+        appData.vocabulary.splice(index, 1);
+        saveAppData();
+        showSuccess('Đã xóa từ vựng!');
         renderSetView();
-        showToast('Đã xóa từ');
     }
-}
-
-/* ===== UTILITIES ===== */
-function truncate(str, len) {
-    if (!str) return '';
-    return str.length > len ? str.substring(0, len) + '...' : str;
 }
 
 /* ===== GLOBAL EXPORTS ===== */
 window.initSetView = initSetView;
+window.openSetDetail = openSetDetail;
 window.backToBookshelf = backToBookshelf;
 window.selectWordInView = selectWord;
 window.toggleMasteredInView = toggleMasteredInView;
