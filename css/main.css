@@ -21,6 +21,7 @@
 @import './components/toast.css';
 @import './components/badges.css';
 @import './components/loading.css'; 
+@import './components/cambridge.css';
 
 /* ===== SECTIONS ===== */
 @import './sections/home.css';
@@ -33,3 +34,4 @@
 
 /* ===== UTILITIES ===== */
 @import './utilities/responsive.css';
+
