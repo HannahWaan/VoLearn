@@ -3,150 +3,109 @@
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
+import { showToast } from '../ui/toast.js';
+import { speak } from '../utils/speech.js';
+import { escapeHtml } from '../utils/helpers.js';
+import { showPracticeArea, updateSRSCount } from './practiceEngine.js';
 
-/* ===== SRS CONSTANTS ===== */
-const SRS_INTERVALS = [1, 3, 7, 14, 30, 90, 180, 365];
-
-const EASE_FACTORS = {
-    again: 0,
-    hard: -1,
-    good: 1,
-    easy: 2
-};
+/* ===== CONSTANTS ===== */
+const SRS_INTERVALS = [1, 3, 7, 14, 30, 60, 120]; // days
 
 /* ===== STATE ===== */
 let srsState = {
-    queue: [],
+    words: [],
     currentIndex: 0,
-    reviewed: 0,
-    correct: 0,
-    wrong: 0,
-    isFlipped: false
+    isFlipped: false,
+    wordsReviewed: 0
 };
-
-/* ===== GET DUE WORDS ===== */
-export function getDueWords() {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const todayStr = now.toISOString().split('T')[0];
-    
-    const dueWords = [];
-    
-    appData.vocabulary?.forEach(word => {
-        if (!word.nextReview || word.nextReview <= todayStr) {
-            dueWords.push({ ...word, source: 'vocabulary' });
-        }
-    });
-    
-    appData.sets?.forEach(set => {
-        set.words?.forEach(word => {
-            if (!word.nextReview || word.nextReview <= todayStr) {
-                dueWords.push({ ...word, source: 'set', setId: set.id });
-            }
-        });
-    });
-    
-    return dueWords;
-}
-
-/* ===== GET SRS STATS ===== */
-export function getSRSStats() {
-    const dueWords = getDueWords();
-    return {
-        due: dueWords.length,
-        total: getTotalWords()
-    };
-}
-
-function getTotalWords() {
-    let count = appData.vocabulary?.length || 0;
-    appData.sets?.forEach(set => {
-        count += set.words?.length || 0;
-    });
-    return count;
-}
-
-/* ===== UPDATE SRS COUNT ===== */
-export function updateSRSCount() {
-    const stats = getSRSStats();
-    const countEl = document.getElementById('srs-due-count');
-    if (countEl) {
-        countEl.textContent = stats.due;
-    }
-}
 
 /* ===== START SRS REVIEW ===== */
 export function startSRSReview() {
-    const dueWords = getDueWords();
+    const now = new Date();
+    const dueWords = (appData.vocabulary || []).filter(w => {
+        if (!w.nextReview) return true;
+        return new Date(w.nextReview) <= now;
+    });
     
     if (dueWords.length === 0) {
-        if (window.showToast) {
-            window.showToast('Không có từ nào cần ôn tập hôm nay! 🎉', 'success');
-        }
+        showToast('Không có từ nào cần ôn tập!', 'error');
         return;
     }
     
-    srsState = {
-        queue: dueWords,
-        currentIndex: 0,
-        reviewed: 0,
-        correct: 0,
-        wrong: 0,
-        isFlipped: false
-    };
+    // Shuffle
+    srsState.words = dueWords.sort(() => Math.random() - 0.5);
+    srsState.currentIndex = 0;
+    srsState.isFlipped = false;
+    srsState.wordsReviewed = 0;
     
+    showPracticeArea();
     renderSRSCard();
+    updateProgress();
+    
+    showToast(`Bắt đầu ôn tập ${dueWords.length} từ`);
 }
 
 /* ===== RENDER SRS CARD ===== */
 export function renderSRSCard() {
-    const container = document.getElementById('practice-area');
-    if (!container) return;
-    
-    if (srsState.currentIndex >= srsState.queue.length) {
-        showSRSResults();
+    const word = srsState.words[srsState.currentIndex];
+    if (!word) {
+        endSRSReview();
         return;
     }
     
-    const word = srsState.queue[srsState.currentIndex];
-    srsState.isFlipped = false;
+    const meaning = word.meanings?.[0] || {};
+    const phonetic = meaning.phoneticUS || meaning.phoneticUK || word.phonetic || '';
+    const defVi = meaning.defVi || '';
+    const defEn = meaning.defEn || '';
+    const example = meaning.example || '';
+    const pos = meaning.pos || '';
+    
+    const container = document.getElementById('practice-content');
+    if (!container) return;
     
     container.innerHTML = `
         <div class="srs-container">
-            <div class="srs-header">
-                <button class="btn-icon btn-back" onclick="window.navigate('practice')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="srs-progress">
-                    <span>${srsState.currentIndex} / ${srsState.queue.length}</span>
+            <div class="flashcard ${srsState.isFlipped ? 'flipped' : ''}" onclick="window.flipCard()">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak('${escapeHtml(word.word)}')" title="Nghe phát âm">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        <div class="flashcard-word">${escapeHtml(word.word)}</div>
+                        ${phonetic ? `<div class="flashcard-phonetic">${escapeHtml(phonetic)}</div>` : ''}
+                        <p class="flip-hint">Nhấn để xem nghĩa</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak('${escapeHtml(defEn || word.word)}')" title="Nghe định nghĩa">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        ${pos ? `<div class="flashcard-pos">${escapeHtml(pos)}</div>` : ''}
+                        <div class="flashcard-meaning">${escapeHtml(defVi || defEn)}</div>
+                        ${example ? `<div class="flashcard-example">"${escapeHtml(example)}"</div>` : ''}
+                    </div>
                 </div>
             </div>
             
-            <div class="srs-main">
-                <div class="srs-card" id="srs-card" onclick="window.flipCard()">
-                    <div class="srs-card-front" id="srs-front">
-                        <div class="card-word">${escapeHtml(word.word)}</div>
-                        ${word.phonetic ? `<div class="card-phonetic">${escapeHtml(word.phonetic)}</div>` : ''}
-                    </div>
-                    <div class="srs-card-back" id="srs-back" style="display: none;">
-                        <div class="card-meaning">${escapeHtml(word.meaning)}</div>
-                    </div>
-                </div>
-                <p class="srs-tip">Nhấn vào thẻ để lật</p>
-            </div>
-            
-            <div class="srs-controls" id="srs-controls" style="display: none;">
-                <button class="srs-btn btn-again" onclick="window.answerSRS('again')">
+            <div class="srs-buttons">
+                <button class="btn-srs btn-again" onclick="window.answerSRS(0)">
+                    <i class="fas fa-times"></i>
                     <span>Quên</span>
+                    <small>1 ngày</small>
                 </button>
-                <button class="srs-btn btn-hard" onclick="window.answerSRS('hard')">
+                <button class="btn-srs btn-hard" onclick="window.answerSRS(1)">
+                    <i class="fas fa-frown"></i>
                     <span>Khó</span>
+                    <small>3 ngày</small>
                 </button>
-                <button class="srs-btn btn-good" onclick="window.answerSRS('good')">
-                    <span>Tốt</span>
+                <button class="btn-srs btn-good" onclick="window.answerSRS(2)">
+                    <i class="fas fa-smile"></i>
+                    <span>Nhớ</span>
+                    <small>7 ngày</small>
                 </button>
-                <button class="srs-btn btn-easy" onclick="window.answerSRS('easy')">
+                <button class="btn-srs btn-easy" onclick="window.answerSRS(3)">
+                    <i class="fas fa-grin-stars"></i>
                     <span>Dễ</span>
+                    <small>14 ngày</small>
                 </button>
             </div>
         </div>
@@ -155,118 +114,147 @@ export function renderSRSCard() {
 
 /* ===== FLIP CARD ===== */
 export function flipCard() {
-    if (srsState.isFlipped) return;
-    
-    srsState.isFlipped = true;
-    
-    const front = document.getElementById('srs-front');
-    const back = document.getElementById('srs-back');
-    const controls = document.getElementById('srs-controls');
-    
-    if (front) front.style.display = 'none';
-    if (back) back.style.display = 'block';
-    if (controls) controls.style.display = 'flex';
+    srsState.isFlipped = !srsState.isFlipped;
+    const card = document.querySelector('.flashcard');
+    if (card) {
+        card.classList.toggle('flipped', srsState.isFlipped);
+    }
 }
 
 /* ===== ANSWER SRS ===== */
 export function answerSRS(quality) {
-    const word = srsState.queue[srsState.currentIndex];
+    const word = srsState.words[srsState.currentIndex];
     if (!word) return;
     
-    const currentLevel = word.srsLevel || 0;
-    let newLevel = currentLevel + EASE_FACTORS[quality];
-    newLevel = Math.max(0, Math.min(SRS_INTERVALS.length - 1, newLevel));
-    
-    const interval = SRS_INTERVALS[newLevel];
-    const nextReview = new Date();
-    nextReview.setDate(nextReview.getDate() + interval);
-    const nextReviewStr = nextReview.toISOString().split('T')[0];
-    
-    // Update word
-    if (word.source === 'vocabulary') {
-        const vocabWord = appData.vocabulary?.find(w => w.id === word.id);
-        if (vocabWord) {
-            vocabWord.srsLevel = newLevel;
-            vocabWord.nextReview = nextReviewStr;
-            vocabWord.lastReviewed = new Date().toISOString();
-        }
-    } else if (word.source === 'set' && word.setId) {
-        const set = appData.sets?.find(s => s.id === word.setId);
-        const setWord = set?.words?.find(w => w.id === word.id);
-        if (setWord) {
-            setWord.srsLevel = newLevel;
-            setWord.nextReview = nextReviewStr;
-            setWord.lastReviewed = new Date().toISOString();
-        }
+    // Update SRS level based on quality
+    // 0 = Forgot, 1 = Hard, 2 = Good, 3 = Easy
+    if (quality === 0) {
+        word.srsLevel = 0;
+    } else if (quality === 1) {
+        word.srsLevel = Math.max(0, (word.srsLevel || 0) - 1);
+    } else if (quality === 2) {
+        word.srsLevel = Math.min(6, (word.srsLevel || 0) + 1);
+    } else {
+        word.srsLevel = Math.min(6, (word.srsLevel || 0) + 2);
     }
     
+    // Calculate next review date
+    const interval = SRS_INTERVALS[word.srsLevel] || 1;
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + interval);
+    word.nextReview = nextDate.toISOString();
+    
+    // Mark as mastered if level >= 6
+    word.mastered = word.srsLevel >= 6;
+    
+    // Update review count
+    word.reviewCount = (word.reviewCount || 0) + 1;
+    word.lastReviewed = new Date().toISOString();
+    
+    // Update history
+    updateReviewHistory(word.id);
+    
+    // Save
     saveData(appData);
     
-    // Update stats
-    srsState.reviewed++;
-    if (quality === 'again') {
-        srsState.wrong++;
+    // Move to next
+    srsState.wordsReviewed++;
+    srsState.currentIndex++;
+    srsState.isFlipped = false;
+    
+    if (srsState.currentIndex >= srsState.words.length) {
+        endSRSReview();
     } else {
-        srsState.correct++;
+        renderSRSCard();
+        updateProgress();
+    }
+}
+
+/* ===== UPDATE PROGRESS ===== */
+function updateProgress() {
+    const progress = ((srsState.currentIndex + 1) / srsState.words.length) * 100;
+    
+    const progressBar = document.getElementById('practice-progress-bar');
+    const progressText = document.getElementById('practice-progress-text');
+    
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (progressText) progressText.textContent = `${srsState.currentIndex + 1}/${srsState.words.length}`;
+}
+
+/* ===== UPDATE HISTORY ===== */
+function updateReviewHistory(wordId) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (!appData.history) appData.history = [];
+    
+    let entry = appData.history.find(h => h.date === today && h.type === 'review');
+    
+    if (!entry) {
+        entry = { 
+            date: today, 
+            type: 'review',
+            reviewed: 0, 
+            reviewedWords: [] 
+        };
+        appData.history.push(entry);
     }
     
-    // Next card
-    srsState.currentIndex++;
-    renderSRSCard();
+    if (!entry.reviewedWords) entry.reviewedWords = [];
+    
+    if (!entry.reviewedWords.includes(wordId)) {
+        entry.reviewedWords.push(wordId);
+    }
+    
+    entry.reviewed = entry.reviewedWords.length;
 }
 
-/* ===== SHOW RESULTS ===== */
-function showSRSResults() {
-    const container = document.getElementById('practice-area');
+/* ===== END SRS REVIEW ===== */
+function endSRSReview() {
+    const container = document.getElementById('practice-content');
     if (!container) return;
     
-    const accuracy = srsState.reviewed > 0 
-        ? Math.round((srsState.correct / srsState.reviewed) * 100)
-        : 0;
-
     container.innerHTML = `
-        <div class="practice-results">
-            <div class="results-header">
-                <span class="result-emoji">🧠</span>
-                <h2>Hoàn thành ôn tập!</h2>
-            </div>
-            <div class="results-stats">
-                <div class="stat-row">
-                    <span>Đã ôn:</span>
-                    <span>${srsState.reviewed}</span>
-                </div>
-                <div class="stat-row">
-                    <span>Nhớ:</span>
-                    <span>${srsState.correct}</span>
-                </div>
-                <div class="stat-row">
-                    <span>Quên:</span>
-                    <span>${srsState.wrong}</span>
-                </div>
-                <div class="stat-row">
-                    <span>Tỷ lệ:</span>
-                    <span>${accuracy}%</span>
-                </div>
-            </div>
-            <div class="results-actions">
-                <button class="btn-primary" onclick="window.navigate('practice')">
-                    <i class="fas fa-home"></i> Quay lại
-                </button>
-            </div>
+        <div class="practice-complete">
+            <i class="fas fa-trophy"></i>
+            <h2>Hoàn thành!</h2>
+            <p>Bạn đã ôn tập ${srsState.wordsReviewed} từ</p>
+            <button class="btn-primary" onclick="window.hidePracticeArea()">
+                <i class="fas fa-check"></i> Xong
+            </button>
         </div>
     `;
+    
+    // Update streak
+    updateStreak();
+    
+    // Update counts
+    updateSRSCount();
+    
+    // Save
+    saveData(appData);
 }
 
-/* ===== UTILITIES ===== */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+/* ===== UPDATE STREAK ===== */
+function updateStreak() {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    
+    if (appData.lastStudyDate === today) {
+        return; // Already studied today
+    }
+    
+    if (appData.lastStudyDate === yesterday) {
+        appData.streak = (appData.streak || 0) + 1;
+    } else {
+        appData.streak = 1;
+    }
+    
+    appData.lastStudyDate = today;
 }
 
-/* ===== EXPORTS ===== */
+/* ===== GLOBALS ===== */
 window.startSRSReview = startSRSReview;
-window.flipCard = flipCard;
 window.answerSRS = answerSRS;
-window.updateSRSCount = updateSRSCount;
+window.flipCard = flipCard;
+
+export { srsState };
