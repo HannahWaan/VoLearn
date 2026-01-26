@@ -1,82 +1,143 @@
-/* ========================================
-   VoLearn - Event Bus
-   Pub/Sub pattern for module communication
-   ======================================== */
-
-const events = {};
+/* ===== EVENT BUS ===== */
+/* VoLearn v2.1.0 - Pub/Sub Event System */
 
 /**
- * Subscribe to an event
- * @param {string} eventName 
- * @param {Function} callback 
- * @returns {Function} unsubscribe function
+ * Simple Event Bus for module communication
  */
-export function on(eventName, callback) {
-    if (!events[eventName]) {
-        events[eventName] = [];
+class EventBus {
+    constructor() {
+        this.events = new Map();
     }
-    events[eventName].push(callback);
-    
-    // Return unsubscribe function
-    return () => off(eventName, callback);
-}
 
-/**
- * Unsubscribe from an event
- * @param {string} eventName 
- * @param {Function} callback 
- */
-export function off(eventName, callback) {
-    if (!events[eventName]) return;
-    
-    events[eventName] = events[eventName].filter(cb => cb !== callback);
-}
-
-/**
- * Emit an event
- * @param {string} eventName 
- * @param {*} data 
- */
-export function emit(eventName, data) {
-    if (!events[eventName]) return;
-    
-    events[eventName].forEach(callback => {
-        try {
-            callback(data);
-        } catch (error) {
-            console.error(`Error in event handler for ${eventName}:`, error);
+    /**
+     * Subscribe to an event
+     * @param {string} event - Event name
+     * @param {Function} callback - Callback function
+     * @returns {Function} Unsubscribe function
+     */
+    on(event, callback) {
+        if (!this.events.has(event)) {
+            this.events.set(event, new Set());
         }
-    });
+        this.events.get(event).add(callback);
+
+        // Return unsubscribe function
+        return () => this.off(event, callback);
+    }
+
+    /**
+     * Subscribe once to an event
+     * @param {string} event - Event name
+     * @param {Function} callback - Callback function
+     */
+    once(event, callback) {
+        const wrapper = (...args) => {
+            this.off(event, wrapper);
+            callback(...args);
+        };
+        this.on(event, wrapper);
+    }
+
+    /**
+     * Unsubscribe from an event
+     * @param {string} event - Event name
+     * @param {Function} callback - Callback function
+     */
+    off(event, callback) {
+        if (this.events.has(event)) {
+            this.events.get(event).delete(callback);
+        }
+    }
+
+    /**
+     * Emit an event
+     * @param {string} event - Event name
+     * @param {*} data - Event data
+     */
+    emit(event, data) {
+        if (this.events.has(event)) {
+            this.events.get(event).forEach(callback => {
+                try {
+                    callback(data);
+                } catch (error) {
+                    console.error(`Error in event handler for "${event}":`, error);
+                }
+            });
+        }
+    }
+
+    /**
+     * Clear all listeners for an event
+     * @param {string} event - Event name (optional, clears all if not provided)
+     */
+    clear(event) {
+        if (event) {
+            this.events.delete(event);
+        } else {
+            this.events.clear();
+        }
+    }
+
+    /**
+     * Get listener count for an event
+     * @param {string} event - Event name
+     * @returns {number}
+     */
+    listenerCount(event) {
+        return this.events.has(event) ? this.events.get(event).size : 0;
+    }
 }
 
-/**
- * Subscribe to an event only once
- * @param {string} eventName 
- * @param {Function} callback 
- */
-export function once(eventName, callback) {
-    const wrapper = (data) => {
-        callback(data);
-        off(eventName, wrapper);
-    };
-    on(eventName, wrapper);
-}
+// Create singleton instance
+const eventBus = new EventBus();
 
-/**
- * Clear all events
- */
-export function clear() {
-    Object.keys(events).forEach(key => {
-        delete events[key];
-    });
-}
+/* ===== EVENT NAMES ===== */
+export const EVENTS = {
+    // Data events
+    DATA_LOADED: 'data:loaded',
+    DATA_SAVED: 'data:saved',
+    DATA_CLEARED: 'data:cleared',
+    DATA_IMPORTED: 'data:imported',
+    
+    // Word events
+    WORD_ADDED: 'word:added',
+    WORD_UPDATED: 'word:updated',
+    WORD_DELETED: 'word:deleted',
+    
+    // Set events
+    SET_CREATED: 'set:created',
+    SET_UPDATED: 'set:updated',
+    SET_DELETED: 'set:deleted',
+    
+    // Practice events
+    PRACTICE_STARTED: 'practice:started',
+    PRACTICE_COMPLETED: 'practice:completed',
+    PRACTICE_ANSWER: 'practice:answer',
+    
+    // Navigation events
+    NAVIGATE: 'navigate',
+    SECTION_CHANGED: 'section:changed',
+    
+    // UI events
+    MODAL_OPENED: 'modal:opened',
+    MODAL_CLOSED: 'modal:closed',
+    TOAST_SHOWN: 'toast:shown',
+    SIDEBAR_TOGGLED: 'sidebar:toggled',
+    THEME_CHANGED: 'theme:changed',
+    
+    // Undo events
+    UNDO_PUSHED: 'undo:pushed',
+    UNDO_PERFORMED: 'undo:performed',
+    REDO_PERFORMED: 'redo:performed'
+};
 
-/**
- * Get all registered events (for debugging)
- */
-export function getEvents() {
-    return { ...events };
-}
+/* ===== EXPORTS ===== */
+export { eventBus };
+export const on = eventBus.on.bind(eventBus);
+export const once = eventBus.once.bind(eventBus);
+export const off = eventBus.off.bind(eventBus);
+export const emit = eventBus.emit.bind(eventBus);
+export const clear = eventBus.clear.bind(eventBus);
 
-// Expose to window for global access
-window.eventBus = { on, off, emit, once, clear };
+// Initialize
+console.log('✅ EventBus initialized');
