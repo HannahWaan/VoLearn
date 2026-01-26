@@ -1,18 +1,16 @@
 /* ===== ADD WORD MODULE ===== */
 /* VoLearn v2.1.0 - Thêm từ vựng với MW API */
 
-import { appData } from '../core/state.js';
+import { appData, addWord as addWordToState, addToHistory } from '../core/state.js';
 import { saveData } from '../core/storage.js';
-import { pushUndoState } from '../core/undo.js';
 import { showToast } from './toast.js';
-import { navigate } from '../core/router.js';
 import { speak } from '../utils/speech.js';
 import { escapeHtml, generateId } from '../utils/helpers.js';
-import { renderShelves } from './bookshelf.js';
+import { renderShelves, populateSetSelect } from './bookshelf.js';
 
 /* ===== CONSTANTS ===== */
-const MW_LEARNER_KEY = window.MW_LEARNER_KEY || '21fc7831-faa6-4831-93a3-cddbe57d78bf';
-const MW_THESAURUS_KEY = window.MW_THESAURUS_KEY || '74724826-02fe-4e5d-a402-1139eece1765';
+const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
+const MW_THESAURUS_KEY = '74724826-02fe-4e5d-a402-1139eece1765';
 
 const POS_MAPPING = {
     'noun': 'Danh từ',
@@ -26,6 +24,14 @@ const POS_MAPPING = {
     'article': 'Mạo từ',
     'auxiliary verb': 'Trợ động từ',
     'phrasal verb': 'Cụm động từ'
+};
+
+// Derivational suffixes for word formation
+const DERIVATIONAL_SUFFIXES = {
+    noun: ['-tion', '-sion', '-ment', '-ness', '-ity', '-er', '-or', '-ist', '-ance', '-ence', '-dom', '-ship', '-hood', '-age', '-al', '-ure'],
+    verb: ['-ize', '-ise', '-ify', '-ate', '-en'],
+    adjective: ['-able', '-ible', '-al', '-ial', '-ful', '-less', '-ous', '-ious', '-ive', '-ative', '-ed', '-ing', '-ic', '-ical', '-ant', '-ent'],
+    adverb: ['-ly']
 };
 
 /* ===== STATE ===== */
@@ -99,21 +105,6 @@ function setupEventListeners() {
     document.getElementById('btn-save-word')?.addEventListener('click', saveWord);
 }
 
-/* ===== SET SELECT ===== */
-export function populateSetSelect() {
-    const setSelect = document.getElementById('set-select');
-    if (!setSelect) return;
-    
-    setSelect.innerHTML = '<option value="">-- Chọn bộ từ --</option>';
-    appData.sets?.forEach(set => {
-        setSelect.innerHTML += `<option value="${set.id}">${escapeHtml(set.name)}</option>`;
-    });
-    
-    if (lastSelectedSetId) {
-        setSelect.value = lastSelectedSetId;
-    }
-}
-
 /* ===== MERRIAM-WEBSTER API ===== */
 async function fetchLearnerAPI(word) {
     try {
@@ -164,7 +155,7 @@ async function translateToVietnamese(text) {
 }
 
 async function processLearnerData(data, word) {
-    const result = { word, phonetic: '', meanings: [], wordForms: '' };
+    const result = { word, phonetic: '', phoneticUS: '', phoneticUK: '', meanings: [], wordForms: '' };
     
     if (!data || !Array.isArray(data) || data.length === 0 || typeof data[0] === 'string') {
         return result;
@@ -176,10 +167,13 @@ async function processLearnerData(data, word) {
     for (const entry of data) {
         if (!entry.meta || !entry.shortdef) continue;
         
+        // Collect word forms from stems
         entry.meta.stems?.forEach(stem => {
-            const clean = stem.toLowerCase().replace(/[^a-z]/g, '');
-            if (clean && clean !== word.toLowerCase() && !wordFormsMap.has(clean)) {
-                wordFormsMap.set(clean, new Set());
+            const clean = stem.toLowerCase().replace(/[^a-z-]/g, '');
+            if (clean && clean !== word.toLowerCase()) {
+                if (!wordFormsMap.has(clean)) {
+                    wordFormsMap.set(clean, new Set());
+                }
             }
         });
         
@@ -202,16 +196,19 @@ async function processLearnerData(data, word) {
             }
         }
         
+        // Set default if missing
         if (!phoneticUK) phoneticUK = phoneticUS;
         if (!phoneticUS) phoneticUS = phoneticUK;
         
-        if (!result.phonetic && phoneticUS) {
-            result.phonetic = phoneticUS;
-        }
+        // Store global phonetics
+        if (!result.phoneticUS && phoneticUS) result.phoneticUS = phoneticUS;
+        if (!result.phoneticUK && phoneticUK) result.phoneticUK = phoneticUK;
+        if (!result.phonetic && phoneticUS) result.phonetic = phoneticUS;
         
         const posEn = entry.fl || 'noun';
         const pos = POS_MAPPING[posEn] || posEn;
         
+        // Add headword to word forms
         const headword = entry.hwi?.hw?.replace(/\*/g, '') || word;
         if (!wordFormsMap.has(headword.toLowerCase())) {
             wordFormsMap.set(headword.toLowerCase(), new Set([posEn]));
@@ -256,31 +253,137 @@ async function processLearnerData(data, word) {
     });
     
     result.meanings = meaningsList;
-    result.wordForms = generateWordFormation(word, wordFormsMap);
+    result.wordForms = generateWordFormation(word, wordFormsMap, data);
     
     return result;
 }
 
-function generateWordFormation(baseWord, wordFormsMap) {
-    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
-    const forms = [];
+/* ===== WORD FORMATION WITH DERIVATIONAL MORPHOLOGY ===== */
+function generateWordFormation(baseWord, wordFormsMap, apiData) {
+    const abbr = { 
+        'noun': 'n', 
+        'verb': 'v', 
+        'adjective': 'adj', 
+        'adverb': 'adv',
+        'preposition': 'prep',
+        'conjunction': 'conj'
+    };
     
+    const forms = new Map();
+    
+    // Add base word
+    const baseWordLower = baseWord.toLowerCase();
+    
+    // Get all related forms from API data
     wordFormsMap.forEach((posSet, formWord) => {
         if (posSet.size > 0) {
-            const posArray = Array.from(posSet).map(p => abbr[p] || p);
-            forms.push({ word: formWord, pos: posArray.join(', ') });
+            const posArray = Array.from(posSet).map(p => abbr[p] || p).filter(p => p);
+            if (posArray.length > 0) {
+                forms.set(formWord, posArray.join(', '));
+            }
         }
     });
     
-    if (forms.length === 0) return '';
-    
-    forms.sort((a, b) => {
-        if (a.word === baseWord.toLowerCase()) return -1;
-        if (b.word === baseWord.toLowerCase()) return 1;
-        return a.word.localeCompare(b.word);
+    // Try to infer POS for forms without it using derivational rules
+    forms.forEach((pos, formWord) => {
+        if (!pos) {
+            const inferredPos = inferPOSFromSuffix(formWord);
+            if (inferredPos) {
+                forms.set(formWord, abbr[inferredPos] || inferredPos);
+            }
+        }
     });
     
-    return forms.map(f => `${f.word} (${f.pos})`).join(', ');
+    // Also check for common derivational patterns from the base word
+    const derivedForms = findDerivedForms(baseWord, apiData);
+    derivedForms.forEach((pos, formWord) => {
+        if (!forms.has(formWord)) {
+            forms.set(formWord, pos);
+        }
+    });
+    
+    if (forms.size === 0) return '';
+    
+    // Sort: base word first, then alphabetically
+    const sortedForms = Array.from(forms.entries()).sort((a, b) => {
+        if (a[0] === baseWordLower) return -1;
+        if (b[0] === baseWordLower) return 1;
+        return a[0].localeCompare(b[0]);
+    });
+    
+    return sortedForms.map(([word, pos]) => `${word} (${pos})`).join(', ');
+}
+
+function inferPOSFromSuffix(word) {
+    const wordLower = word.toLowerCase();
+    
+    // Check noun suffixes
+    for (const suffix of DERIVATIONAL_SUFFIXES.noun) {
+        if (wordLower.endsWith(suffix.replace('-', ''))) {
+            return 'noun';
+        }
+    }
+    
+    // Check adjective suffixes
+    for (const suffix of DERIVATIONAL_SUFFIXES.adjective) {
+        if (wordLower.endsWith(suffix.replace('-', ''))) {
+            return 'adjective';
+        }
+    }
+    
+    // Check adverb suffixes
+    for (const suffix of DERIVATIONAL_SUFFIXES.adverb) {
+        if (wordLower.endsWith(suffix.replace('-', ''))) {
+            return 'adverb';
+        }
+    }
+    
+    // Check verb suffixes
+    for (const suffix of DERIVATIONAL_SUFFIXES.verb) {
+        if (wordLower.endsWith(suffix.replace('-', ''))) {
+            return 'verb';
+        }
+    }
+    
+    return null;
+}
+
+function findDerivedForms(baseWord, apiData) {
+    const forms = new Map();
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    
+    if (!apiData || !Array.isArray(apiData)) return forms;
+    
+    // Look through all entries for related forms
+    apiData.forEach(entry => {
+        if (!entry.meta) return;
+        
+        // Check stems
+        entry.meta.stems?.forEach(stem => {
+            const stemLower = stem.toLowerCase();
+            if (stemLower !== baseWord.toLowerCase()) {
+                const pos = entry.fl;
+                if (pos && abbr[pos]) {
+                    forms.set(stemLower, abbr[pos]);
+                }
+            }
+        });
+        
+        // Check for derivative forms in definitions
+        if (entry.uros) {
+            entry.uros.forEach(uro => {
+                if (uro.ure) {
+                    const form = uro.ure.replace(/\*/g, '').toLowerCase();
+                    const pos = uro.fl;
+                    if (pos && abbr[pos]) {
+                        forms.set(form, abbr[pos]);
+                    }
+                }
+            });
+        }
+    });
+    
+    return forms;
 }
 
 async function addThesaurusData(result, thesaurusData) {
@@ -331,7 +434,6 @@ export async function fetchWordData(word) {
         result = await addThesaurusData(result, thesaurusData);
         
         if (result.meanings.length === 0) {
-            // Check for suggestions
             if (learnerData && Array.isArray(learnerData) && typeof learnerData[0] === 'string') {
                 container.innerHTML = `
                     <div class="suggestion-not-found">
@@ -448,7 +550,6 @@ export function selectMeaning(index) {
     const wordInput = document.getElementById('word-input');
     const newWord = wordInput?.value.trim() || '';
     
-    // Check if form has content
     if (hasFormContent() && currentFilledWord && 
         newWord.toLowerCase() !== currentFilledWord.toLowerCase()) {
         
@@ -483,15 +584,29 @@ export function selectMeaning(index) {
     }
     
     if (!targetBlock) {
-        addMeaningBlock();
+        addMeaningBlockSilent(); // Use silent version - no toast
         const allBlocks = document.querySelectorAll('.meaning-block');
         targetBlock = allBlocks[allBlocks.length - 1];
     }
     
     if (!targetBlock) return;
     
-    // Fill the block
+    // Fill the block with phonetics
     fillMeaningBlock(targetBlock, meaning);
+    
+    // AUTO FILL: Also fill phonetics for first block if empty
+    const firstBlock = document.querySelector('.meaning-block');
+    if (firstBlock && firstBlock !== targetBlock) {
+        const firstUS = firstBlock.querySelector('.phonetic-us');
+        const firstUK = firstBlock.querySelector('.phonetic-uk');
+        
+        if (firstUS && !firstUS.value && (data.phoneticUS || meaning.phoneticUS)) {
+            firstUS.value = '/' + (data.phoneticUS || meaning.phoneticUS) + '/';
+        }
+        if (firstUK && !firstUK.value && (data.phoneticUK || meaning.phoneticUK)) {
+            firstUK.value = '/' + (data.phoneticUK || meaning.phoneticUK) + '/';
+        }
+    }
     
     // Fill word formation
     const wordFormGlobal = document.getElementById('word-formation-global');
@@ -505,6 +620,7 @@ export function selectMeaning(index) {
 }
 
 function fillMeaningBlock(block, meaning) {
+    // Fill phonetics
     const phoneticUS = block.querySelector('.phonetic-us');
     if (phoneticUS && meaning.phoneticUS) {
         phoneticUS.value = '/' + meaning.phoneticUS + '/';
@@ -517,6 +633,7 @@ function fillMeaningBlock(block, meaning) {
         phoneticUK.value = '/' + meaning.phoneticUS + '/';
     }
     
+    // Fill POS
     const posSelect = block.querySelector('.pos-select');
     if (posSelect && meaning.posEn) {
         for (let i = 0; i < posSelect.options.length; i++) {
@@ -527,6 +644,7 @@ function fillMeaningBlock(block, meaning) {
         }
     }
     
+    // Fill other fields
     const defEn = block.querySelector('.def-en');
     const defVi = block.querySelector('.def-vi');
     const example = block.querySelector('.example-input');
@@ -556,6 +674,23 @@ export function addMeaningBlock() {
     
     initDragAndDropForBlock(block);
     showToast(`Đã thêm Nghĩa ${index + 1}`);
+}
+
+// Silent version - no toast (for internal use)
+function addMeaningBlockSilent() {
+    const container = document.getElementById('meanings-container');
+    if (!container) return;
+    
+    const index = container.querySelectorAll('.meaning-block').length;
+    const block = document.createElement('div');
+    block.className = 'meaning-block';
+    block.setAttribute('data-index', index);
+    block.setAttribute('draggable', 'true');
+    
+    block.innerHTML = getMeaningBlockHTML(index + 1);
+    container.appendChild(block);
+    
+    initDragAndDropForBlock(block);
 }
 
 function getMeaningBlockHTML(number) {
@@ -653,7 +788,7 @@ export function clearMeaningBlock(btn) {
     const block = btn.closest('.meaning-block');
     if (!block) return;
     
-    // Always allow clearing, even for first block
+    // Clear without confirmation for single block
     ['.phonetic-us', '.phonetic-uk', '.pos-select', '.def-en', '.def-vi', 
      '.example-input', '.synonyms-input', '.antonyms-input'
     ].forEach(selector => {
@@ -663,7 +798,7 @@ export function clearMeaningBlock(btn) {
         }
     });
     
-    showToast('Đã xóa nội dung nghĩa');
+    // No toast for cleaner UX
 }
 
 export function removeMeaningBlock(btn) {
@@ -671,16 +806,15 @@ export function removeMeaningBlock(btn) {
     const container = document.getElementById('meanings-container');
     const allBlocks = container.querySelectorAll('.meaning-block');
     
-    // Allow removing first block if there are multiple blocks
     if (allBlocks.length <= 1) {
-        // If only 1 block, just clear it instead
+        // If only 1 block, just clear it
         clearMeaningBlock(btn);
         return;
     }
     
     block.remove();
     updateMeaningNumbers();
-    showToast('Đã xóa nghĩa');
+    // No toast for cleaner UX
 }
 
 function updateMeaningNumbers() {
@@ -761,7 +895,6 @@ function initDragAndDropForBlock(block) {
             }
             
             updateMeaningNumbers();
-            showToast('Đã sắp xếp lại thứ tự nghĩa');
         }
     });
 }
@@ -844,6 +977,7 @@ export function saveWord() {
         return;
     }
     
+    // Remember selected set for next word
     if (setId) {
         lastSelectedSetId = setId;
     }
@@ -871,74 +1005,51 @@ export function saveWord() {
     
     const phonetic = meanings[0]?.phoneticUS || meanings[0]?.phoneticUK || '';
     
-    // Save undo state
-    pushUndoState({
-        type: 'word_save',
-        undo: () => {
-            // Revert will be handled by undo system
-        }
-    });
+    // Check for existing word to update
+    const existingIndex = appData.vocabulary.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
     
-    if (editingWordId) {
-        const existing = appData.vocabulary.find(w => w.id === editingWordId);
-        if (existing) {
-            existing.word = word;
-            existing.phonetic = phonetic;
-            existing.wordFormation = wordFormation;
-            existing.meanings = meanings;
-            existing.setId = setId || null;
-            existing.updatedAt = new Date().toISOString();
-            saveData(appData);
-            clearWordFormSilent();
-            showToast(`Đã cập nhật từ "${word}"`);
-            return;
-        }
-    }
-    
-    // Check for existing word
-    const existingWord = appData.vocabulary.find(w => w.word.toLowerCase() === word.toLowerCase());
-    if (existingWord) {
-        existingWord.phonetic = phonetic;
-        existingWord.wordFormation = wordFormation;
-        existingWord.meanings = meanings;
-        existingWord.setId = setId || null;
-        existingWord.updatedAt = new Date().toISOString();
+    if (existingIndex !== -1) {
+        // Update existing
+        appData.vocabulary[existingIndex] = {
+            ...appData.vocabulary[existingIndex],
+            word,
+            phonetic,
+            wordFormation,
+            meanings,
+            setId: setId || null,
+            updatedAt: new Date().toISOString()
+        };
         saveData(appData);
         clearWordFormSilent();
         showToast(`Đã cập nhật từ "${word}"`);
-        return;
+    } else {
+        // Create new word
+        const newWord = {
+            id: generateId(),
+            word, 
+            phonetic, 
+            wordFormation, 
+            meanings,
+            setId: setId || null,
+            createdAt: new Date().toISOString(),
+            mastered: false,
+            bookmarked: false,
+            srsLevel: 0,
+            nextReview: new Date().toISOString()
+        };
+        
+        appData.vocabulary.push(newWord);
+        
+        // Update history
+        addToHistory('add', newWord.id);
+        
+        saveData(appData);
+        clearWordFormSilent();
+        showToast(`Đã lưu từ "${word}"`);
     }
     
-    // Create new word
-    const newWord = {
-        id: generateId(),
-        word, phonetic, wordFormation, meanings,
-        setId: setId || null,
-        createdAt: new Date().toISOString(),
-        mastered: false,
-        bookmarked: false,
-        srsLevel: 0,
-        nextReview: new Date().toISOString()
-    };
-    
-    appData.vocabulary.push(newWord);
-    
-    // Update history
-    const today = new Date().toISOString().split('T')[0];
-    let historyEntry = appData.history.find(h => h.date === today);
-    
-    if (!historyEntry) {
-        historyEntry = { date: today, added: 0, reviewed: 0, addedWords: [], reviewedWords: [] };
-        appData.history.push(historyEntry);
-    }
-    
-    if (!historyEntry.addedWords) historyEntry.addedWords = [];
-    historyEntry.addedWords.push(newWord.id);
-    historyEntry.added = historyEntry.addedWords.length;
-    
-    saveData(appData);
-    clearWordFormSilent();
-    showToast(`Đã lưu từ "${word}"`);
+    // Dispatch event for other modules to update
+    window.dispatchEvent(new CustomEvent('volearn:wordSaved'));
 }
 
 function clearWordFormSilent() {
@@ -948,6 +1059,7 @@ function clearWordFormSilent() {
     const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = '';
     
+    // Keep the selected set for next word
     const setSelect = document.getElementById('set-select');
     if (setSelect && lastSelectedSetId) {
         setSelect.value = lastSelectedSetId;
@@ -971,51 +1083,15 @@ export function searchAlternativeWord(word) {
     }
 }
 
-/* ===== EDIT WORD ===== */
-export function editWord(wordId) {
-    const word = appData.vocabulary.find(w => w.id === wordId);
-    if (!word) return;
-    
-    editingWordId = wordId;
-    navigate('add');
-    
-    setTimeout(() => {
-        document.getElementById('word-input').value = word.word;
-        document.getElementById('set-select').value = word.setId || '';
-        
-        const wordFormGlobal = document.getElementById('word-formation-global');
-        if (wordFormGlobal) {
-            wordFormGlobal.value = word.wordFormation || '';
-        }
-        
-        clearAllMeaningBlocks();
-        
-        word.meanings.forEach((m, i) => {
-            if (i > 0) addMeaningBlock();
-            
-            const blocks = document.querySelectorAll('.meaning-block');
-            const block = blocks[i];
-            if (!block) return;
-            
-            fillMeaningBlock(block, {
-                phoneticUS: m.phoneticUS || '',
-                phoneticUK: m.phoneticUK || '',
-                posEn: m.pos || '',
-                defEn: m.defEn || '',
-                defVi: m.defVi || '',
-                example: m.example || '',
-                synonyms: m.synonyms || '',
-                antonyms: m.antonyms || ''
-            });
-        });
-        
-        document.getElementById('btn-save-word').innerHTML = '<i class="fas fa-save"></i> Cập nhật từ vựng';
-        currentFilledWord = word.word;
-        showToast(`Đang chỉnh sửa từ "${word.word}"`);
-    }, 100);
-}
+/* ===== GLOBAL EXPORTS ===== */
+window.selectMeaning = selectMeaning;
+window.addMeaningBlock = addMeaningBlock;
+window.clearMeaningBlock = clearMeaningBlock;
+window.removeMeaningBlock = removeMeaningBlock;
+window.clearWordForm = clearWordForm;
+window.searchAlternativeWord = searchAlternativeWord;
+window.saveWord = saveWord;
 
-/* ===== EXPORTS ===== */
 export {
     editingWordId,
     currentFilledWord,
