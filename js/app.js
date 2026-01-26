@@ -19,6 +19,7 @@ import { initBookshelf, renderShelves } from './ui/bookshelf.js';
 import { initSetView } from './ui/setView.js';
 import { initCalendar, renderCalendar } from './ui/calendar.js';
 import { initSettings, applySettings } from './ui/settings.js';
+import { initCambridgeWidget } from './ui/cambridgeWidget.js';
 
 // ===== PRACTICE IMPORTS =====
 import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
@@ -84,6 +85,10 @@ async function initApp() {
         // Step 6: Initialize practice
         console.log('🏋️ Step 6: Initializing practice...');
         initPracticeEngine();
+
+        // Step 6.5: Initialize Cambridge Widget
+        console.log('📚 Step 6.5: Initializing Cambridge Widget...');
+        initCambridgeWidget();
         
         // Step 7: Initialize sync (optional)
         console.log('☁️ Step 7: Initializing sync...');
