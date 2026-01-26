@@ -33,7 +33,6 @@ export function initSetView() {
 
 /* ===== BIND EVENTS ===== */
 function bindSetViewEvents() {
-    // View mode toggle
     document.addEventListener('click', (e) => {
         if (e.target.closest('#view-grid-btn')) {
             setViewMode('grid');
@@ -46,13 +45,34 @@ function bindSetViewEvents() {
         }
     });
     
-    // Scale slider
+    // Scale slider - sửa để hoạt động với split view
     document.addEventListener('input', (e) => {
-        if (e.target.id === 'word-scale-slider') {
-            const scale = e.target.value;
-            document.documentElement.style.setProperty('--word-card-scale', scale);
+        if (e.target.id === 'word-scale-slider' || e.target.classList.contains('scale-slider')) {
+            const scale = parseFloat(e.target.value);
+            applyScale(scale);
         }
     });
+}
+
+/* ===== APPLY SCALE ===== */
+function applyScale(scale) {
+    // Scale cho word list (bên trái)
+    const wordList = document.querySelector('.word-list-grid');
+    const detailPanel = document.querySelector('.word-detail-panel');
+    const splitView = document.querySelector('.set-view-split');
+    
+    if (splitView) {
+        const listPercent = Math.round(30 + (scale - 0.5) * 40); // 30% - 70%
+        const detailPercent = 100 - listPercent;
+        
+        splitView.style.gridTemplateColumns = `${listPercent}% ${detailPercent}%`;
+    }
+    
+    // Scale cho word cards
+    if (wordList) {
+        const cardScale = 0.8 + (scale - 0.5) * 0.4; // 0.8 - 1.2
+        wordList.style.setProperty('--card-scale', cardScale);
+    }
 }
 
 /* ===== OPEN SET DETAIL ===== */
@@ -307,5 +327,6 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
 
 
