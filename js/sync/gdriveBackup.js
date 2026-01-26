@@ -1,197 +1,288 @@
-/* ========================================
-   VoLearn - Google Drive Backup/Restore
-   ======================================== */
+/* ===== GOOGLE DRIVE BACKUP ===== */
+/* VoLearn v2.1.0 - Backup & Restore to Google Drive */
 
-import { accessToken, checkSignedIn } from './gdriveAuth.js';
-import { appData, setAppData } from '../core/state.js';
+import { getAccessToken, isGoogleSignedIn, loginGoogle } from './gdriveAuth.js';
+import { appData } from '../core/state.js';
+import { setAppData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
+import { showToast } from '../ui/toast.js';
 
+/* ===== CONFIG ===== */
 const BACKUP_FILENAME = 'volearn_backup.json';
-const BACKUP_FOLDER = 'VoLearn Backups';
+const BACKUP_FOLDER = 'appDataFolder'; // Use app-specific folder
 
-/* ===== BACKUP TO DRIVE ===== */
+/* ===== BACKUP ===== */
 export async function backupToDrive() {
-    if (!checkSignedIn()) {
-        window.showToast?.('Vui lòng đăng nhập Google trước', 'warning');
+    if (!isGoogleSignedIn()) {
+        showToast('Vui lòng đăng nhập Google trước', 'warning');
+        loginGoogle();
         return false;
     }
 
     try {
-        window.showToast?.('Đang sao lưu...', 'info');
+        showToast('Đang sao lưu...', 'info');
 
-        // Get or create backup folder
-        const folderId = await getOrCreateFolder(BACKUP_FOLDER);
-        
-        // Create backup content
+        const accessToken = getAccessToken();
         const backupData = {
             ...appData,
             backupDate: new Date().toISOString(),
             version: '2.1.0'
         };
-        const content = JSON.stringify(backupData, null, 2);
 
         // Check if backup file exists
-        const existingFileId = await findFile(BACKUP_FILENAME, folderId);
+        const existingFile = await findBackupFile();
         
-        if (existingFileId) {
+        if (existingFile) {
             // Update existing file
-            await updateFile(existingFileId, content);
+            await updateDriveFile(existingFile.id, backupData);
         } else {
             // Create new file
-            await createFile(BACKUP_FILENAME, content, folderId);
+            await createDriveFile(backupData);
         }
 
-        window.showToast?.('Sao lưu thành công!', 'success');
+        showToast('Sao lưu thành công!', 'success');
+        updateLastBackupUI();
         return true;
+
     } catch (error) {
         console.error('Backup error:', error);
-        window.showToast?.('Sao lưu thất bại: ' + error.message, 'error');
+        showToast('Sao lưu thất bại: ' + error.message, 'error');
         return false;
     }
 }
 
-/* ===== RESTORE FROM DRIVE ===== */
+/* ===== RESTORE ===== */
 export async function restoreFromDrive() {
-    if (!checkSignedIn()) {
-        window.showToast?.('Vui lòng đăng nhập Google trước', 'warning');
+    if (!isGoogleSignedIn()) {
+        showToast('Vui lòng đăng nhập Google trước', 'warning');
+        loginGoogle();
         return false;
     }
 
     try {
-        window.showToast?.('Đang khôi phục...', 'info');
+        showToast('Đang khôi phục...', 'info');
 
-        // Find backup folder
-        const folderId = await findFolder(BACKUP_FOLDER);
-        if (!folderId) {
-            window.showToast?.('Không tìm thấy bản sao lưu', 'warning');
-            return false;
-        }
-
-        // Find backup file
-        const fileId = await findFile(BACKUP_FILENAME, folderId);
-        if (!fileId) {
-            window.showToast?.('Không tìm thấy bản sao lưu', 'warning');
+        const existingFile = await findBackupFile();
+        
+        if (!existingFile) {
+            showToast('Không tìm thấy bản sao lưu!', 'warning');
             return false;
         }
 
         // Download file content
-        const content = await downloadFile(fileId);
-        const backupData = JSON.parse(content);
-
-        // Confirm restore
-        if (!confirm(`Khôi phục dữ liệu từ ${new Date(backupData.backupDate).toLocaleString('vi-VN')}?\n\nDữ liệu hiện tại sẽ bị ghi đè.`)) {
+        const content = await downloadDriveFile(existingFile.id);
+        
+        if (!content || !content.vocabulary) {
+            showToast('Dữ liệu sao lưu không hợp lệ!', 'error');
             return false;
         }
 
-        // Restore data
-        delete backupData.backupDate;
-        delete backupData.version;
-        
-        setAppData(backupData);
-        saveData(backupData);
+        // Confirm restore
+        const confirmed = confirm(
+            `Khôi phục dữ liệu từ ${new Date(content.backupDate).toLocaleString()}?\n` +
+            `Dữ liệu hiện tại sẽ bị thay thế.`
+        );
 
-        window.showToast?.('Khôi phục thành công!', 'success');
+        if (!confirmed) return false;
+
+        // Restore data
+        setAppData(content);
+        saveData(content);
+
+        showToast('Khôi phục thành công!', 'success');
         
-        // Reload page
-        setTimeout(() => location.reload(), 1000);
+        // Reload page to apply changes
+        setTimeout(() => window.location.reload(), 1000);
         return true;
+
     } catch (error) {
         console.error('Restore error:', error);
-        window.showToast?.('Khôi phục thất bại: ' + error.message, 'error');
+        showToast('Khôi phục thất bại: ' + error.message, 'error');
         return false;
     }
 }
 
-/* ===== HELPER FUNCTIONS ===== */
+/* ===== DRIVE API HELPERS ===== */
+async function findBackupFile() {
+    const accessToken = getAccessToken();
+    
+    const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?` +
+        `spaces=${BACKUP_FOLDER}&` +
+        `q=name='${BACKUP_FILENAME}'&` +
+        `fields=files(id,name,modifiedTime)`,
+        {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+    );
 
-async function getOrCreateFolder(name) {
-    let folderId = await findFolder(name);
-    if (!folderId) {
-        folderId = await createFolder(name);
+    if (!response.ok) {
+        throw new Error('Failed to search files');
     }
-    return folderId;
+
+    const data = await response.json();
+    return data.files?.[0] || null;
 }
 
-async function findFolder(name) {
-    const response = await gapi.client.drive.files.list({
-        q: `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name)'
-    });
-    return response.result.files?.[0]?.id || null;
-}
-
-async function createFolder(name) {
-    const response = await gapi.client.drive.files.create({
-        resource: {
-            name: name,
-            mimeType: 'application/vnd.google-apps.folder'
-        },
-        fields: 'id'
-    });
-    return response.result.id;
-}
-
-async function findFile(name, folderId) {
-    const response = await gapi.client.drive.files.list({
-        q: `name='${name}' and '${folderId}' in parents and trashed=false`,
-        fields: 'files(id, name)'
-    });
-    return response.result.files?.[0]?.id || null;
-}
-
-async function createFile(name, content, folderId) {
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const closeDelim = "\r\n--" + boundary + "--";
-
+async function createDriveFile(content) {
+    const accessToken = getAccessToken();
+    
     const metadata = {
-        name: name,
-        mimeType: 'application/json',
-        parents: [folderId]
+        name: BACKUP_FILENAME,
+        parents: [BACKUP_FOLDER],
+        mimeType: 'application/json'
     };
 
-    const multipartBody =
-        delimiter +
-        'Content-Type: application/json\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: application/json\r\n\r\n' +
-        content +
-        closeDelim;
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', new Blob([JSON.stringify(content)], { type: 'application/json' }));
 
-    const response = await gapi.client.request({
-        path: '/upload/drive/v3/files',
-        method: 'POST',
-        params: { uploadType: 'multipart' },
-        headers: {
-            'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-        },
-        body: multipartBody
-    });
+    const response = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: form
+        }
+    );
 
-    return response.result.id;
+    if (!response.ok) {
+        throw new Error('Failed to create file');
+    }
+
+    return response.json();
 }
 
-async function updateFile(fileId, content) {
-    await gapi.client.request({
-        path: `/upload/drive/v3/files/${fileId}`,
-        method: 'PATCH',
-        params: { uploadType: 'media' },
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: content
-    });
+async function updateDriveFile(fileId, content) {
+    const accessToken = getAccessToken();
+    
+    const response = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+        {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(content)
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error('Failed to update file');
+    }
+
+    return response.json();
 }
 
-async function downloadFile(fileId) {
-    const response = await gapi.client.drive.files.get({
-        fileId: fileId,
-        alt: 'media'
+async function downloadDriveFile(fileId) {
+    const accessToken = getAccessToken();
+    
+    const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error('Failed to download file');
+    }
+
+    return response.json();
+}
+
+/* ===== GET BACKUP INFO ===== */
+export async function getBackupInfo() {
+    if (!isGoogleSignedIn()) {
+        return null;
+    }
+
+    try {
+        const file = await findBackupFile();
+        if (file) {
+            return {
+                lastBackup: file.modifiedTime,
+                fileId: file.id
+            };
+        }
+    } catch (error) {
+        console.error('Get backup info error:', error);
+    }
+
+    return null;
+}
+
+/* ===== UI UPDATE ===== */
+async function updateLastBackupUI() {
+    const info = await getBackupInfo();
+    const lastBackupEl = document.getElementById('last-backup-time');
+    
+    if (lastBackupEl && info) {
+        const date = new Date(info.lastBackup);
+        lastBackupEl.textContent = date.toLocaleString('vi-VN');
+    }
+}
+
+/* ===== DELETE BACKUP ===== */
+export async function deleteBackup() {
+    if (!isGoogleSignedIn()) {
+        showToast('Vui lòng đăng nhập Google trước', 'warning');
+        return false;
+    }
+
+    const confirmed = confirm('Xóa bản sao lưu trên Google Drive?');
+    if (!confirmed) return false;
+
+    try {
+        const file = await findBackupFile();
+        if (!file) {
+            showToast('Không có bản sao lưu để xóa', 'info');
+            return false;
+        }
+
+        const accessToken = getAccessToken();
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${file.id}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to delete file');
+        }
+
+        showToast('Đã xóa bản sao lưu', 'success');
+        return true;
+
+    } catch (error) {
+        console.error('Delete backup error:', error);
+        showToast('Xóa thất bại: ' + error.message, 'error');
+        return false;
+    }
+}
+
+/* ===== INIT ===== */
+export function initDriveBackup() {
+    // Update UI when signed in
+    window.addEventListener('volearn:googleSignedIn', () => {
+        updateLastBackupUI();
     });
-    return response.body;
+    
+    console.log('✅ Drive backup module initialized');
 }
 
 /* ===== EXPORTS ===== */
 window.backupToDrive = backupToDrive;
 window.restoreFromDrive = restoreFromDrive;
+window.deleteBackup = deleteBackup;
