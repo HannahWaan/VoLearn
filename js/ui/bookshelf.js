@@ -115,10 +115,23 @@ function bindBookshelfEvents() {
     }
 }
 
-/* ===== OPEN SET VIEW - Giống code cũ ===== */
+/* ===== OPEN SET VIEW ===== */
 export function openSetView(setId) {
+    // Lưu setId vào window để setView.js đọc
     window.currentSetViewId = setId;
+    
+    // Navigate đến trang set-view
     navigate('set-view');
+    
+    // Đợi DOM update rồi render
+    setTimeout(() => {
+        // Gọi initSetView hoặc renderSetView
+        if (window.initSetView) {
+            window.initSetView();
+        } else if (window.renderSetView) {
+            window.renderSetView();
+        }
+    }, 100);
 }
 
 /* ===== CREATE SET MODAL ===== */
@@ -246,4 +259,5 @@ window.renderShelves = renderShelves;
 window.populateSetSelect = populateSetSelect;
 
 export { searchQuery };
+
 
