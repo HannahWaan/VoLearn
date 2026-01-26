@@ -1,5 +1,5 @@
 /* ===== DICTATION MODE ===== */
-/* VoLearn v2.1.0 - Chế độ nghe chép */
+/* VoLearn - Chế độ nghe chép */
 
 import { 
     initPractice, 
