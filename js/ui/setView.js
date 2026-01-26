@@ -359,5 +359,3 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
-
-export { initSetView, renderSetView, toggleMasteredInView, toggleBookmarkInView };
