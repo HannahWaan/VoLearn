@@ -17,38 +17,42 @@ let searchQuery = '';
 
 /* ===== INIT ===== */
 export function initSetView() {
-    currentSetId = window.currentSetId;
+    // Get setId from window (set by bookshelf or router)
+    currentSetId = window.currentSetId || null;
     
     if (!currentSetId) {
-        // Don't navigate away if we're not on set-view page
-        return;
+        return; // Don't navigate if not on set-view
     }
     
     selectedWordId = null;
+    searchQuery = '';
+    
     renderSetView();
     bindSetViewEvents();
     
     console.log('✅ SetView initialized for:', currentSetId);
 }
 
-/* ===== OPEN SET DETAIL (called from bookshelf) ===== */
+/* ===== OPEN SET DETAIL (called from bookshelf or app.js) ===== */
 export function openSetDetail(setId) {
-    window.currentSetId = setId;
     currentSetId = setId;
+    window.currentSetId = setId;
+    selectedWordId = null;
+    searchQuery = '';
     navigate('set-view');
 }
 
 /* ===== BACK TO BOOKSHELF ===== */
 export function backToBookshelf() {
-    window.currentSetId = null;
     currentSetId = null;
+    window.currentSetId = null;
     selectedWordId = null;
     navigate('bookshelf');
 }
 
 /* ===== GET WORDS FOR CURRENT SET ===== */
 function getWordsForSet() {
-    if (currentSetId === 'all') {
+    if (!currentSetId || currentSetId === 'all') {
         return appData.vocabulary || [];
     }
     return (appData.vocabulary || []).filter(w => w.setId === currentSetId);
@@ -56,7 +60,7 @@ function getWordsForSet() {
 
 /* ===== GET SET INFO ===== */
 function getSetInfo() {
-    if (currentSetId === 'all') {
+    if (!currentSetId || currentSetId === 'all') {
         return {
             id: 'all',
             name: 'Tất cả từ vựng',
@@ -69,12 +73,14 @@ function getSetInfo() {
 
 /* ===== RENDER SET VIEW ===== */
 export function renderSetView() {
-    // Re-read currentSetId from window in case it changed
-    currentSetId = window.currentSetId;
+    // Re-sync with window.currentSetId
+    if (window.currentSetId && window.currentSetId !== currentSetId) {
+        currentSetId = window.currentSetId;
+    }
     
     const set = getSetInfo();
     if (!set) {
-        navigate('bookshelf');
+        backToBookshelf();
         return;
     }
 
@@ -462,7 +468,6 @@ function setViewMode(mode) {
 
 /* ===== ADD WORD TO SET ===== */
 function addWordToCurrentSet() {
-    // Store the current set ID for the add word form
     window.preSelectedSetId = currentSetId === 'all' ? '' : currentSetId;
     navigate('add-word');
 }
@@ -520,3 +525,5 @@ window.speakWord = speakWord;
 window.selectWordInSet = selectWord;
 window.toggleMasteredInView = toggleMasteredInView;
 window.toggleBookmarkInView = toggleBookmarkInView;
+window.renderSetView = renderSetView;
+window.initSetView = initSetView;
