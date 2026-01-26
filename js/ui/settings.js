@@ -332,5 +332,43 @@ function formatDate(date) {
     return `${y}-${m}-${d}`;
 }
 
+/* ===== APPLY SETTINGS ===== */
+export function applySettings() {
+    const settings = appData.settings || {};
+    
+    // Apply theme
+    const isDark = settings.darkMode || settings.theme === 'dark';
+    document.body.classList.toggle('dark-mode', isDark);
+    
+    // Apply font
+    if (settings.font) {
+        document.body.style.fontFamily = `'${settings.font}', sans-serif`;
+    }
+    
+    // Apply sidebar state
+    if (settings.sidebarCollapsed) {
+        document.getElementById('sidebar')?.classList.add('collapsed');
+        document.body.classList.add('sidebar-collapsed');
+    }
+    
+    // Update UI elements
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) themeToggle.checked = isDark;
+    
+    const fontSelect = document.getElementById('font-select');
+    if (fontSelect && settings.font) fontSelect.value = settings.font;
+    
+    const voiceSelect = document.getElementById('voice-select');
+    if (voiceSelect && settings.voice) voiceSelect.value = settings.voice;
+    
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValue = document.getElementById('speed-value');
+    if (speedSlider && settings.speed) {
+        speedSlider.value = settings.speed;
+        if (speedValue) speedValue.textContent = settings.speed + 'x';
+    }
+}
+
 /* ===== EXPORTS ===== */
 window.exportData = exportData;
+
