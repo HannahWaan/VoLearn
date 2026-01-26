@@ -42,10 +42,12 @@ export function loadData() {
 
 /**
  * Lưu dữ liệu vào localStorage
+ * @param {Object} data - Dữ liệu cần lưu (optional, mặc định dùng appData)
  */
-export function saveData() {
+export function saveData(data) {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        const dataToSave = data || appData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
         
         // Dispatch event
         window.dispatchEvent(new CustomEvent('volearn:dataSaved'));
@@ -73,6 +75,9 @@ export function clearAllData() {
         return false;
     }
 }
+
+// Alias cho clearAllData (để tương thích với các file khác)
+export const clearData = clearAllData;
 
 /**
  * Export dữ liệu ra JSON
@@ -164,7 +169,7 @@ export function importFromJSON(file) {
                 };
                 
                 setAppData(merged);
-                saveData();
+                saveData(merged);
                 
                 window.dispatchEvent(new CustomEvent('volearn:dataImported'));
                 
