@@ -1,0 +1,9 @@
+/* ========================================
+   VoLearn - Bookshelf Section
+   ======================================== */
+
+/* Sets grid is in cards.css */
+
+#bookshelf-section .section-header {
+    flex-wrap: wrap;
+}
