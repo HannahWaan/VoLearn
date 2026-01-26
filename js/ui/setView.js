@@ -20,15 +20,30 @@ export function initSetView() {
     currentSetId = window.currentSetId;
     
     if (!currentSetId) {
-        navigate('bookshelf');
+        // Don't navigate away if we're not on set-view page
         return;
     }
     
-    selectedWordId = null; // Reset selected word
+    selectedWordId = null;
     renderSetView();
     bindSetViewEvents();
     
     console.log('✅ SetView initialized for:', currentSetId);
+}
+
+/* ===== OPEN SET DETAIL (called from bookshelf) ===== */
+export function openSetDetail(setId) {
+    window.currentSetId = setId;
+    currentSetId = setId;
+    navigate('set-view');
+}
+
+/* ===== BACK TO BOOKSHELF ===== */
+export function backToBookshelf() {
+    window.currentSetId = null;
+    currentSetId = null;
+    selectedWordId = null;
+    navigate('bookshelf');
 }
 
 /* ===== GET WORDS FOR CURRENT SET ===== */
@@ -54,6 +69,9 @@ function getSetInfo() {
 
 /* ===== RENDER SET VIEW ===== */
 export function renderSetView() {
+    // Re-read currentSetId from window in case it changed
+    currentSetId = window.currentSetId;
+    
     const set = getSetInfo();
     if (!set) {
         navigate('bookshelf');
@@ -89,7 +107,7 @@ function renderSetHeader(set) {
 
     header.innerHTML = `
         <div class="set-header-left">
-            <button class="btn-back" onclick="window.navigate('bookshelf')">
+            <button class="btn-back" onclick="window.backToBookshelf()">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="set-header-info">
@@ -418,6 +436,24 @@ function toggleWordMastered(wordId, mastered) {
     }
 }
 
+export function toggleMasteredInView(wordId) {
+    const word = appData.vocabulary?.find(w => w.id === wordId);
+    if (word) {
+        word.mastered = !word.mastered;
+        saveData(appData);
+        renderSetView();
+    }
+}
+
+export function toggleBookmarkInView(wordId) {
+    const word = appData.vocabulary?.find(w => w.id === wordId);
+    if (word) {
+        word.bookmarked = !word.bookmarked;
+        saveData(appData);
+        renderSetView();
+    }
+}
+
 /* ===== VIEW MODE ===== */
 function setViewMode(mode) {
     viewMode = mode;
@@ -473,6 +509,8 @@ function truncate(str, len) {
 }
 
 /* ===== GLOBAL EXPORTS ===== */
+window.openSetDetail = openSetDetail;
+window.backToBookshelf = backToBookshelf;
 window.setViewMode = setViewMode;
 window.addWordToCurrentSet = addWordToCurrentSet;
 window.practiceCurrentSet = practiceCurrentSet;
@@ -480,4 +518,5 @@ window.editCurrentWord = editCurrentWord;
 window.deleteCurrentWord = deleteCurrentWord;
 window.speakWord = speakWord;
 window.selectWordInSet = selectWord;
-
+window.toggleMasteredInView = toggleMasteredInView;
+window.toggleBookmarkInView = toggleBookmarkInView;
