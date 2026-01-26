@@ -1,9 +1,8 @@
 /* ===== CALENDAR MODULE ===== */
 /* VoLearn v2.1.0 - Lịch học tập */
 
-import { appData } from '../core/state.js';
+import { appData, getTodayStats } from '../core/state.js';
 import { showToast } from './toast.js';
-import { openModal, closeAllModals } from './modalEngine.js';
 import { escapeHtml } from '../utils/helpers.js';
 
 /* ===== STATE ===== */
@@ -16,6 +15,11 @@ export function initCalendar() {
     bindCalendarEvents();
     renderCalendar();
     renderTodayStats();
+    
+    // Listen for word saved events
+    window.addEventListener('volearn:wordSaved', renderTodayStats);
+    window.addEventListener('volearn:dataSaved', renderTodayStats);
+    
     console.log('✅ Calendar initialized');
 }
 
@@ -39,9 +43,9 @@ export function renderCalendar() {
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
-    let startingDay = firstDay.getDay(); // 0 = Sunday
+    let startingDay = firstDay.getDay();
     
-    // Adjust for Sunday = 0 -> make it 7 for easier calculation (week starts Monday)
+    // Adjust for Monday start (Sunday = 0 -> 7)
     if (startingDay === 0) startingDay = 7;
 
     let html = '';
@@ -50,7 +54,7 @@ export function renderCalendar() {
     const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     html += dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
 
-    // Empty cells before first day (Monday = 1)
+    // Empty cells before first day
     for (let i = 1; i < startingDay; i++) {
         html += '<div class="calendar-day empty"></div>';
     }
@@ -82,7 +86,7 @@ export function renderCalendar() {
 }
 
 /* ===== RENDER TODAY STATS ===== */
-function renderTodayStats() {
+export function renderTodayStats() {
     const today = formatDateStr(
         new Date().getFullYear(),
         new Date().getMonth(),
@@ -96,11 +100,13 @@ function renderTodayStats() {
     
     if (dailyAdded) dailyAdded.textContent = stats.added;
     if (dailyReviewed) dailyReviewed.textContent = stats.reviewed;
+    
+    // Also update calendar if visible
+    renderCalendar();
 }
 
 /* ===== BIND EVENTS ===== */
 function bindCalendarEvents() {
-    // Previous month
     const prevBtn = document.getElementById('prev-month');
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
@@ -113,7 +119,6 @@ function bindCalendarEvents() {
         });
     }
 
-    // Next month
     const nextBtn = document.getElementById('next-month');
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
@@ -130,7 +135,7 @@ function bindCalendarEvents() {
 /* ===== SHOW DAY WORDS ===== */
 export function showDayWords(dateStr) {
     selectedDate = dateStr;
-    renderCalendar(); // Update selected state
+    renderCalendar();
     
     const stats = getDayStats(dateStr);
     const addedWords = getWordsAddedOnDate(dateStr);
@@ -140,13 +145,12 @@ export function showDayWords(dateStr) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const formattedDate = date.toLocaleDateString('vi-VN', options);
     
-    // Create or get modal
     let modal = document.getElementById('day-detail-modal');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'day-detail-modal';
         modal.className = 'modal';
-        document.getElementById('modals-container')?.appendChild(modal);
+        document.getElementById('modals-container')?.appendChild(modal) || document.body.appendChild(modal);
     }
     
     modal.innerHTML = `
@@ -168,10 +172,10 @@ export function showDayWords(dateStr) {
                 </div>
                 
                 <div class="day-tabs">
-                    <button class="day-tab active" onclick="window.switchDayTab('added', this)" data-tab="added">
+                    <button class="day-tab active" onclick="window.switchDayTab('added', this)">
                         <i class="fas fa-plus-circle"></i> Đã thêm (${addedWords.length})
                     </button>
-                    <button class="day-tab" onclick="window.switchDayTab('reviewed', this)" data-tab="reviewed">
+                    <button class="day-tab" onclick="window.switchDayTab('reviewed', this)">
                         <i class="fas fa-sync-alt"></i> Đã ôn (${reviewedWords.length})
                     </button>
                 </div>
@@ -233,7 +237,6 @@ export function closeDayDetailModal() {
 export function openWordFromCalendar(wordId) {
     closeDayDetailModal();
     
-    // Navigate to set view and select word
     if (window.openSetDetail) {
         window.openSetDetail('all');
         setTimeout(() => {
@@ -249,28 +252,27 @@ function getDayStats(dateStr) {
     let added = 0;
     let reviewed = 0;
     
-    // Count words added on this date
+    // Count words added on this date (by createdAt)
     appData.vocabulary?.forEach(word => {
         if (word.createdAt?.startsWith(dateStr)) {
             added++;
         }
     });
     
-    // Count from history
+    // Also check history for more accurate counts
     const historyEntry = appData.history?.find(h => h.date === dateStr);
     if (historyEntry) {
-        if (historyEntry.addedWords) {
-            added = Math.max(added, historyEntry.addedWords.length);
-        }
-        if (historyEntry.reviewedWords) {
-            reviewed = historyEntry.reviewedWords.length;
-        }
-        // Fallback to numbers if arrays not available
-        if (historyEntry.added && !historyEntry.addedWords) {
+        // Use array length if available
+        if (Array.isArray(historyEntry.added)) {
+            added = Math.max(added, historyEntry.added.length);
+        } else if (typeof historyEntry.added === 'number') {
             added = Math.max(added, historyEntry.added);
         }
-        if (historyEntry.reviewed && !historyEntry.reviewedWords) {
-            reviewed = Math.max(reviewed, historyEntry.reviewed);
+        
+        if (Array.isArray(historyEntry.reviewed)) {
+            reviewed = historyEntry.reviewed.length;
+        } else if (typeof historyEntry.reviewed === 'number') {
+            reviewed = historyEntry.reviewed;
         }
     }
     
@@ -287,17 +289,6 @@ function getWordsAddedOnDate(dateStr) {
         }
     });
     
-    // Also check history for word IDs
-    const historyEntry = appData.history?.find(h => h.date === dateStr);
-    if (historyEntry?.addedWords) {
-        historyEntry.addedWords.forEach(wordId => {
-            const word = appData.vocabulary?.find(w => w.id === wordId);
-            if (word && !words.find(w => w.id === word.id)) {
-                words.push(word);
-            }
-        });
-    }
-    
     return words;
 }
 
@@ -305,8 +296,8 @@ function getWordsReviewedOnDate(dateStr) {
     const words = [];
     
     const historyEntry = appData.history?.find(h => h.date === dateStr);
-    if (historyEntry?.reviewedWords) {
-        historyEntry.reviewedWords.forEach(wordId => {
+    if (historyEntry?.reviewed && Array.isArray(historyEntry.reviewed)) {
+        historyEntry.reviewed.forEach(wordId => {
             const word = appData.vocabulary?.find(w => w.id === wordId);
             if (word) {
                 words.push(word);
@@ -326,7 +317,10 @@ function formatDateStr(year, month, day) {
 
 /* ===== GLOBAL EXPORTS ===== */
 window.renderCalendar = renderCalendar;
+window.renderTodayStats = renderTodayStats;
 window.showDayWords = showDayWords;
 window.switchDayTab = switchDayTab;
 window.closeDayDetailModal = closeDayDetailModal;
 window.openWordFromCalendar = openWordFromCalendar;
+
+export { renderTodayStats };
