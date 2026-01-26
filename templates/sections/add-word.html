@@ -1,0 +1,147 @@
+<!-- ==================== ADD WORD SECTION ==================== -->
+<section id="add-section" class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-plus-circle"></i> Thêm từ vựng mới</h2>
+            <button type="button" id="btn-clear-form" class="btn-clear" title="Xóa tất cả">
+                <i class="fas fa-trash-alt"></i> Xóa hết
+            </button>
+        </div>
+        <div class="card-body">
+            <!-- Từ vựng -->
+            <div class="form-group">
+                <label for="word-input">Từ vựng <span class="required">*</span></label>
+                <div class="input-with-icon">
+                    <input type="text" id="word-input" placeholder="Nhập từ tiếng Anh..." autocomplete="off">
+                    <button type="button" id="btn-speak-word" class="btn-input-icon" title="Phát âm">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div id="word-suggestions" class="suggestions-dropdown"></div>
+            </div>
+
+            <!-- Word Formation -->
+            <div class="form-group">
+                <label for="word-formation-global">Word Formation</label>
+                <input type="text" id="word-formation-global" class="word-formation-global" placeholder="advance (n, v), advanced (adj), advancement (n)">
+            </div>
+
+            <!-- Bộ từ vựng -->
+            <div class="form-group">
+                <label for="set-select">Bộ từ vựng</label>
+                <select id="set-select">
+                    <option value="">-- Chọn bộ từ --</option>
+                </select>
+            </div>
+
+            <!-- Meanings Container -->
+            <div id="meanings-container" class="meanings-container">
+                <!-- Meaning Block Template -->
+                <div class="meaning-block" data-index="0" draggable="true">
+                    <div class="meaning-header">
+                        <span class="meaning-title">Nghĩa 1</span>
+                        <div class="meaning-actions">
+                            <span class="drag-handle" title="Kéo để sắp xếp">
+                                <i class="fas fa-grip-vertical"></i>
+                            </span>
+                            <button type="button" class="btn-clear-meaning" title="Xóa nội dung">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                            <button type="button" class="btn-remove-meaning" title="Xóa nghĩa này">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Phiên âm US/UK -->
+                    <div class="phonetic-row">
+                        <div class="phonetic-group">
+                            <label>🇺🇸 US</label>
+                            <div class="phonetic-input-wrapper">
+                                <input type="text" class="phonetic-us" placeholder="/ˈprɛzənt/">
+                                <button type="button" class="btn-speak-phonetic" data-accent="en-US" title="Nghe US">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="phonetic-group">
+                            <label>🇬🇧 UK</label>
+                            <div class="phonetic-input-wrapper">
+                                <input type="text" class="phonetic-uk" placeholder="/ˈprɛzənt/">
+                                <button type="button" class="btn-speak-phonetic" data-accent="en-GB" title="Nghe UK">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loại từ -->
+                    <div class="form-group">
+                        <label>Loại từ</label>
+                        <select class="pos-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="noun">Danh từ (noun)</option>
+                            <option value="verb">Động từ (verb)</option>
+                            <option value="adjective">Tính từ (adj)</option>
+                            <option value="adverb">Trạng từ (adv)</option>
+                            <option value="pronoun">Đại từ (pron)</option>
+                            <option value="preposition">Giới từ (prep)</option>
+                            <option value="conjunction">Liên từ (conj)</option>
+                            <option value="interjection">Thán từ (interj)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Định nghĩa tiếng Anh -->
+                    <div class="form-group">
+                        <label>Định nghĩa (English)</label>
+                        <div class="textarea-with-speaker">
+                            <textarea class="def-en" rows="2" placeholder="Definition in English"></textarea>
+                            <button type="button" class="btn-speak-text" data-lang="en" title="Nghe định nghĩa">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Nghĩa tiếng Việt -->
+                    <div class="form-group">
+                        <label>Nghĩa (Tiếng Việt)</label>
+                        <textarea class="def-vi" rows="2" placeholder="Nghĩa tiếng Việt"></textarea>
+                    </div>
+                    
+                    <!-- Ví dụ -->
+                    <div class="form-group">
+                        <label>Ví dụ</label>
+                        <div class="textarea-with-speaker">
+                            <textarea class="example-input" rows="2" placeholder="Example sentence"></textarea>
+                            <button type="button" class="btn-speak-text" data-lang="en" title="Nghe ví dụ">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Đồng nghĩa / Trái nghĩa -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Từ đồng nghĩa</label>
+                            <input type="text" class="synonyms-input" placeholder="synonym1, synonym2">
+                        </div>
+                        <div class="form-group">
+                            <label>Từ trái nghĩa</label>
+                            <input type="text" class="antonyms-input" placeholder="antonym1, antonym2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" id="btn-add-meaning" class="btn-secondary">
+                    <i class="fas fa-plus"></i> Thêm nghĩa
+                </button>
+                <button type="button" id="btn-save-word" class="btn-primary">
+                    <i class="fas fa-save"></i> Lưu từ vựng
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
