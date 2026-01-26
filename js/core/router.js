@@ -1,7 +1,7 @@
-/* ========================================
+/* =============================================
    VoLearn - Router (Navigation)
    Handle page navigation
-   ======================================== */
+   ============================================= */
 
 // Lưu section hiện tại
 let currentSection = 'home';
@@ -9,7 +9,7 @@ let currentSection = 'home';
 // Mapping section -> page title
 const pageTitles = {
     'home': 'Trang chủ',
-    'add': 'Thêm từ vựng',
+    'add-word': 'Thêm từ vựng',
     'bookshelf': 'Tủ sách',
     'set-view': 'Chi tiết bộ từ',
     'practice': 'Luyện tập',
@@ -22,8 +22,6 @@ const navigationCallbacks = {};
 
 /**
  * Đăng ký callback khi navigate đến section
- * @param {string} section - Tên section
- * @param {function} callback - Hàm callback
  */
 export function onNavigate(section, callback) {
     if (!navigationCallbacks[section]) {
@@ -34,7 +32,6 @@ export function onNavigate(section, callback) {
 
 /**
  * Điều hướng đến một section
- * @param {string} sectionName - Tên section (home, add, bookshelf, ...)
  */
 export function navigate(sectionName) {
     // Ẩn tất cả sections
@@ -68,6 +65,13 @@ export function navigate(sectionName) {
     // Lưu section hiện tại
     const previousSection = currentSection;
     currentSection = sectionName;
+
+    // GỌI TRỰC TIẾP initSetView khi navigate đến set-view
+    if (sectionName === 'set-view' && window.initSetView) {
+        setTimeout(() => {
+            window.initSetView();
+        }, 50);
+    }
 
     // Gọi callbacks
     if (navigationCallbacks[sectionName]) {
@@ -105,7 +109,6 @@ export function getCurrentSection() {
  * Quay lại section trước
  */
 export function goBack() {
-    // Simple back - có thể mở rộng với history stack
     navigate('home');
 }
 
@@ -120,8 +123,6 @@ export function initRouter() {
             const section = item.dataset.section;
             if (section) {
                 navigate(section);
-                
-                // Đóng sidebar trên mobile
                 closeMobileSidebar();
             }
         });
