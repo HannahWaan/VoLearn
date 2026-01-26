@@ -2,8 +2,6 @@
    VoLearn - Bookshelf Section
    ======================================== */
 
-/* Sets grid is in cards.css */
-
 #bookshelf-section .section-header {
     flex-wrap: wrap;
 }
@@ -19,6 +17,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease;
+    gap: 12px;
 }
 
 .set-card:hover {
@@ -32,14 +31,51 @@
     gap: 12px;
     flex: 1;
     cursor: pointer;
+    min-width: 0;
+}
+
+.set-card .set-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.set-card .set-icon i {
+    font-size: 20px;
+    color: #fff;
+}
+
+.set-card .set-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.set-card .set-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.set-card .set-count {
+    font-size: 13px;
+    color: var(--text-secondary, #666);
 }
 
 /* ===== SET CARD ACTIONS (Edit & Delete) ===== */
 .set-card-actions {
     display: flex;
-    gap: 4px;
+    flex-direction: row;
+    gap: 6px;
     opacity: 0;
     transition: opacity 0.2s ease;
+    flex-shrink: 0;
 }
 
 .set-card:hover .set-card-actions {
@@ -80,7 +116,7 @@
     color: #fff;
 }
 
-/* ===== ALL WORDS CARD (no actions) ===== */
+/* ===== ALL WORDS CARD ===== */
 .set-card.all-words {
     cursor: pointer;
 }
