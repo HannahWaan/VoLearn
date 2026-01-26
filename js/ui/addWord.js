@@ -968,34 +968,46 @@ export function clearWordForm() {
 
 /* ===== SAVE WORD ===== */
 export function saveWord() {
-    const word = document.getElementById('word-input').value.trim();
-    const setId = document.getElementById('set-select').value;
-    const wordFormation = document.getElementById('word-formation-global')?.value.trim() || '';
+    const wordInput = document.getElementById('word-input');
+    const word = wordInput?.value?.trim();
     
     if (!word) {
         showToast('Vui lòng nhập từ vựng', 'error');
         return;
     }
     
-    // Remember selected set for next word
-    if (setId) {
-        lastSelectedSetId = setId;
-    }
+    // Thu thập dữ liệu
+    const setSelect = document.getElementById('set-select');
+    const wordFormation = document.getElementById('word-formation-global')?.value?.trim() || '';
+    const setId = setSelect?.value || null;
     
+    // Thu thập các meanings
     const meanings = [];
-    document.querySelectorAll('.meaning-block').forEach(block => {
-        const meaning = {
-            phoneticUS: block.querySelector('.phonetic-us')?.value.trim() || '',
-            phoneticUK: block.querySelector('.phonetic-uk')?.value.trim() || '',
-            pos: block.querySelector('.pos-select')?.value || '',
-            defEn: block.querySelector('.def-en')?.value.trim() || '',
-            defVi: block.querySelector('.def-vi')?.value.trim() || '',
-            example: block.querySelector('.example-input')?.value.trim() || '',
-            synonyms: block.querySelector('.synonyms-input')?.value.trim() || '',
-            antonyms: block.querySelector('.antonyms-input')?.value.trim() || ''
-        };
+    const meaningBlocks = document.querySelectorAll('.meaning-block');
+    
+    meaningBlocks.forEach((block, index) => {
+        const phoneticUS = block.querySelector(`#phonetic-us-${index}`)?.value?.trim() || '';
+        const phoneticUK = block.querySelector(`#phonetic-uk-${index}`)?.value?.trim() || '';
+        const pos = block.querySelector(`#pos-${index}`)?.value || '';
+        const defEn = block.querySelector(`#def-en-${index}`)?.value?.trim() || '';
+        const defVi = block.querySelector(`#def-vi-${index}`)?.value?.trim() || '';
+        const example = block.querySelector(`#example-${index}`)?.value?.trim() || '';
+        const synonyms = block.querySelector(`#synonyms-${index}`)?.value?.trim() || '';
+        const antonyms = block.querySelector(`#antonyms-${index}`)?.value?.trim() || '';
         
-        if (meaning.defEn || meaning.defVi) meanings.push(meaning);
+        // Chỉ thêm nếu có nội dung
+        if (defEn || defVi || phoneticUS || phoneticUK) {
+            meanings.push({
+                phoneticUS,
+                phoneticUK,
+                pos,
+                defEn,
+                defVi,
+                example,
+                synonyms,
+                antonyms
+            });
+        }
     });
     
     if (meanings.length === 0) {
@@ -1003,89 +1015,74 @@ export function saveWord() {
         return;
     }
     
-    const phonetic = meanings[0]?.phoneticUS || meanings[0]?.phoneticUK || '';
+    // Lưu setId để quay về sau
+    const returnToSetId = editingWordId 
+        ? (appData.vocabulary?.find(w => w.id === editingWordId)?.setId || setId)
+        : setId;
     
-    // Lưu lại setId trước khi edit để quay về đúng chỗ
-    const returnToSetId = editingWordId ? 
-        (appData.vocabulary.find(w => w.id === editingWordId)?.setId || setId) : 
-        null;
+    const now = new Date().toISOString();
     
-    // Check if editing existing word
     if (editingWordId) {
-        const existingIndex = appData.vocabulary.findIndex(w => w.id === editingWordId);
-        if (existingIndex !== -1) {
-            appData.vocabulary[existingIndex] = {
-                ...appData.vocabulary[existingIndex],
-                word,
-                phonetic,
-                wordFormation,
-                meanings,
-                setId: setId || null,
-                updatedAt: new Date().toISOString()
-            };
-            saveData(appData);
-            clearWordFormSilent();
-            showToast(`Đã cập nhật từ "${word}"`, 'success');
+        // === EDIT MODE ===
+        const existingWord = appData.vocabulary?.find(w => w.id === editingWordId);
+        if (existingWord) {
+            existingWord.word = word;
+            existingWord.setId = setId;
+            existingWord.formation = wordFormation;
+            existingWord.meanings = meanings;
+            existingWord.updatedAt = now;
             
-            // Quay lại bộ từ vựng sau khi edit
-            setTimeout(() => {
-                if (returnToSetId || setId) {
-                    window.currentSetViewId = returnToSetId || setId || 'all';
-                    navigate('set-view');
-                    setTimeout(() => {
-                        if (window.renderSetView) window.renderSetView();
-                    }, 100);
-                }
-            }, 500);
-            return;
+            showToast(`Đã cập nhật "${word}"`, 'success');
         }
-    }
-    
-    // Check for existing word by name
-    const existingByName = appData.vocabulary.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
-    
-    if (existingByName !== -1 && !editingWordId) {
-        if (confirm(`Từ "${word}" đã tồn tại. Bạn có muốn cập nhật không?`)) {
-            appData.vocabulary[existingByName] = {
-                ...appData.vocabulary[existingByName],
-                word,
-                phonetic,
-                wordFormation,
-                meanings,
-                setId: setId || null,
-                updatedAt: new Date().toISOString()
-            };
-            saveData(appData);
-            clearWordFormSilent();
-            showToast(`Đã cập nhật từ "${word}"`, 'success');
+    } else {
+        // === ADD NEW ===
+        const newWord = {
+            id: generateId(),
+            word,
+            setId,
+            formation: wordFormation,
+            meanings,
+            createdAt: now,
+            updatedAt: now,
+            nextReview: now,
+            srsLevel: 0,
+            mastered: false,
+            bookmarked: false
+        };
+        
+        if (!appData.vocabulary) appData.vocabulary = [];
+        appData.vocabulary.push(newWord);
+        
+        // Ghi vào history
+        if (typeof addToHistory === 'function') {
+            addToHistory('add', newWord.id);
         }
-        return;
+        
+        showToast(`Đã thêm "${word}"`, 'success');
     }
-    
-    // Create new word
-    const newWord = {
-        id: generateId(),
-        word, 
-        phonetic, 
-        wordFormation, 
-        meanings,
-        setId: setId || null,
-        createdAt: new Date().toISOString(),
-        mastered: false,
-        bookmarked: false,
-        srsLevel: 0,
-        nextReview: new Date().toISOString()
-    };
-    
-    appData.vocabulary.push(newWord);
-    addToHistory('add', newWord.id);
     
     saveData(appData);
-    clearWordFormSilent();
-    showToast(`Đã lưu từ "${word}"`, 'success');
     
-    // Dispatch event for other modules to update
-    window.dispatchEvent(new CustomEvent('volearn:wordSaved'));
+    // Dispatch event
+    document.dispatchEvent(new CustomEvent('volearn:wordSaved', {
+        detail: { word, isEdit: !!editingWordId }
+    }));
+    
+    // Clear form
+    clearWordForm();
+    editingWordId = null;
+    
+    // === QUAY VỀ SET-VIEW NẾU ĐANG EDIT ===
+    if (returnToSetId) {
+        window.currentSetViewId = returnToSetId;
+        navigate('set-view');
+        
+        setTimeout(() => {
+            if (window.renderSetView) {
+                window.renderSetView();
+            }
+        }, 100);
+    }
 }
 
 function clearWordFormSilent() {
