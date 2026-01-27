@@ -29,7 +29,7 @@
 
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
-    /* ========== SIDEBAR - ẨN HOÀN TOÀN ========== */
+    /* ========== SIDEBAR - ẨN HOÀN TOÀN, HIỆN KHI CÓ CLASS .show ========== */
     .sidebar {
         position: fixed;
         top: 0;
@@ -45,12 +45,31 @@
         transform: translateX(0);
     }
 
+    /* Ẩn nút toggle desktop */
     .sidebar-toggle {
-        display: none;
+        display: none !important;
     }
 
+    /* Hiện nút close mobile */
     .sidebar-close {
-        display: flex;
+        display: flex !important;
+        position: absolute;
+        top: 20px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    .sidebar-close:hover {
+        background: rgba(255, 255, 255, 0.3);
     }
 
     /* Overlay khi sidebar mở */
@@ -80,27 +99,29 @@
         margin-left: 0 !important;
     }
 
-    /* ========== HEADER ========== */
-    .main-header {
-        padding: 12px 16px;
+    /* ========== HEADER - HIỆN NÚT MENU ========== */
+    .header {
+        padding: 0 16px;
     }
 
     .menu-toggle {
         display: flex !important;
-        width: 40px;
-        height: 40px;
         align-items: center;
         justify-content: center;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md, 8px);
+        width: 40px;
+        height: 40px;
+        background: var(--bg-tertiary, #f5f5f5);
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 8px;
         cursor: pointer;
-        color: var(--text-primary);
+        color: var(--primary-color, #e91e8c);
         font-size: 1.2rem;
+        flex-shrink: 0;
     }
 
     .menu-toggle:hover {
-        background: var(--bg-tertiary);
+        background: var(--primary-color, #e91e8c);
+        color: white;
     }
 
     .page-title {
@@ -216,6 +237,13 @@
         justify-content: flex-end;
         margin-top: 8px;
     }
+
+    /* ========== CARD ========== */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 }
 
 /* ===== SMALL MOBILE ===== */
@@ -251,18 +279,10 @@
         gap: 16px;
     }
 
-    /* Card header */
-    .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
     .card-header h2 {
         font-size: 1.1rem;
     }
 
-    /* Buttons */
     .btn {
         padding: 10px 16px;
         font-size: 0.9rem;
