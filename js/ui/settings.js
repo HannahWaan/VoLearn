@@ -187,13 +187,18 @@ function testVoice(type) {
 
 // ===== SETTINGS MANAGEMENT =====
 function loadCurrentSettings() {
-    // Theme
+    // Theme - hỗ trợ cả dark-mode và dark-theme
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
-        const isDark = document.body.classList.contains('dark-theme') || 
-                       localStorage.getItem('volearn-theme') === 'dark';
+        const savedTheme = localStorage.getItem('volearn-theme');
+        const isDark = savedTheme === 'dark' || 
+                       document.body.classList.contains('dark-theme') || 
+                       document.body.classList.contains('dark-mode');
         themeToggle.checked = isDark;
-        if (isDark) document.body.classList.add('dark-theme');
+        if (isDark) {
+            document.body.classList.add('dark-theme');
+            document.body.classList.add('dark-mode'); // Hỗ trợ cả 2
+        }
     }
     
     // Font
@@ -222,9 +227,11 @@ function applyFont(fontFamily) {
 function applyTheme(isDark) {
     if (isDark) {
         document.body.classList.add('dark-theme');
+        document.body.classList.add('dark-mode'); 
         localStorage.setItem('volearn-theme', 'dark');
     } else {
         document.body.classList.remove('dark-theme');
+        document.body.classList.remove('dark-mode');
         localStorage.setItem('volearn-theme', 'light');
     }
 }
@@ -990,9 +997,9 @@ export function applySettings() {
     const savedTheme = localStorage.getItem('volearn-theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme');
+        document.body.classList.add('dark-mode'); 
     }
     
-    // Apply saved font
     const savedFont = localStorage.getItem('volearn-font');
     if (savedFont) {
         document.body.style.fontFamily = `"${savedFont}", sans-serif`;
@@ -1001,4 +1008,5 @@ export function applySettings() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
 
