@@ -89,48 +89,55 @@ function populateVoiceSelect(selectId, voices, label) {
     
     select.disabled = false;
     
-    // Phân loại nam/nữ
+    // Keywords để phân loại nam/nữ
     const femaleKeywords = ['female', 'woman', 'girl', 'zira', 'hazel', 'susan', 'linda', 'samantha', 'karen', 'moira', 'tessa', 'fiona', 'victoria', 'alice', 'ellen', 'monica', 'paulina', 'helena', 'catherine', 'anna', 'linh', 'mai', 'huong'];
     const maleKeywords = ['male', 'man', 'boy', 'david', 'mark', 'james', 'daniel', 'george', 'richard', 'alex', 'tom', 'fred', 'lee', 'oliver', 'ryan', 'nam', 'hung', 'minh'];
     
-    const femaleVoices = [];
-    const maleVoices = [];
-    const otherVoices = [];
+    // Tìm 1 giọng nữ và 1 giọng nam
+    let femaleVoice = null;
+    let maleVoice = null;
     
-    voices.forEach(voice => {
+    for (const voice of voices) {
         const nameLower = voice.name.toLowerCase();
-        if (femaleKeywords.some(k => nameLower.includes(k))) {
-            femaleVoices.push(voice);
-        } else if (maleKeywords.some(k => nameLower.includes(k))) {
-            maleVoices.push(voice);
-        } else {
-            otherVoices.push(voice);
+        
+        if (!femaleVoice && femaleKeywords.some(k => nameLower.includes(k))) {
+            femaleVoice = voice;
         }
-    });
+        if (!maleVoice && maleKeywords.some(k => nameLower.includes(k))) {
+            maleVoice = voice;
+        }
+        
+        // Đã tìm đủ thì dừng
+        if (femaleVoice && maleVoice) break;
+    }
     
-    // Thêm giọng nữ
-    femaleVoices.forEach((voice, idx) => {
-        const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = `♀ Nữ ${idx + 1} - ${voice.name}`;
-        select.appendChild(option);
-    });
+    // Nếu không phân loại được, lấy 2 giọng đầu tiên
+    if (!femaleVoice && !maleVoice) {
+        if (voices.length >= 1) femaleVoice = voices[0];
+        if (voices.length >= 2) maleVoice = voices[1];
+    } else if (!femaleVoice) {
+        // Chỉ có nam, tìm giọng khác làm nữ
+        femaleVoice = voices.find(v => v !== maleVoice) || null;
+    } else if (!maleVoice) {
+        // Chỉ có nữ, tìm giọng khác làm nam
+        maleVoice = voices.find(v => v !== femaleVoice) || null;
+    }
     
-    // Thêm giọng nam
-    maleVoices.forEach((voice, idx) => {
+    // Thêm giọng nữ (nếu có)
+    if (femaleVoice) {
         const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = `♂ Nam ${idx + 1} - ${voice.name}`;
+        option.value = femaleVoice.name;
+        option.textContent = `♀ Nữ - ${femaleVoice.name}`;
         select.appendChild(option);
-    });
+    }
     
-    // Thêm giọng khác
-    otherVoices.forEach((voice) => {
+    // Thêm giọng nam (nếu có)
+    if (maleVoice) {
         const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = voice.name;
+        option.value = maleVoice.name;
+        option.textContent = `♂ Nam - ${maleVoice.name}`;
         select.appendChild(option);
-    });
+    }
     
     // Load saved value
     const savedValue = localStorage.getItem(`volearn-voice-${selectId}`);
@@ -994,3 +1001,4 @@ export function applySettings() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
