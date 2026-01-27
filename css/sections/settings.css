@@ -2,70 +2,81 @@
    VoLearn - Settings Section (2x2 Grid)
    ======================================== */
 
+#settings-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 #settings-section .section-header {
-    margin-bottom: 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 24px;
 }
 
 #settings-section .section-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 #settings-section .section-title i {
     color: var(--primary-color);
 }
 
-/* ===== GRID 2x2 ===== */
+/* ===== GRID 2x2 - CĂN GIỮA ===== */
 .settings-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    max-width: 900px;
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
-/* ===== CARD ===== */
+/* ===== CARD - TO HƠN ===== */
 .settings-card {
     background: var(--bg-secondary);
-    border-radius: 12px;
+    border-radius: 16px;
     border: 1px solid var(--border-color);
     overflow: hidden;
+    min-height: 280px;
 }
 
 .settings-card-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
+    gap: 12px;
+    padding: 18px 20px;
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);
 }
 
 .settings-card-header i {
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: var(--primary-color);
 }
 
 .settings-card-header h3 {
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
 }
 
 .settings-card-body {
-    padding: 14px 16px;
+    padding: 20px;
 }
 
-/* ===== SETTING ROW ===== */
+/* ===== SETTING ROW - TO HƠN ===== */
 .setting-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 0;
+    padding: 14px 0;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -74,20 +85,20 @@
 }
 
 .setting-label {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-primary);
 }
 
-/* ===== SELECT ===== */
+/* ===== SELECT - TO HƠN ===== */
 .setting-select {
-    width: 180px;
-    padding: 6px 10px;
+    min-width: 200px;
+    padding: 10px 14px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     cursor: pointer;
 }
 
@@ -96,11 +107,11 @@
     border-color: var(--primary-color);
 }
 
-/* ===== TOGGLE ===== */
+/* ===== TOGGLE - TO HƠN ===== */
 .toggle-switch {
     position: relative;
-    width: 44px;
-    height: 24px;
+    width: 52px;
+    height: 28px;
 }
 
 .toggle-switch input {
@@ -115,15 +126,15 @@
     inset: 0;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: 28px;
     transition: 0.3s;
 }
 
 .toggle-slider:before {
     content: "";
     position: absolute;
-    height: 18px;
-    width: 18px;
+    height: 22px;
+    width: 22px;
     left: 2px;
     bottom: 2px;
     background: var(--text-secondary);
@@ -137,7 +148,7 @@
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-    transform: translateX(20px);
+    transform: translateX(24px);
     background: white;
 }
 
@@ -145,48 +156,48 @@
 .speed-control {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .speed-control input[type="range"] {
-    width: 100px;
-    height: 4px;
+    width: 120px;
+    height: 6px;
     -webkit-appearance: none;
     background: var(--bg-tertiary);
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 .speed-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     background: var(--primary-color);
     border-radius: 50%;
     cursor: pointer;
 }
 
 #speed-value {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--primary-color);
-    min-width: 35px;
+    min-width: 45px;
 }
 
-/* ===== VOICE TEST ===== */
+/* ===== VOICE TEST - TO HƠN ===== */
 .voice-test-row {
     display: flex;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 10px;
+    margin-top: 16px;
 }
 
 .btn-test {
     flex: 1;
-    padding: 8px;
+    padding: 12px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: 0.2s;
@@ -198,52 +209,52 @@
     color: white;
 }
 
-/* ===== DATA STATS ===== */
+/* ===== DATA STATS - TO HƠN ===== */
 .data-stats {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 14px;
-    padding-bottom: 14px;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
     border-bottom: 1px solid var(--border-color);
 }
 
 .stat-box {
     text-align: center;
-    flex: 1;
 }
 
 .stat-num {
     display: block;
-    font-size: 1.3rem;
+    font-size: 1.8rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
 .stat-txt {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
+    margin-top: 4px;
 }
 
-/* ===== DATA BUTTONS ===== */
+/* ===== DATA BUTTONS - TO HƠN ===== */
 .data-btns {
     display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .btn-data {
     flex: 1;
-    padding: 10px 8px;
+    padding: 14px 12px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     transition: 0.2s;
 }
 
@@ -255,18 +266,18 @@
 
 .btn-danger {
     width: 100%;
-    padding: 10px;
+    padding: 14px;
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 6px;
+    border-radius: 8px;
     color: #ef4444;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     transition: 0.2s;
 }
 
@@ -275,16 +286,16 @@
     color: white;
 }
 
-/* ===== GOOGLE DRIVE ===== */
+/* ===== GOOGLE DRIVE - TO HƠN ===== */
 .gdrive-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
+    gap: 10px;
+    padding: 14px 16px;
     background: var(--bg-tertiary);
-    border-radius: 6px;
-    margin-bottom: 12px;
-    font-size: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
 }
 
 .gdrive-status.connected {
@@ -298,23 +309,23 @@
 }
 
 .gdrive-btns {
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .btn-google {
     width: 100%;
-    padding: 10px 14px;
+    padding: 14px 16px;
     background: #4285f4;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     color: white;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     transition: 0.2s;
 }
 
@@ -324,17 +335,17 @@
 
 .btn-logout-google {
     width: 100%;
-    padding: 10px 14px;
+    padding: 14px 16px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     transition: 0.2s;
 }
 
@@ -346,23 +357,23 @@
 
 .gdrive-sync {
     display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .btn-sync {
     flex: 1;
-    padding: 12px 10px;
+    padding: 16px 14px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     transition: 0.2s;
 }
 
@@ -373,26 +384,23 @@
 }
 
 .btn-sync i {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
 }
 
 .gdrive-info {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
     text-align: center;
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 700px) {
+@media (max-width: 800px) {
     .settings-grid {
         grid-template-columns: 1fr;
+        max-width: 500px;
     }
     
     .setting-select {
-        width: 140px;
-    }
-    
-    .speed-control input[type="range"] {
-        width: 80px;
+        min-width: 160px;
     }
 }
