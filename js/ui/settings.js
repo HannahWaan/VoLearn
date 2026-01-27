@@ -15,6 +15,7 @@ let availableVoices = {
 
 /* ===== INIT ===== */
 export function initSettings() {
+    checkOAuthCallback();
     loadVoices();
     bindSettingsEvents();
     loadCurrentSettings();
@@ -367,8 +368,8 @@ function confirmClearData() {
 }
 
 /* ===== GOOGLE DRIVE ===== */
-const GDRIVE_CLIENT_ID = ''; // Cần điền Client ID từ Google Cloud Console
-const GDRIVE_API_KEY = ''; // Cần điền API Key từ Google Cloud Console
+const GDRIVE_CLIENT_ID = '1053065016561-s84rn7tjsrc16a31s0b7mhs6kg140rvm.apps.googleusercontent.com';
+const GDRIVE_API_KEY = ''; 
 const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const BACKUP_FILENAME = 'volearn-backup.json';
 
@@ -666,3 +667,4 @@ export function applySettings() {
 /* ===== EXPORTS ===== */
 export { applyTheme, applyFont };
 window.exportData = exportJSON;
+
