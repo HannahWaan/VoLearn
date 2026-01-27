@@ -38,7 +38,7 @@ let quizSettings = {
   sortBy: 'random',
 
   questionFields: [1, 5],
-  answerFields: [],
+  answerFields: [5],
 
   timeLimit: 0,
   autoSkip: false,
@@ -423,18 +423,19 @@ function getFilteredWordsForQuiz() {
 
   // marks (unmarked/mastered/learning/bookmarked)
   words = words.filter(w => {
-    const mastered = isMastered(w);
-    const bookmarked = isBookmarked(w);
-    const unmarked = isUnmarked(w);
-    const learning = isLearning(w);
-
-    if (unmarked && !quizSettings.includeUnmarked) return false;
-    if (mastered && !quizSettings.includeMastered) return false;
-    if (learning && !quizSettings.includeLearning) return false;
-    if (bookmarked && !quizSettings.includeBookmarked) return false;
-
-    return true;
-  });
+     const mastered = isMastered(w); 
+     const bookmarked = isBookmarked(w); 
+     const unmarked = !mastered && !bookmarked;
+     const learning = !mastered;
+   
+     const allowed =
+       (unmarked && quizSettings.includeUnmarked) ||
+       (mastered && quizSettings.includeMastered) ||
+       (learning && quizSettings.includeLearning) ||
+       (bookmarked && quizSettings.includeBookmarked);
+   
+     return allowed;
+   });
 
   // sort
   switch (quizSettings.sortBy) {
