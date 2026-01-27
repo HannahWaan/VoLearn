@@ -553,21 +553,46 @@ export function selectMeaning(index) {
     if (hasFormContent() && currentFilledWord && 
         newWord.toLowerCase() !== currentFilledWord.toLowerCase()) {
         
-        const confirmReplace = confirm(
-            `Nội dung của từ "${currentFilledWord}" chưa được lưu.\n\nBạn có muốn thay thế bằng từ "${newWord}" không?`
-        );
-        
-        if (confirmReplace) {
-            clearAllMeaningBlocks();
-            currentFilledWord = newWord;
-        } else {
-            if (wordInput) wordInput.value = currentFilledWord;
-            container.style.display = 'none';
+        // Sử dụng modal thay vì confirm()
+        if (typeof showConfirm === 'function') {
+            showConfirm({
+                title: 'Thay thế nội dung?',
+                message: `Nội dung của từ "${currentFilledWord}" chưa được lưu.\n\nBạn có muốn thay thế bằng từ "${newWord}" không?`,
+                type: 'warning',
+                confirmText: 'Thay thế',
+                cancelText: 'Hủy',
+                onConfirm: () => {
+                    clearAllMeaningBlocks();
+                    currentFilledWord = newWord;
+                    continueSelectMeaning(data, meaning, container);
+                }
+            });
             return;
+        } else {
+            // Fallback nếu không có showConfirm
+            const confirmReplace = confirm(
+                `Nội dung của từ "${currentFilledWord}" chưa được lưu.\n\nBạn có muốn thay thế bằng từ "${newWord}" không?`
+            );
+            
+            if (confirmReplace) {
+                clearAllMeaningBlocks();
+                currentFilledWord = newWord;
+            } else {
+                if (wordInput) wordInput.value = currentFilledWord;
+                container.style.display = 'none';
+                return;
+            }
         }
     }
     
-    if (!currentFilledWord) currentFilledWord = newWord;
+    continueSelectMeaning(data, meaning, container);
+}
+
+function continueSelectMeaning(data, meaning, container) {
+    if (!currentFilledWord) {
+        const wordInput = document.getElementById('word-input');
+        currentFilledWord = wordInput?.value.trim() || '';
+    }
     
     // Find empty block or create new one
     let targetBlock = null;
@@ -784,11 +809,45 @@ function getMeaningBlockHTML(number) {
     `;
 }
 
+/* ===== CLEAR MEANING BLOCK - SỬ DỤNG MODAL ===== */
 export function clearMeaningBlock(btn) {
     const block = btn.closest('.meaning-block');
     if (!block) return;
     
-    // Clear without confirmation for single block
+    // Kiểm tra xem block có nội dung không
+    const hasContent = ['.phonetic-us', '.phonetic-uk', '.def-en', '.def-vi', 
+        '.example-input', '.synonyms-input', '.antonyms-input'
+    ].some(selector => {
+        const field = block.querySelector(selector);
+        return field && field.value && field.value.trim();
+    });
+    
+    if (!hasContent) {
+        // Không có nội dung, xóa trực tiếp
+        doClearMeaningBlock(block);
+        return;
+    }
+    
+    // Có nội dung, hiện modal xác nhận
+    if (typeof showConfirm === 'function') {
+        showConfirm({
+            title: 'Xóa nội dung?',
+            message: 'Bạn có chắc muốn xóa nội dung của khối nghĩa này?',
+            type: 'warning',
+            confirmText: 'Xóa nội dung',
+            cancelText: 'Hủy',
+            onConfirm: () => {
+                doClearMeaningBlock(block);
+                showToast('Đã xóa nội dung', 'info');
+            }
+        });
+    } else {
+        // Fallback
+        doClearMeaningBlock(block);
+    }
+}
+
+function doClearMeaningBlock(block) {
     ['.phonetic-us', '.phonetic-uk', '.pos-select', '.def-en', '.def-vi', 
      '.example-input', '.synonyms-input', '.antonyms-input'
     ].forEach(selector => {
@@ -797,10 +856,9 @@ export function clearMeaningBlock(btn) {
             field.tagName === 'SELECT' ? field.selectedIndex = 0 : field.value = '';
         }
     });
-    
-    // No toast for cleaner UX
 }
 
+/* ===== REMOVE MEANING BLOCK - SỬ DỤNG MODAL ===== */
 export function removeMeaningBlock(btn) {
     const block = btn.closest('.meaning-block');
     const container = document.getElementById('meanings-container');
@@ -812,9 +870,25 @@ export function removeMeaningBlock(btn) {
         return;
     }
     
-    block.remove();
-    updateMeaningNumbers();
-    // No toast for cleaner UX
+    // Hiện modal xác nhận
+    if (typeof showConfirm === 'function') {
+        showConfirm({
+            title: 'Xóa khối nghĩa?',
+            message: 'Bạn có chắc muốn xóa khối nghĩa này?',
+            type: 'danger',
+            confirmText: 'Xóa',
+            cancelText: 'Hủy',
+            onConfirm: () => {
+                block.remove();
+                updateMeaningNumbers();
+                showToast('Đã xóa khối nghĩa', 'info');
+            }
+        });
+    } else {
+        // Fallback - xóa trực tiếp
+        block.remove();
+        updateMeaningNumbers();
+    }
 }
 
 function updateMeaningNumbers() {
@@ -937,19 +1011,45 @@ function clearAllMeaningBlocks() {
     if (wordFormGlobal) wordFormGlobal.value = '';
 }
 
+/* ===== CLEAR WORD FORM - SỬ DỤNG MODAL ===== */
 export function clearWordForm() {
     const wordInput = document.getElementById('word-input');
     const hasWord = wordInput?.value.trim();
     const hasContent = hasFormContent();
     
-    if (hasWord || hasContent) {
-        if (!confirm('Bạn có chắc muốn xóa tất cả nội dung?')) return;
+    if (!hasWord && !hasContent) {
+        // Không có gì để xóa
+        showToast('Form đang trống', 'info');
+        return;
     }
     
+    // Hiện modal xác nhận
+    if (typeof showConfirm === 'function') {
+        showConfirm({
+            title: 'Xóa tất cả?',
+            message: 'Bạn có chắc muốn xóa toàn bộ nội dung đã nhập?',
+            type: 'warning',
+            confirmText: 'Xóa tất cả',
+            cancelText: 'Hủy',
+            onConfirm: () => {
+                doClearWordForm();
+                showToast('Đã xóa tất cả nội dung', 'info');
+            }
+        });
+    } else {
+        // Fallback với confirm() trình duyệt
+        if (!confirm('Bạn có chắc muốn xóa tất cả nội dung?')) return;
+        doClearWordForm();
+        showToast('Đã xóa tất cả nội dung');
+    }
+}
+
+function doClearWordForm() {
     currentFilledWord = '';
     editingWordId = null;
     lastSelectedSetId = '';
     
+    const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = '';
     
     const setSelect = document.getElementById('set-select');
@@ -962,8 +1062,6 @@ export function clearWordForm() {
     if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Lưu từ vựng';
     
     document.getElementById('btn-cancel-edit')?.remove();
-    
-    showToast('Đã xóa tất cả nội dung');
 }
 
 /* ===== SAVE WORD ===== */
