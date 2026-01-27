@@ -1,0 +1,294 @@
+/* ========================================
+   VoLearn - Practice Settings Modals
+   ======================================== */
+
+/* ===== MODAL LARGE ===== */
+.modal-large .modal-content {
+    max-width: 500px;
+    width: 95%;
+}
+
+/* ===== PRACTICE SETTINGS BODY ===== */
+.practice-settings-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 0 4px;
+}
+
+/* ===== SETTINGS TABS ===== */
+.settings-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.settings-tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.settings-tab:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.settings-tab.active {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+/* ===== TAB CONTENT ===== */
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* ===== SETTING SECTION ===== */
+.setting-section {
+    margin-bottom: 24px;
+}
+
+.setting-section h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-section h4 i {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+/* ===== LIMIT CONTROL ===== */
+.limit-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.btn-adjust {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-adjust:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.limit-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 120px;
+    text-align: center;
+}
+
+.limit-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    outline: none;
+}
+
+.limit-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ===== SELECT FULL WIDTH ===== */
+.setting-select-full {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.setting-select-full:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* ===== CHECKBOX ITEM ===== */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.checkbox-item input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.checkbox-item input:checked + .checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.checkbox-item input:checked + .checkmark::after {
+    content: '✓';
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+/* ===== RADIO GROUP ===== */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.radio-item:hover {
+    border-color: var(--primary-color);
+}
+
+.radio-item input[type="radio"] {
+    display: none;
+}
+
+.radio-mark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.radio-item input:checked + .radio-mark {
+    border-color: var(--primary-color);
+}
+
+.radio-item input:checked + .radio-mark::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* ===== FIELD CHECKBOXES ===== */
+.field-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.field-checkboxes .checkbox-item {
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+/* ===== WORD COUNT BADGE ===== */
+.word-count-badge {
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* ===== MODAL FOOTER ===== */
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 16px;
+}
+
+.btn-start-practice {
+    padding: 12px 24px;
+    font-size: 1rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+    .field-checkboxes {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .btn-start-practice {
+        width: 100%;
+    }
+}
