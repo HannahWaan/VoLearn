@@ -284,8 +284,8 @@ function exportCSV() {
             showWarning('Không có dữ liệu để xuất!');
             return;
         }
-
-        // ===== HEADER =====
+        
+        // Headers - Dòng 1 (đúng như Excel mẫu)
         const headers = [
             'Word',
             'Word Formation',
@@ -295,52 +295,65 @@ function exportCSV() {
             'POS',
             'Definition (EN)',
             'Definition (VI)',
+            'Example',
             'Synonym',
             'Antonym',
             'Mastered',
             'Bookmarked'
         ];
-
+        
         const rows = [];
         rows.push(headers.join(','));
-
-        // ===== DATA =====
+        
         words.forEach(wordData => {
+            // Lấy tên bookshelf
+            let bookshelfName = 'Tất cả';
+            if (wordData.setId) {
+                const set = (appData.sets || []).find(s => s.id === wordData.setId);
+                if (set) bookshelfName = set.name;
+            }
+            
+            // Lấy meaning đầu tiên
             const meanings = wordData.meanings || [];
-            const m = meanings[0] || {}; // lấy nghĩa đầu tiên
-
-            const synonyms = Array.isArray(m.synonyms) ? m.synonyms.join('; ') : (m.synonyms || '');
-            const antonyms = Array.isArray(m.antonyms) ? m.antonyms.join('; ') : (m.antonyms || '');
-
+            const m = meanings[0] || {};
+            
+            // Xử lý synonyms và antonyms
+            let synonyms = '';
+            let antonyms = '';
+            
+            if (m.synonyms) {
+                synonyms = Array.isArray(m.synonyms) ? m.synonyms.join(', ') : m.synonyms;
+            }
+            if (m.antonyms) {
+                antonyms = Array.isArray(m.antonyms) ? m.antonyms.join(', ') : m.antonyms;
+            }
+            
+            // Tạo dòng dữ liệu - MỖI TỪ 1 DÒNG NGANG
             const row = [
-                escapeCSV(wordData.word || ''),                // Word
-                escapeCSV(wordData.formation || ''),           // Word Formation
-                escapeCSV(wordData.bookshelf || ''),           // Bookshelf
-                escapeCSV(m.phoneticUS || ''),                  // Phonetic US
-                escapeCSV(m.phoneticUK || ''),                  // Phonetic UK
-                escapeCSV(m.pos || ''),                         // POS
-                escapeCSV(m.definitionEn || ''),                // Definition EN
-                escapeCSV(m.definitionVi || ''),                // Definition VI
-                escapeCSV(synonyms),                            // Synonym
-                escapeCSV(antonyms),                            // Antonym
-                wordData.mastered ? 'yes' : 'no',               // Mastered
-                wordData.bookmarked ? 'yes' : 'no'              // Bookmarked
+                escapeCSV(wordData.word || ''),
+                escapeCSV(wordData.formation || wordData.wordFormation || ''),
+                escapeCSV(bookshelfName),
+                escapeCSV(m.phoneticUS || m.phonetic || wordData.phonetic || ''),
+                escapeCSV(m.phoneticUK || m.phonetic || wordData.phonetic || ''),
+                escapeCSV(m.pos || ''),
+                escapeCSV(m.definitionEn || m.defEn || ''),
+                escapeCSV(m.definitionVi || m.defVi || ''),
+                escapeCSV(m.example || ''),
+                escapeCSV(synonyms),
+                escapeCSV(antonyms),
+                wordData.mastered ? 'yes' : 'no',
+                wordData.bookmarked ? 'yes' : 'no'
             ];
-
+            
             rows.push(row.join(','));
         });
-
-        // BOM để Excel đọc UTF-8 tiếng Việt
+        
+        // Tạo CSV với BOM để Excel đọc đúng tiếng Việt
         const csvContent = '\ufeff' + rows.join('\r\n');
-
-        downloadFile(
-            csvContent,
-            `volearn-vocabulary-${getDateString()}.csv`,
-            'text/csv;charset=utf-8'
-        );
-
+        
+        downloadFile(csvContent, `volearn-vocabulary-${getDateString()}.csv`, 'text/csv;charset=utf-8');
         showSuccess(`Đã xuất ${words.length} từ vựng ra CSV!`);
-
+        
     } catch (error) {
         console.error('Export CSV error:', error);
         showError('Lỗi khi xuất CSV!');
@@ -697,6 +710,7 @@ function getDateString() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
 
 
 
