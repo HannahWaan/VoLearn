@@ -106,14 +106,54 @@
                 </div>
             </div>
 
-            <!-- Tab Content: Xem -->
+            <!-- Tab Content: Xem - VIẾT SẴN NỘI DUNG -->
             <div id="fc-tab-view" class="settings-tab-content">
                 <!-- Mặt trước thẻ -->
                 <div class="setting-section">
                     <h4><i class="fas fa-eye"></i> Mặt Trước Thẻ (Câu hỏi)</h4>
                     <p class="section-desc">Chọn các mục hiển thị ở mặt trước. Các mục không được chọn sẽ bị ẩn.</p>
+                    
                     <div class="field-selector" id="front-fields">
-                        <!-- Sẽ được render bởi JS -->
+                        <label class="field-item selected" data-field="word">
+                            <span class="field-order">1</span>
+                            <input type="checkbox" checked onchange="window.toggleFrontField && window.toggleFrontField('word', this.checked)">
+                            <span class="field-name">Từ vựng</span>
+                        </label>
+                        <label class="field-item selected" data-field="phonetic">
+                            <span class="field-order">2</span>
+                            <input type="checkbox" checked onchange="window.toggleFrontField && window.toggleFrontField('phonetic', this.checked)">
+                            <span class="field-name">Phát âm</span>
+                        </label>
+                        <label class="field-item" data-field="pos">
+                            <span class="field-order">3</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('pos', this.checked)">
+                            <span class="field-name">Loại từ</span>
+                        </label>
+                        <label class="field-item" data-field="defEn">
+                            <span class="field-order">4</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('defEn', this.checked)">
+                            <span class="field-name">Định nghĩa (EN)</span>
+                        </label>
+                        <label class="field-item" data-field="defVi">
+                            <span class="field-order">5</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('defVi', this.checked)">
+                            <span class="field-name">Nghĩa (VI)</span>
+                        </label>
+                        <label class="field-item" data-field="example">
+                            <span class="field-order">6</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('example', this.checked)">
+                            <span class="field-name">Ví dụ</span>
+                        </label>
+                        <label class="field-item" data-field="synonyms">
+                            <span class="field-order">7</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('synonyms', this.checked)">
+                            <span class="field-name">Từ đồng nghĩa</span>
+                        </label>
+                        <label class="field-item" data-field="antonyms">
+                            <span class="field-order">8</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('antonyms', this.checked)">
+                            <span class="field-name">Từ trái nghĩa</span>
+                        </label>
                     </div>
                 </div>
 
@@ -121,8 +161,48 @@
                 <div class="setting-section">
                     <h4><i class="fas fa-eye-slash"></i> Mặt Sau Thẻ (Đáp án)</h4>
                     <p class="section-desc">Chọn các mục hiển thị ở mặt sau khi lật thẻ.</p>
+                    
                     <div class="field-selector" id="back-fields">
-                        <!-- Sẽ được render bởi JS -->
+                        <label class="field-item" data-field="word">
+                            <span class="field-order">1</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('word', this.checked)">
+                            <span class="field-name">Từ vựng</span>
+                        </label>
+                        <label class="field-item" data-field="phonetic">
+                            <span class="field-order">2</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('phonetic', this.checked)">
+                            <span class="field-name">Phát âm</span>
+                        </label>
+                        <label class="field-item selected" data-field="pos">
+                            <span class="field-order">3</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('pos', this.checked)">
+                            <span class="field-name">Loại từ</span>
+                        </label>
+                        <label class="field-item" data-field="defEn">
+                            <span class="field-order">4</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('defEn', this.checked)">
+                            <span class="field-name">Định nghĩa (EN)</span>
+                        </label>
+                        <label class="field-item selected" data-field="defVi">
+                            <span class="field-order">5</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('defVi', this.checked)">
+                            <span class="field-name">Nghĩa (VI)</span>
+                        </label>
+                        <label class="field-item selected" data-field="example">
+                            <span class="field-order">6</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('example', this.checked)">
+                            <span class="field-name">Ví dụ</span>
+                        </label>
+                        <label class="field-item" data-field="synonyms">
+                            <span class="field-order">7</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('synonyms', this.checked)">
+                            <span class="field-name">Từ đồng nghĩa</span>
+                        </label>
+                        <label class="field-item" data-field="antonyms">
+                            <span class="field-order">8</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('antonyms', this.checked)">
+                            <span class="field-name">Từ trái nghĩa</span>
+                        </label>
                     </div>
                 </div>
             </div>
