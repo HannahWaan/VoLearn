@@ -254,7 +254,7 @@ function toggleQuizSetScopeInternal(setId, checked) {
   if (setId === 'all') {
     if (checked) {
       quizSettings.selectedSetIds = ['all'];
-      document.querySelectorAll('#quiz-scope-selector-content .scope-list-item-checkbox').forEach(item => {
+      document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(...)
         const input = item.querySelector('input');
         const isAll = input?.getAttribute('data-quiz-scope-toggle') === 'all';
         if (input && !isAll) {
