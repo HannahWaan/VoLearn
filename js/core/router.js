@@ -59,32 +59,9 @@ export function navigate(sectionName) {
         }
     });
 
-    // === CẬP NHẬT PAGE TITLE ===
+    // Cập nhật browser tab title
     const pageTitle = pageTitles[sectionName] || sectionName;
-    
-    // Cập nhật browser tab
     document.title = `${pageTitle} - VoLearn`;
-    
-    // Tìm và cập nhật title trong section
-    // Hỗ trợ cả 2 cấu trúc: .section-title và .card-header h2
-    const sectionTitle = targetSection.querySelector('.section-header .section-title');
-    const cardHeaderH2 = targetSection.querySelector('.card-header h2');
-    
-    if (sectionTitle) {
-        const icon = sectionTitle.querySelector('i');
-        if (icon) {
-            sectionTitle.innerHTML = `${icon.outerHTML} ${pageTitle}`;
-        } else {
-            sectionTitle.textContent = pageTitle;
-        }
-    } else if (cardHeaderH2) {
-        const icon = cardHeaderH2.querySelector('i');
-        if (icon) {
-            cardHeaderH2.innerHTML = `${icon.outerHTML} ${pageTitle}`;
-        } else {
-            cardHeaderH2.textContent = pageTitle;
-        }
-    }
 
     const previousSection = currentSection;
     currentSection = sectionName;
