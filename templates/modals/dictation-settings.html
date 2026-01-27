@@ -1,113 +1,132 @@
-<!-- ==================== DICTATION SETTINGS MODAL ==================== -->
+<!-- Dictation Settings Modal -->
 <div id="dictation-settings-modal" class="modal">
     <div class="modal-content modal-large">
         <div class="modal-header">
-            <h3><i class="fas fa-headphones" style="color: var(--info-color);"></i> Cài đặt Nghe - Viết</h3>
-            <button class="modal-close" data-modal="dictation-settings-modal">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3><i class="fas fa-headphones" style="color: var(--info-color);"></i> Nghe - Viết</h3>
+            <button class="modal-close" onclick="closeDictationSettings()"><i class="fas fa-times"></i></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body flashcard-settings-body">
             <!-- Tabs -->
             <div class="settings-tabs">
-                <button class="settings-tab active" data-tab="dict-target">Mục tiêu</button>
-                <button class="settings-tab" data-tab="dict-audio">Âm thanh</button>
+                <button class="settings-tab active" onclick="switchDictationTab('target', this)">Mục tiêu</button>
+                <button class="settings-tab" onclick="switchDictationTab('other', this)">Cài đặt</button>
             </div>
 
-            <!-- Tab: Mục tiêu -->
-            <div id="dict-tab-target" class="settings-tab-content active">
-                <!-- Giới hạn -->
+            <!-- Tab 1: Mục tiêu -->
+            <div id="dictation-tab-target" class="settings-tab-content active">
                 <div class="setting-section">
                     <div class="setting-row">
-                        <span class="setting-label">Số từ</span>
+                        <span class="setting-label">Số từ cần nghe</span>
                         <div class="setting-value">
-                            <button class="btn-circle" id="dict-limit-minus"><i class="fas fa-minus"></i></button>
-                            <span id="dict-limit-value">Không giới hạn</span>
-                            <button class="btn-circle" id="dict-limit-plus"><i class="fas fa-plus"></i></button>
+                            <button class="btn-circle" onclick="adjustDictationLimit(-5)"><i class="fas fa-minus"></i></button>
+                            <span id="dictation-limit-value">Không giới hạn</span>
+                            <button class="btn-circle" onclick="adjustDictationLimit(5)"><i class="fas fa-plus"></i></button>
                         </div>
                     </div>
-                    <input type="range" id="dict-limit-slider" min="0" max="100" value="0" class="full-slider">
+                    <input type="range" id="dictation-limit-slider" min="0" max="100" value="0" 
+                           oninput="updateDictationLimit(this.value)" class="full-slider">
                 </div>
 
-                <!-- Phạm vi -->
                 <div class="setting-section">
                     <div class="section-header">
-                        <h4><i class="fas fa-crosshairs"></i> Phạm vi</h4>
+                        <h4><i class="fas fa-crosshairs"></i> Phạm Vi</h4>
                     </div>
-                    
-                    <div class="scope-option" id="dict-scope-set">
+                    <div class="scope-option" onclick="openDictationScopeSelector('set')">
                         <i class="fas fa-layer-group"></i>
-                        <span id="dict-selected-set">Tất cả từ vựng</span>
+                        <span id="dictation-selected-set-name">Tất Cả Từ Vựng</span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
 
-                <!-- Đánh dấu -->
                 <div class="setting-section">
-                    <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
+                    <h4><i class="fas fa-bookmark"></i> Bao gồm</h4>
                     <label class="checkbox-item">
-                        <input type="checkbox" id="dict-include-unmarked" checked>
-                        <span class="checkbox-label">Chưa đánh dấu</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="dict-include-mastered" checked>
-                        <span class="checkbox-label">Đã thuộc</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="dict-include-learning" checked>
+                        <input type="checkbox" id="dictation-include-learning" checked>
+                        <span class="checkmark"></span>
                         <span class="checkbox-label">Chưa thuộc</span>
                     </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="dictation-include-mastered" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Đã thuộc</span>
+                    </label>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-sort"></i> Sắp Xếp</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="dictation-sort" value="random" checked>
+                            <span class="radio-mark"></span>
+                            <span>Ngẫu nhiên</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="dictation-sort" value="newest">
+                            <span class="radio-mark"></span>
+                            <span>Mới nhất trước</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab: Âm thanh -->
-            <div id="dict-tab-audio" class="settings-tab-content">
-                <!-- Giọng đọc -->
+            <!-- Tab 2: Cài đặt -->
+            <div id="dictation-tab-other" class="settings-tab-content">
                 <div class="setting-section">
-                    <h4><i class="fas fa-microphone"></i> Giọng đọc</h4>
+                    <h4><i class="fas fa-globe"></i> Giọng đọc</h4>
                     <div class="radio-group">
                         <label class="radio-item">
-                            <input type="radio" name="dict-voice" value="en-US" checked>
-                            <span>🇺🇸 English (US)</span>
+                            <input type="radio" name="dictation-voice" value="en-US" checked>
+                            <span class="radio-mark"></span>
+                            <span>🇺🇸 Giọng Mỹ (US)</span>
                         </label>
                         <label class="radio-item">
-                            <input type="radio" name="dict-voice" value="en-GB">
-                            <span>🇬🇧 English (UK)</span>
+                            <input type="radio" name="dictation-voice" value="en-GB">
+                            <span class="radio-mark"></span>
+                            <span>🇬🇧 Giọng Anh (UK)</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Tốc độ -->
                 <div class="setting-section">
-                    <h4><i class="fas fa-tachometer-alt"></i> Tốc độ đọc</h4>
-                    <div class="speed-control">
-                        <input type="range" id="dict-speed-slider" min="0.5" max="1.5" step="0.1" value="1">
-                        <span id="dict-speed-value">1x</span>
+                    <h4><i class="fas fa-redo"></i> Số lần được nghe lại</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="dictation-replay" value="3" checked>
+                            <span class="radio-mark"></span>
+                            <span>3 lần</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="dictation-replay" value="5">
+                            <span class="radio-mark"></span>
+                            <span>5 lần</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="dictation-replay" value="0">
+                            <span class="radio-mark"></span>
+                            <span>Không giới hạn</span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- Tùy chọn -->
                 <div class="setting-section">
-                    <h4><i class="fas fa-cog"></i> Tùy chọn</h4>
+                    <h4><i class="fas fa-lightbulb"></i> Gợi ý</h4>
                     <label class="checkbox-item">
-                        <input type="checkbox" id="dict-auto-play" checked>
-                        <span class="checkbox-label">Tự động phát âm</span>
+                        <input type="checkbox" id="dictation-show-hint">
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Hiện gợi ý nghĩa tiếng Việt</span>
                     </label>
                     <label class="checkbox-item">
-                        <input type="checkbox" id="dict-repeat-on-error">
-                        <span class="checkbox-label">Lặp lại khi sai</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="dict-show-hint">
-                        <span class="checkbox-label">Hiện gợi ý (nghĩa tiếng Việt)</span>
+                        <input type="checkbox" id="dictation-show-length" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Hiện số ký tự của từ</span>
                     </label>
                 </div>
             </div>
         </div>
         
         <div class="modal-footer">
-            <button class="btn-primary" id="btn-start-dictation">
-                <i class="fas fa-play"></i> Bắt đầu
+            <button class="btn-start-practice" onclick="startDictationWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu luyện nghe
             </button>
         </div>
     </div>
