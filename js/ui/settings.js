@@ -540,6 +540,8 @@ function confirmClearData() {
 }
 
 // ===== GOOGLE DRIVE =====
+const GDRIVE_FOLDER_NAME = 'VoLearnSync';
+
 function checkOAuthCallback() {
     const hash = window.location.hash;
     if (hash.includes('access_token')) {
@@ -600,15 +602,73 @@ function showGoogleDriveDisconnected() {
 
 function loginGoogleDrive() {
     const redirectUri = window.location.origin + window.location.pathname;
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(GDRIVE_SCOPE)}`;
+    // Thêm scope để tạo folder và file trên Drive
+    const scope = 'https://www.googleapis.com/auth/drive.file';
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
 }
 
 function logoutGoogleDrive() {
     localStorage.removeItem('volearn-gdrive-token');
     localStorage.removeItem('volearn-gdrive-expires');
     localStorage.removeItem('volearn-gdrive-lastsync');
+    localStorage.removeItem('volearn-gdrive-folderid');
     showGoogleDriveDisconnected();
     showSuccess('Đã đăng xuất Google Drive!');
+}
+
+// Tìm hoặc tạo folder VoLearnSync
+async function getOrCreateFolder(token) {
+    try {
+        // Tìm folder đã tồn tại
+        const searchResponse = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (!searchResponse.ok) throw new Error('Search folder failed');
+        
+        const searchData = await searchResponse.json();
+        
+        if (searchData.files && searchData.files.length > 0) {
+            console.log('📁 Found existing folder:', searchData.files[0].id);
+            return searchData.files[0].id;
+        }
+        
+        // Tạo folder mới
+        const createResponse = await fetch(
+            'https://www.googleapis.com/drive/v3/files',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: GDRIVE_FOLDER_NAME,
+                    mimeType: 'application/vnd.google-apps.folder'
+                })
+            }
+        );
+        
+        if (!createResponse.ok) throw new Error('Create folder failed');
+        
+        const createData = await createResponse.json();
+        console.log('📁 Created new folder:', createData.id);
+        return createData.id;
+        
+    } catch (error) {
+        console.error('Folder error:', error);
+        throw error;
+    }
+}
+
+// Tạo tên file với ngày tháng
+function getBackupFileName() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `volearn-backup-${day}-${month}-${year}.json`;
 }
 
 async function backupToGoogleDrive() {
@@ -619,30 +679,66 @@ async function backupToGoogleDrive() {
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang sao lưu...'; }
     
     try {
-        const backupData = { version: '2.1.0', backupAt: new Date().toISOString(), vocabulary: appData.vocabulary || [], sets: appData.sets || [], history: appData.history || {} };
-        const existingFile = await findBackupFile(token);
+        // Lấy hoặc tạo folder
+        const folderId = await getOrCreateFolder(token);
         
-        const metadata = { name: BACKUP_FILENAME, mimeType: 'application/json' };
-        if (!existingFile) metadata.parents = ['appDataFolder'];
+        // Tạo dữ liệu backup
+        const backupData = {
+            version: '2.1.0',
+            backupAt: new Date().toISOString(),
+            vocabulary: appData.vocabulary || [],
+            sets: appData.sets || [],
+            history: appData.history || {}
+        };
         
+        const fileName = getBackupFileName();
+        
+        // Tìm file cùng tên trong folder (để cập nhật thay vì tạo mới)
+        const existingFile = await findBackupFileInFolder(token, folderId, fileName);
+        
+        // Tạo metadata
+        const metadata = {
+            name: fileName,
+            mimeType: 'application/json'
+        };
+        
+        if (!existingFile) {
+            metadata.parents = [folderId];
+        }
+        
+        // Upload file
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', new Blob([JSON.stringify(backupData)], { type: 'application/json' }));
+        form.append('file', new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' }));
         
-        const url = existingFile ? `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart` : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-        const response = await fetch(url, { method: existingFile ? 'PATCH' : 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: form });
+        const url = existingFile
+            ? `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`
+            : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+        
+        const response = await fetch(url, {
+            method: existingFile ? 'PATCH' : 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form
+        });
         
         if (!response.ok) throw new Error('Backup failed: ' + response.status);
         
         localStorage.setItem('volearn-gdrive-lastsync', new Date().toISOString());
-        showSuccess('Đã sao lưu lên Google Drive!');
+        localStorage.setItem('volearn-gdrive-folderid', folderId);
+        
+        showSuccess(`Đã sao lưu: ${fileName}`);
         
         const lastSyncEl = document.getElementById('gdrive-last-sync');
         if (lastSyncEl) lastSyncEl.textContent = 'Lần cuối: ' + new Date().toLocaleString('vi-VN');
+        
     } catch (error) {
         console.error('Backup error:', error);
-        if (error.message.includes('401')) { logoutGoogleDrive(); showError('Phiên hết hạn. Đăng nhập lại!'); }
-        else showError('Lỗi sao lưu!');
+        if (error.message.includes('401')) {
+            logoutGoogleDrive();
+            showError('Phiên hết hạn. Đăng nhập lại!');
+        } else {
+            showError('Lỗi sao lưu: ' + error.message);
+        }
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Sao lưu'; }
     }
@@ -653,39 +749,162 @@ async function restoreFromGoogleDrive() {
     if (!token) { showError('Vui lòng đăng nhập Google Drive!'); return; }
     
     const btn = document.getElementById('btn-gdrive-restore');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang khôi phục...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...'; }
     
     try {
-        const file = await findBackupFile(token);
-        if (!file) { showWarning('Không tìm thấy backup!'); return; }
+        // Lấy folder
+        const folderId = await getOrCreateFolder(token);
         
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!response.ok) throw new Error('Download failed: ' + response.status);
+        // Tìm tất cả file backup trong folder
+        const files = await listBackupFiles(token, folderId);
         
-        const data = await response.json();
-        
-        if (confirm(`Tìm thấy ${(data.vocabulary || []).length} từ và ${(data.sets || []).length} bộ.\nKhôi phục sẽ ghi đè. Tiếp tục?`)) {
-            setAppData({ ...DEFAULT_DATA, vocabulary: data.vocabulary || [], sets: data.sets || [], history: data.history || {} });
-            saveData();
-            showSuccess('Đã khôi phục từ Google Drive!');
-            setTimeout(() => location.reload(), 1000);
+        if (!files || files.length === 0) {
+            showWarning('Không tìm thấy file backup trong folder VoLearnSync!');
+            return;
         }
+        
+        // Hiển thị popup chọn file
+        showRestoreFileSelector(token, files);
+        
     } catch (error) {
         console.error('Restore error:', error);
-        if (error.message.includes('401')) { logoutGoogleDrive(); showError('Phiên hết hạn. Đăng nhập lại!'); }
-        else showError('Lỗi khôi phục!');
+        if (error.message.includes('401')) {
+            logoutGoogleDrive();
+            showError('Phiên hết hạn. Đăng nhập lại!');
+        } else {
+            showError('Lỗi: ' + error.message);
+        }
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Khôi phục'; }
     }
 }
 
-async function findBackupFile(token) {
+// Tìm file backup trong folder
+async function findBackupFileInFolder(token, folderId, fileName) {
     try {
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${BACKUP_FILENAME}'`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and name='${fileName}' and trashed=false&fields=files(id,name)`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
         if (!response.ok) return null;
+        
         const data = await response.json();
         return data.files?.[0] || null;
-    } catch { return null; }
+    } catch {
+        return null;
+    }
+}
+
+// Liệt kê tất cả file backup trong folder
+async function listBackupFiles(token, folderId) {
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and name contains 'volearn-backup' and trashed=false&fields=files(id,name,createdTime,size)&orderBy=createdTime desc`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (!response.ok) return [];
+        
+        const data = await response.json();
+        return data.files || [];
+    } catch {
+        return [];
+    }
+}
+
+// Hiển thị popup chọn file khôi phục
+function showRestoreFileSelector(token, files) {
+    let overlay = document.getElementById('restore-file-selector');
+    
+    if (overlay) overlay.remove();
+    
+    overlay = document.createElement('div');
+    overlay.id = 'restore-file-selector';
+    overlay.className = 'help-popup-overlay show';
+    
+    const fileListHtml = files.map((file, index) => {
+        const date = new Date(file.createdTime).toLocaleString('vi-VN');
+        const size = file.size ? (parseInt(file.size) / 1024).toFixed(1) + ' KB' : '';
+        return `
+            <div class="restore-file-item" onclick="selectRestoreFile('${file.id}', '${token}')">
+                <i class="fas fa-file-alt"></i>
+                <div class="restore-file-info">
+                    <span class="restore-file-name">${file.name}</span>
+                    <span class="restore-file-date">${date} ${size ? '• ' + size : ''}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    overlay.innerHTML = `
+        <div class="help-popup" style="max-width: 500px;">
+            <div class="help-popup-header">
+                <h4><i class="fas fa-cloud-download-alt"></i> Chọn file khôi phục</h4>
+                <button class="help-popup-close" onclick="closeRestoreSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="help-popup-content">
+                <p style="margin-bottom: 12px; color: var(--text-muted);">
+                    Tìm thấy <strong>${files.length}</strong> file backup trong folder VoLearnSync:
+                </p>
+                <div class="restore-file-list">
+                    ${fileListHtml}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeRestoreSelector();
+    });
+}
+
+function closeRestoreSelector() {
+    const overlay = document.getElementById('restore-file-selector');
+    if (overlay) overlay.remove();
+}
+
+async function selectRestoreFile(fileId, token) {
+    closeRestoreSelector();
+    
+    const btn = document.getElementById('btn-gdrive-restore');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang khôi phục...'; }
+    
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (!response.ok) throw new Error('Download failed: ' + response.status);
+        
+        const data = await response.json();
+        
+        const wordCount = (data.vocabulary || []).length;
+        const setCount = (data.sets || []).length;
+        
+        if (confirm(`File chứa ${wordCount} từ và ${setCount} bộ từ.\n\nKhôi phục sẽ GHI ĐÈ dữ liệu hiện tại. Tiếp tục?`)) {
+            setAppData({
+                ...DEFAULT_DATA,
+                vocabulary: data.vocabulary || [],
+                sets: data.sets || [],
+                history: data.history || {}
+            });
+            saveData();
+            showSuccess('Đã khôi phục thành công!');
+            setTimeout(() => location.reload(), 1000);
+        }
+        
+    } catch (error) {
+        console.error('Restore error:', error);
+        showError('Lỗi khôi phục: ' + error.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Khôi phục'; }
+    }
 }
 
 // ===== HELP POPUP =====
@@ -758,8 +977,7 @@ function getDateString() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
-
-
-
+window.closeRestoreSelector = closeRestoreSelector;
+window.selectRestoreFile = selectRestoreFile;
 
 
