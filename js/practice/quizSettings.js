@@ -345,12 +345,19 @@ function getFilteredWordsForQuiz() {
   }
 
   // marks (giữ logic cũ)
-  words = words.filter(w => {
-    if (w.mastered && !quizSettings.includeMastered) return false;
-    if (!w.mastered && !quizSettings.includeLearning) return false;
-    // includeBookmarked/includeUnmarked: code cũ có nhưng filter gốc chưa dùng -> giữ nguyên hành vi
-    return true;
-  });
+   words = words.filter(w => {
+     const mastered = !!w.mastered;
+     const bookmarked = !!w.bookmarked;
+     const unmarked = !mastered && !bookmarked;
+     const learning = !mastered; 
+   
+     if (unmarked && !quizSettings.includeUnmarked) return false;
+     if (mastered && !quizSettings.includeMastered) return false;
+     if (learning && !quizSettings.includeLearning) return false;
+     if (bookmarked && !quizSettings.includeBookmarked) return false;
+   
+     return true;
+   });
 
   switch (quizSettings.sortBy) {
     case 'newest': words.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
