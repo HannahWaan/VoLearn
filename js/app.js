@@ -37,6 +37,9 @@ import { backupToDrive, restoreFromDrive, initDriveBackup } from './sync/gdriveB
 import { initSpeech, speak, stopSpeaking } from './utils/speech.js';
 import { escapeHtml, generateId, formatDate, debounce } from './utils/helpers.js';
 
+// ===== FLASHCARD SETTINGS IMPORT =====
+import { initFlashcardSettings } from './practice/flashcardSettings.js';
+
 /* ===== CONSTANTS ===== */
 const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
 const MW_THESAURUS_KEY = '74724826-02fe-4e5d-a402-1139eece1765';
