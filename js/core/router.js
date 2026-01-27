@@ -5,10 +5,9 @@
 
 let currentSection = 'home';
 
-// Mapping section name -> actual DOM ID
 const sectionIdMap = {
     'home': 'home-section',
-    'add-word': 'add-section',  // FIX: add-section không phải add-word-section
+    'add-word': 'add-section',
     'bookshelf': 'bookshelf-section',
     'set-view': 'set-view-section',
     'practice': 'practice-section',
@@ -60,11 +59,29 @@ export function navigate(sectionName) {
         }
     });
 
-    // Cập nhật page title
-    const pageTitle = document.getElementById('page-title');
-    if (pageTitle && pageTitles[sectionName]) {
-        pageTitle.textContent = pageTitles[sectionName];
+    // === CẬP NHẬT PAGE TITLE - FIX ===
+    const pageTitle = pageTitles[sectionName] || sectionName;
+    
+    // Tìm #page-title (nếu có)
+    const pageTitleEl = document.getElementById('page-title');
+    if (pageTitleEl) {
+        pageTitleEl.textContent = pageTitle;
     }
+    
+    // Tìm .section-title trong section active
+    const sectionTitle = targetSection.querySelector('.section-title');
+    if (sectionTitle) {
+        const icon = sectionTitle.querySelector('i');
+        if (icon) {
+            const iconHTML = icon.outerHTML;
+            sectionTitle.innerHTML = `${iconHTML} ${pageTitle}`;
+        } else {
+            sectionTitle.textContent = pageTitle;
+        }
+    }
+    
+    // Cập nhật browser tab title
+    document.title = `${pageTitle} - VoLearn`;
 
     const previousSection = currentSection;
     currentSection = sectionName;
