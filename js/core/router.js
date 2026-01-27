@@ -17,7 +17,7 @@ const sectionIdMap = {
 
 const pageTitles = {
     'home': 'Trang chủ',
-    'add-word': 'Thêm từ vựng',
+    'add-word': 'Thêm từ vựng mới',
     'bookshelf': 'Tủ sách',
     'set-view': 'Chi tiết bộ từ',
     'practice': 'Luyện tập',
@@ -60,27 +60,31 @@ export function navigate(sectionName) {
     });
 
     // === CẬP NHẬT PAGE TITLE ===
-   const pageTitle = pageTitles[sectionName] || '';
+    const pageTitle = pageTitles[sectionName] || sectionName;
     
-    // Tìm #page-title (nếu có)
-    const pageTitleEl = document.getElementById('page-title');
-   if (pageTitleEl) {
-       pageTitleEl.textContent = pageTitle;
-   }
-
-   // Reset toàn bộ section-title cũ
-   document.querySelectorAll('.section-title').forEach(t => {
-       t.textContent = '';
-   });
-   
-    // Tìm .section-title trong section active
-    const sectionTitle = targetSection.querySelector('.section-title');
-   if (sectionTitle) {
-       sectionTitle.textContent = pageTitle;
-   }
+    // Cập nhật browser tab
+    document.title = `${pageTitle} - VoLearn`;
     
-    // Cập nhật browser tab title
-    document.title = pageTitle ? `${pageTitle} - VoLearn` : 'VoLearn';
+    // Tìm và cập nhật title trong section
+    // Hỗ trợ cả 2 cấu trúc: .section-title và .card-header h2
+    const sectionTitle = targetSection.querySelector('.section-header .section-title');
+    const cardHeaderH2 = targetSection.querySelector('.card-header h2');
+    
+    if (sectionTitle) {
+        const icon = sectionTitle.querySelector('i');
+        if (icon) {
+            sectionTitle.innerHTML = `${icon.outerHTML} ${pageTitle}`;
+        } else {
+            sectionTitle.textContent = pageTitle;
+        }
+    } else if (cardHeaderH2) {
+        const icon = cardHeaderH2.querySelector('i');
+        if (icon) {
+            cardHeaderH2.innerHTML = `${icon.outerHTML} ${pageTitle}`;
+        } else {
+            cardHeaderH2.textContent = pageTitle;
+        }
+    }
 
     const previousSection = currentSection;
     currentSection = sectionName;
@@ -147,4 +151,3 @@ function closeMobileSidebar() {
 
 window.navigate = navigate;
 window.goBack = goBack;
-
