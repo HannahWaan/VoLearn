@@ -59,29 +59,28 @@ export function navigate(sectionName) {
         }
     });
 
-    // === CẬP NHẬT PAGE TITLE - FIX ===
-    const pageTitle = pageTitles[sectionName] || sectionName;
+    // === CẬP NHẬT PAGE TITLE ===
+   const pageTitle = pageTitles[sectionName] || '';
     
     // Tìm #page-title (nếu có)
     const pageTitleEl = document.getElementById('page-title');
-    if (pageTitleEl) {
-        pageTitleEl.textContent = pageTitle;
-    }
-    
+   if (pageTitleEl) {
+       pageTitleEl.textContent = pageTitle;
+   }
+
+   // Reset toàn bộ section-title cũ
+   document.querySelectorAll('.section-title').forEach(t => {
+       t.textContent = '';
+   });
+   
     // Tìm .section-title trong section active
     const sectionTitle = targetSection.querySelector('.section-title');
-    if (sectionTitle) {
-        const icon = sectionTitle.querySelector('i');
-        if (icon) {
-            const iconHTML = icon.outerHTML;
-            sectionTitle.innerHTML = `${iconHTML} ${pageTitle}`;
-        } else {
-            sectionTitle.textContent = pageTitle;
-        }
-    }
+   if (sectionTitle) {
+       sectionTitle.textContent = pageTitle;
+   }
     
     // Cập nhật browser tab title
-    document.title = `${pageTitle} - VoLearn`;
+    document.title = pageTitle ? `${pageTitle} - VoLearn` : 'VoLearn';
 
     const previousSection = currentSection;
     currentSection = sectionName;
@@ -148,3 +147,4 @@ function closeMobileSidebar() {
 
 window.navigate = navigate;
 window.goBack = goBack;
+
