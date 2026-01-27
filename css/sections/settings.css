@@ -415,5 +415,128 @@
     }
 }
 
+/* ===== HELP BUTTON ===== */
+.btn-help {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
 
+.btn-help:hover {
+    color: var(--primary-color);
+    background: var(--primary-light);
+}
 
+/* ===== HELP POPUP ===== */
+.help-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.help-popup-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.help-popup {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s;
+}
+
+.help-popup-overlay.show .help-popup {
+    transform: scale(1);
+}
+
+.help-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-popup-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-popup-header h4 i {
+    color: var(--primary-color);
+}
+
+.help-popup-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+
+.help-popup-close:hover {
+    color: var(--text-primary);
+}
+
+.help-popup-content {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.help-popup-content p {
+    margin: 0 0 12px 0;
+}
+
+.help-popup-content p:last-child {
+    margin-bottom: 0;
+}
+
+.help-popup-content code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+}
+
+.help-popup-content .help-note {
+    background: var(--bg-tertiary);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.help-popup-content .help-note strong {
+    color: var(--text-primary);
+}
