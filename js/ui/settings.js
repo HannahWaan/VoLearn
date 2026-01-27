@@ -279,58 +279,81 @@ function exportJSON() {
 function exportCSV() {
     try {
         const words = appData.vocabulary || [];
+        
         if (words.length === 0) {
             showWarning('Không có dữ liệu để xuất!');
             return;
         }
         
-        const headers = ['Word', 'Word Formation', 'Bookshelf', 'Phonetic US', 'Phonetic UK', 'POS', 'Definition (EN)', 'Definition (VI)', 'Example', 'Synonym', 'Antonym', 'Mastered', 'Bookmarked'];
-        const rows = [headers.join(',')];
+        // Headers - Dòng 1 (đúng như Excel mẫu)
+        const headers = [
+            'Word',
+            'Word Formation',
+            'Bookshelf',
+            'Phonetic US',
+            'Phonetic UK',
+            'POS',
+            'Definition (EN)',
+            'Definition (VI)',
+            'Example',
+            'Synonym',
+            'Antonym',
+            'Mastered',
+            'Bookmarked'
+        ];
+        
+        const rows = [];
+        rows.push(headers.join(','));
         
         words.forEach(wordData => {
+            // Lấy tên bookshelf
             let bookshelfName = 'Tất cả';
             if (wordData.setId) {
                 const set = (appData.sets || []).find(s => s.id === wordData.setId);
                 if (set) bookshelfName = set.name;
             }
             
+            // Lấy meaning đầu tiên
             const meanings = wordData.meanings || [];
             const m = meanings[0] || {};
             
-            rows.push([
+            // Xử lý synonyms và antonyms
+            let synonyms = '';
+            let antonyms = '';
+            
+            if (m.synonyms) {
+                synonyms = Array.isArray(m.synonyms) ? m.synonyms.join(', ') : m.synonyms;
+            }
+            if (m.antonyms) {
+                antonyms = Array.isArray(m.antonyms) ? m.antonyms.join(', ') : m.antonyms;
+            }
+            
+            // Tạo dòng dữ liệu - MỖI TỪ 1 DÒNG NGANG
+            const row = [
                 escapeCSV(wordData.word || ''),
                 escapeCSV(wordData.formation || wordData.wordFormation || ''),
                 escapeCSV(bookshelfName),
-                escapeCSV(m.phoneticUS || wordData.phonetics?.us || ''),
-                escapeCSV(m.phoneticUK || wordData.phonetics?.uk || ''),
+                escapeCSV(m.phoneticUS || m.phonetic || wordData.phonetic || ''),
+                escapeCSV(m.phoneticUK || m.phonetic || wordData.phonetic || ''),
                 escapeCSV(m.pos || ''),
                 escapeCSV(m.definitionEn || m.defEn || ''),
                 escapeCSV(m.definitionVi || m.defVi || ''),
                 escapeCSV(m.example || ''),
-                escapeCSV(Array.isArray(m.synonyms) ? m.synonyms.join(', ') : (m.synonyms || '')),
-                escapeCSV(Array.isArray(m.antonyms) ? m.antonyms.join(', ') : (m.antonyms || '')),
+                escapeCSV(synonyms),
+                escapeCSV(antonyms),
                 wordData.mastered ? 'yes' : 'no',
                 wordData.bookmarked ? 'yes' : 'no'
-            ].join(','));
+            ];
             
-            for (let i = 1; i < meanings.length; i++) {
-                const mx = meanings[i];
-                rows.push(['', '', '',
-                    escapeCSV(mx.phoneticUS || ''),
-                    escapeCSV(mx.phoneticUK || ''),
-                    escapeCSV(mx.pos || ''),
-                    escapeCSV(mx.definitionEn || mx.defEn || ''),
-                    escapeCSV(mx.definitionVi || mx.defVi || ''),
-                    escapeCSV(mx.example || ''),
-                    escapeCSV(Array.isArray(mx.synonyms) ? mx.synonyms.join(', ') : (mx.synonyms || '')),
-                    escapeCSV(Array.isArray(mx.antonyms) ? mx.antonyms.join(', ') : (mx.antonyms || '')),
-                    '', ''
-                ].join(','));
-            }
+            rows.push(row.join(','));
         });
         
-        downloadFile('\ufeff' + rows.join('\n'), `volearn-vocabulary-${getDateString()}.csv`, 'text/csv;charset=utf-8');
+        // Tạo CSV với BOM để Excel đọc đúng tiếng Việt
+        const csvContent = '\ufeff' + rows.join('\r\n');
+        
+        downloadFile(csvContent, `volearn-vocabulary-${getDateString()}.csv`, 'text/csv;charset=utf-8');
         showSuccess(`Đã xuất ${words.length} từ vựng ra CSV!`);
+        
     } catch (error) {
         console.error('Export CSV error:', error);
         showError('Lỗi khi xuất CSV!');
@@ -687,3 +710,4 @@ function getDateString() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
