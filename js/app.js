@@ -20,6 +20,7 @@ import { initSetView } from './ui/setView.js';
 import { initCalendar, renderCalendar } from './ui/calendar.js';
 import { initSettings, applySettings } from './ui/settings.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
+import { initConfirmModal } from './ui/confirmModal.js';
 
 // ===== PRACTICE IMPORTS =====
 import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
@@ -73,6 +74,7 @@ async function initApp() {
         console.log('🎨 Step 4: Initializing UI...');
         initSidebar();
         initModals();
+        initConfirmModal();
         initToast();
         initSpeech();
         
