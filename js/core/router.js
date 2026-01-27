@@ -35,12 +35,12 @@ export function onNavigate(section, callback) {
 }
 
 export function navigate(sectionName) {
-    // Ẩn tất cả sections
+    /* ===== ẨN TẤT CẢ SECTIONS ===== */
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
 
-    // Lấy ID thực của section
+    /* ===== LẤY SECTION ID ===== */
     const sectionId = sectionIdMap[sectionName] || `${sectionName}-section`;
     const targetSection = document.getElementById(sectionId);
     
@@ -51,7 +51,7 @@ export function navigate(sectionName) {
         return;
     }
 
-    // Cập nhật nav item active
+    /* ===== NAV ACTIVE ===== */
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.section === sectionName) {
@@ -59,21 +59,45 @@ export function navigate(sectionName) {
         }
     });
 
-    // Cập nhật browser tab title
-    const pageTitle = pageTitles[sectionName] || sectionName;
-    document.title = `${pageTitle} - VoLearn`;
+    /* ===== PAGE TITLE DATA ===== */
+    const pageTitle = pageTitles[sectionName] || '';
 
+    /* ===== BROWSER TAB TITLE ===== */
+    document.title = pageTitle ? `${pageTitle} - VoLearn` : 'VoLearn';
+
+    /* =================================================
+       ===== FIX HEADER STATE + UI TITLE (CORE FIX) =====
+       ================================================= */
+
+    /* Header global (sidebar/topbar nếu có) */
+    const headerTitleEl = document.getElementById('page-title');
+    if (headerTitleEl) {
+        headerTitleEl.textContent = pageTitle;
+    }
+
+    /* Reset toàn bộ section header cũ */
+    document.querySelectorAll('.sectionheader, .section-title, .page-title, h1').forEach(el => {
+        el.textContent = '';
+    });
+
+    /* Set header cho section hiện tại */
+    const sectionHeader = targetSection.querySelector('.sectionheader, .section-title, .page-title, h1');
+    if (sectionHeader) {
+        sectionHeader.textContent = pageTitle;
+    }
+
+    /* ===== STATE ===== */
     const previousSection = currentSection;
     currentSection = sectionName;
 
-    // Gọi initSetView khi navigate đến set-view
+    /* ===== SPECIAL INIT ===== */
     if (sectionName === 'set-view' && window.initSetView) {
         setTimeout(() => {
             window.initSetView();
         }, 50);
     }
 
-    // Gọi callbacks
+    /* ===== CALLBACKS ===== */
     if (navigationCallbacks[sectionName]) {
         navigationCallbacks[sectionName].forEach(cb => {
             try {
@@ -84,7 +108,7 @@ export function navigate(sectionName) {
         });
     }
 
-    // Emit custom event
+    /* ===== EVENT EMIT ===== */
     window.dispatchEvent(new CustomEvent('volearn:navigate', { 
         detail: { from: previousSection, to: sectionName } 
     }));
