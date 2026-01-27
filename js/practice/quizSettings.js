@@ -317,6 +317,9 @@ function getQuizSettingsFromForm() {
   quizSettings.autoSkip = document.getElementById('quiz-auto-skip')?.checked ?? false;
   quizSettings.autoNext = document.getElementById('quiz-auto-next')?.checked ?? true;
 
+   const opt = document.querySelector('input[name="quiz-option-count"]:checked');
+   quizSettings.optionCount = parseInt(opt?.value || '4', 10);
+
   return quizSettings;
 }
 
