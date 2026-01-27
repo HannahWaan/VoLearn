@@ -7,7 +7,7 @@ import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { speak } from '../utils/speech.js';
-import { showPracticeArea } from './practiceEngine.js'; 
+import { showPracticeArea } from './practiceEngine.js';
 import { startQuiz } from './quiz.js';
 
 const POS_MAPPING = {
@@ -19,26 +19,33 @@ const POS_MAPPING = {
   conjunction: 'Liên từ',
   interjection: 'Thán từ',
   pronoun: 'Đại từ',
-  'article': 'Mạo từ',
+  article: 'Mạo từ',
   'auxiliary verb': 'Trợ động từ',
   'phrasal verb': 'Cụm động từ'
 };
 
-// ===== QUIZ SETTINGS SYSTEM =====
+// ===== QUIZ SETTINGS STATE =====
 let quizSettings = {
   limit: 0,
   selectedSetIds: ['all'],
   selectedDateRange: 'all',
+
   includeUnmarked: true,
   includeMastered: true,
   includeLearning: true,
   includeBookmarked: true,
+
   sortBy: 'random',
+
   questionFields: [1, 5],
   answerFields: [],
+
   timeLimit: 0,
   autoSkip: false,
-  autoNext: true
+  autoNext: true,
+
+  // MC options
+  optionCount: 4
 };
 
 const QUIZ_FIELDS = [
@@ -52,7 +59,7 @@ const QUIZ_FIELDS = [
   { id: 8, key: 'antonyms', label: 'Từ trái nghĩa' }
 ];
 
-// practice session (local)
+// practice session (legacy renderer still present; new engine uses startQuiz)
 let practiceWords = [];
 let practiceIndex = 0;
 
@@ -72,25 +79,73 @@ function setText(id, value) {
   if (el) el.textContent = String(value);
 }
 
+function uniqWordsById(words) {
+  const seen = new Set();
+  const out = [];
+  for (const w of words || []) {
+    if (!w) continue;
+    const key = w.id ?? (w.word ?? JSON.stringify(w));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(w);
+  }
+  return out;
+}
+
+function getAllVocabWords() {
+  return uniqWordsById(Array.isArray(appData?.vocabulary) ? appData.vocabulary : []);
+}
+
+function isMastered(w) {
+  // theo data hiện tại của bạn: boolean mastered
+  return !!w?.mastered;
+}
+
+function isBookmarked(w) {
+  // theo data hiện tại của bạn: boolean bookmarked
+  return !!w?.bookmarked;
+}
+
+function isLearning(w) {
+  // learning = chưa thuộc
+  return !isMastered(w);
+}
+
+function isUnmarked(w) {
+  // unmarked = không mastered và không bookmarked
+  return !isMastered(w) && !isBookmarked(w);
+}
+
+// ===== modal controls =====
 function closeQuizSettings() {
   closeAllModals();
 }
 
 function updateQuizSettingsCounts() {
-  const vocab = appData.vocabulary || [];
-  const unmarked = vocab.filter(w => !w.mastered && !w.bookmarked).length;
-  const mastered = vocab.filter(w => w.mastered).length;
-  const learning = vocab.filter(w => !w.mastered).length;
-  const bookmarked = vocab.filter(w => w.bookmarked).length;
+  const vocab = getAllVocabWords();
+
+  const unmarked = vocab.filter(isUnmarked).length;
+  const mastered = vocab.filter(isMastered).length;
+  const learning = vocab.filter(isLearning).length;
+  const bookmarked = vocab.filter(isBookmarked).length;
 
   setText('quiz-count-unmarked', unmarked);
   setText('quiz-count-mastered', mastered);
   setText('quiz-count-learning', learning);
   setText('quiz-count-bookmarked', bookmarked);
 
-  // slider max = vocab length (optional)
+  // slider max = tổng từ
   const slider = document.getElementById('quiz-limit-slider');
-  if (slider) slider.max = String(vocab.length || 100);
+  if (slider) {
+    slider.max = String(vocab.length);
+
+    // clamp current slider value if needed
+    const current = parseInt(slider.value || '0', 10);
+    if (Number.isFinite(current) && current > vocab.length) {
+      slider.value = String(vocab.length);
+      updateQuizLimit(vocab.length);
+    }
+  }
 }
 
 function renderQuizFieldSelectors() {
@@ -102,7 +157,7 @@ function renderQuizFieldSelectors() {
     <label class="field-item" data-field-id="${f.id}">
       <span class="field-order">${idx + 1}</span>
       <input type="checkbox" ${quizSettings.questionFields.includes(f.id) ? 'checked' : ''} data-quiz-qfield="${f.id}">
-      <span class="field-name">${f.label}</span>
+      <span class="field-name">${escapeHtml(f.label)}</span>
     </label>
   `).join('');
 
@@ -110,39 +165,43 @@ function renderQuizFieldSelectors() {
     <label class="field-item" data-field-id="${f.id}">
       <span class="field-order">${idx + 1}</span>
       <input type="checkbox" ${quizSettings.answerFields.includes(f.id) ? 'checked' : ''} data-quiz-afield="${f.id}">
-      <span class="field-name">${f.label}</span>
+      <span class="field-name">${escapeHtml(f.label)}</span>
     </label>
   `).join('');
 }
 
 function updateQuizLimit(value) {
   const intValue = parseInt(value, 10);
-  quizSettings.limit = intValue;
-  setText('quiz-limit-value', intValue === 0 ? 'Không giới hạn' : `${intValue} câu`);
+  quizSettings.limit = Number.isFinite(intValue) ? intValue : 0;
+  setText('quiz-limit-value', quizSettings.limit === 0 ? 'Không giới hạn' : `${quizSettings.limit} câu`);
 }
 
 function adjustQuizLimit(delta) {
   const slider = document.getElementById('quiz-limit-slider');
   if (!slider) return;
-  const max = parseInt(slider.max || '100', 10);
+  const max = parseInt(slider.max || '0', 10) || 0;
+
   let newValue = parseInt(slider.value || '0', 10) + delta;
   newValue = Math.max(0, Math.min(max, newValue));
+
   slider.value = String(newValue);
   updateQuizLimit(newValue);
 }
 
 function updateQuizTimer(value) {
   const intValue = parseInt(value, 10);
-  quizSettings.timeLimit = intValue;
-  setText('quiz-timer-value', intValue === 0 ? 'Không giới hạn' : `${intValue} giây`);
+  quizSettings.timeLimit = Number.isFinite(intValue) ? intValue : 0;
+  setText('quiz-timer-value', quizSettings.timeLimit === 0 ? 'Không giới hạn' : `${quizSettings.timeLimit} giây`);
 }
 
 function adjustQuizTimer(delta) {
   const slider = document.getElementById('quiz-timer-slider');
   if (!slider) return;
   const max = parseInt(slider.max || '60', 10);
+
   let newValue = parseInt(slider.value || '0', 10) + delta;
   newValue = Math.max(0, Math.min(max, newValue));
+
   slider.value = String(newValue);
   updateQuizTimer(newValue);
 }
@@ -155,25 +214,24 @@ function openQuizSettings() {
 
 function switchQuizTab(tabName, btn) {
   document.querySelectorAll('#quiz-settings-modal .settings-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
+  btn?.classList.add('active');
 
   document.querySelectorAll('#quiz-settings-modal .settings-tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById(`quiz-tab-${tabName}`)?.classList.add('active');
 }
 
-// ===== scope selector =====
+// ===== scope selector (USE SHARED scope-selector-modal) =====
 function openQuizScopeSelector(type) {
-  const modal = document.getElementById('scope-selector-modal');
   const title = document.getElementById('scope-selector-title');
   const content = document.getElementById('scope-selector-content');
-  if (!modal || !title || !content) return;
+  if (!title || !content) return;
 
   if (type === 'set') {
     title.textContent = 'Chọn Bộ Từ Vựng';
 
+    const vocab = getAllVocabWords();
+    const sets = Array.isArray(appData?.sets) ? appData.sets : [];
     const isAllSelected = quizSettings.selectedSetIds.includes('all');
-    const vocab = appData.vocabulary || [];
-    const sets = appData.sets || [];
 
     let html = '<div class="scope-list scope-multiple">';
 
@@ -193,9 +251,12 @@ function openQuizScopeSelector(type) {
 
       html += `
         <label class="scope-list-item-checkbox ${isSelected ? 'selected' : ''}" ${isAllSelected ? 'style="opacity:0.5; pointer-events:none;"' : ''}>
-          <input type="checkbox" ${isSelected ? 'checked' : ''} ${isAllSelected ? 'disabled' : ''} data-quiz-scope-toggle="${set.id}">
+          <input type="checkbox"
+            ${isSelected ? 'checked' : ''}
+            ${isAllSelected ? 'disabled' : ''}
+            data-quiz-scope-toggle="${escapeHtml(set.id)}">
           <span class="scope-checkmark"></span>
-          <i class="fas fa-folder" style="color: ${set.color || '#e91e8c'}"></i>
+          <i class="fas fa-folder" style="color: ${escapeHtml(set.color || '#e91e8c')}"></i>
           <span class="scope-item-name">${escapeHtml(set.name || '')}</span>
           <span class="count">${count}</span>
         </label>
@@ -203,6 +264,7 @@ function openQuizScopeSelector(type) {
     });
 
     html += '</div>';
+
     html += `
       <div class="scope-footer">
         <button class="btn-secondary" type="button" data-quiz-scope-close>Đóng</button>
@@ -219,23 +281,27 @@ function openQuizScopeSelector(type) {
     title.textContent = 'Chọn Phạm Vi Ngày';
     content.innerHTML = `
       <div class="scope-list">
-        <div class="scope-list-item ${quizSettings.selectedDateRange === 'all' ? 'selected' : ''}" data-quiz-date="all" data-quiz-date-label="Tất Cả Ngày">
+        <div class="scope-list-item ${quizSettings.selectedDateRange === 'all' ? 'selected' : ''}"
+             data-quiz-date="all" data-quiz-date-label="Tất Cả Ngày">
           <i class="fas fa-calendar"></i><span>Tất Cả Ngày</span>
         </div>
-        <div class="scope-list-item ${quizSettings.selectedDateRange === 'today' ? 'selected' : ''}" data-quiz-date="today" data-quiz-date-label="Hôm nay">
+        <div class="scope-list-item ${quizSettings.selectedDateRange === 'today' ? 'selected' : ''}"
+             data-quiz-date="today" data-quiz-date-label="Hôm nay">
           <i class="fas fa-calendar-day"></i><span>Hôm nay</span>
         </div>
-        <div class="scope-list-item ${quizSettings.selectedDateRange === 'week' ? 'selected' : ''}" data-quiz-date="week" data-quiz-date-label="7 ngày qua">
+        <div class="scope-list-item ${quizSettings.selectedDateRange === 'week' ? 'selected' : ''}"
+             data-quiz-date="week" data-quiz-date-label="7 ngày qua">
           <i class="fas fa-calendar-week"></i><span>7 ngày qua</span>
         </div>
-        <div class="scope-list-item ${quizSettings.selectedDateRange === 'month' ? 'selected' : ''}" data-quiz-date="month" data-quiz-date-label="30 ngày qua">
+        <div class="scope-list-item ${quizSettings.selectedDateRange === 'month' ? 'selected' : ''}"
+             data-quiz-date="month" data-quiz-date-label="30 ngày qua">
           <i class="fas fa-calendar-alt"></i><span>30 ngày qua</span>
         </div>
       </div>
     `;
   }
 
-openModal('scope-selector-modal');
+  openModal('scope-selector-modal');
 }
 
 function closeQuizScopeSelector() {
@@ -306,6 +372,7 @@ function updateQuizSetDisplay() {
   }
 }
 
+// ===== read settings from UI =====
 function getQuizSettingsFromForm() {
   quizSettings.includeUnmarked = document.getElementById('quiz-include-unmarked')?.checked ?? true;
   quizSettings.includeMastered = document.getElementById('quiz-include-mastered')?.checked ?? true;
@@ -318,19 +385,22 @@ function getQuizSettingsFromForm() {
   quizSettings.autoSkip = document.getElementById('quiz-auto-skip')?.checked ?? false;
   quizSettings.autoNext = document.getElementById('quiz-auto-next')?.checked ?? true;
 
-   const opt = document.querySelector('input[name="quiz-option-count"]:checked');
-   quizSettings.optionCount = parseInt(opt?.value || '4', 10);
+  const opt = document.querySelector('input[name="quiz-option-count"]:checked');
+  quizSettings.optionCount = parseInt(opt?.value || '4', 10);
 
   return quizSettings;
 }
 
+// ===== vocab filtering =====
 function getFilteredWordsForQuiz() {
-  let words = [...(appData.vocabulary || [])];
+  let words = getAllVocabWords();
 
+  // set scope
   if (!quizSettings.selectedSetIds.includes('all') && quizSettings.selectedSetIds.length > 0) {
     words = words.filter(w => quizSettings.selectedSetIds.includes(w.setId));
   }
 
+  // date scope
   if (quizSettings.selectedDateRange !== 'all') {
     const now = new Date();
     let startDate;
@@ -344,33 +414,48 @@ function getFilteredWordsForQuiz() {
     }
 
     if (startDate) {
-      words = words.filter(w => new Date(w.createdAt) >= startDate);
+      words = words.filter(w => {
+        if (!w?.createdAt) return true; // nếu thiếu createdAt thì không loại
+        return new Date(w.createdAt) >= startDate;
+      });
     }
   }
 
-  // marks (giữ logic cũ)
-   words = words.filter(w => {
-     const mastered = !!w.mastered;
-     const bookmarked = !!w.bookmarked;
-     const unmarked = !mastered && !bookmarked;
-     const learning = !mastered; 
-   
-     if (unmarked && !quizSettings.includeUnmarked) return false;
-     if (mastered && !quizSettings.includeMastered) return false;
-     if (learning && !quizSettings.includeLearning) return false;
-     if (bookmarked && !quizSettings.includeBookmarked) return false;
-   
-     return true;
-   });
+  // marks (unmarked/mastered/learning/bookmarked)
+  words = words.filter(w => {
+    const mastered = isMastered(w);
+    const bookmarked = isBookmarked(w);
+    const unmarked = isUnmarked(w);
+    const learning = isLearning(w);
 
+    if (unmarked && !quizSettings.includeUnmarked) return false;
+    if (mastered && !quizSettings.includeMastered) return false;
+    if (learning && !quizSettings.includeLearning) return false;
+    if (bookmarked && !quizSettings.includeBookmarked) return false;
+
+    return true;
+  });
+
+  // sort
   switch (quizSettings.sortBy) {
-    case 'newest': words.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
-    case 'oldest': words.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); break;
-    case 'az': words.sort((a, b) => a.word.localeCompare(b.word)); break;
-    case 'za': words.sort((a, b) => b.word.localeCompare(a.word)); break;
-    default: words.sort(() => Math.random() - 0.5); break;
+    case 'newest':
+      words.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      break;
+    case 'oldest':
+      words.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+      break;
+    case 'az':
+      words.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
+      break;
+    case 'za':
+      words.sort((a, b) => (b.word || '').localeCompare(a.word || ''));
+      break;
+    default:
+      words.sort(() => Math.random() - 0.5);
+      break;
   }
 
+  // limit
   if (quizSettings.limit > 0) {
     words = words.slice(0, quizSettings.limit);
   }
@@ -378,14 +463,15 @@ function getFilteredWordsForQuiz() {
   return words;
 }
 
+// ===== field value =====
 function getWordFieldValue(word, fieldId) {
-  const m = (word.meanings && word.meanings[0]) ? word.meanings[0] : {};
+  const m = (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
   const field = QUIZ_FIELDS.find(f => f.id === fieldId);
   if (!field) return '';
 
   const values = {
-    word: word.word,
-    phonetic: m.phoneticUS || m.phoneticUK || word.phonetic || '',
+    word: word?.word || '',
+    phonetic: m.phoneticUS || m.phoneticUK || word?.phonetic || '',
     pos: POS_MAPPING[m.pos] || m.pos || '',
     defEn: m.defEn || '',
     defVi: m.defVi || '',
@@ -397,25 +483,30 @@ function getWordFieldValue(word, fieldId) {
   return values[field.key] || '';
 }
 
+// ===== start quiz (NEW engine) =====
 function startQuizWithSettings() {
   getQuizSettingsFromForm();
 
-  if (quizSettings.questionFields.length === 0) {
+  if (!Array.isArray(quizSettings.questionFields) || quizSettings.questionFields.length === 0) {
     showToast('Vui lòng chọn ít nhất 1 mục làm câu hỏi!', 'error');
     return;
   }
-  if (quizSettings.answerFields.length === 0) {
+  if (!Array.isArray(quizSettings.answerFields) || quizSettings.answerFields.length === 0) {
     showToast('Vui lòng chọn ít nhất 1 mục làm đáp án!', 'error');
     return;
   }
 
   const words = getFilteredWordsForQuiz();
-  if (words.length < 4) {
-    showToast('Cần ít nhất 4 từ vựng để chơi trắc nghiệm!', 'error');
+  const need = Math.max(4, quizSettings.optionCount || 4);
+  if (words.length < need) {
+    showToast(`Cần ít nhất ${need} từ vựng để chơi trắc nghiệm!`, 'error');
     return;
   }
 
   closeQuizSettings();
+
+  // đảm bảo UI practice area hiện trước
+  try { showPracticeArea(); } catch (_) {}
 
   const scope = { type: 'custom', words };
 
@@ -423,6 +514,8 @@ function startQuizWithSettings() {
     shuffle: true,
     optionCount: quizSettings.optionCount || 4,
     timeLimit: quizSettings.timeLimit || 0,
+
+    // bạn có thể map theo UI sau; tạm giữ default
     questionType: 'word-to-meaning',
     speakQuestion: false
   };
@@ -430,6 +523,7 @@ function startQuizWithSettings() {
   startQuiz(scope, settings);
 }
 
+/* ===== Legacy render functions (kept for compatibility; not used if quiz.js renders) ===== */
 function renderQuizWithSettings() {
   const word = practiceWords[practiceIndex];
   if (!word) return;
@@ -445,10 +539,13 @@ function renderQuizWithSettings() {
 
   const correctAnswer = getWordFieldValue(word, answerFieldId);
 
+  const optionCount = Math.max(4, quizSettings.optionCount || 4);
+  const wrongNeed = Math.max(0, optionCount - 1);
+
   const wrongWords = practiceWords
-    .filter(w => w.id !== word.id)
+    .filter(w => w?.id !== word?.id)
     .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
+    .slice(0, wrongNeed);
 
   const allAnswers = [
     { text: correctAnswer, correct: true },
@@ -479,7 +576,10 @@ function renderQuizWithSettings() {
 
       <div class="quiz-options">
         ${allAnswers.map(a => `
-          <button class="quiz-option" type="button" data-action="quiz-answer" data-correct="${a.correct ? 'true' : 'false'}" data-right="${escapeHtml(correctAnswer)}">
+          <button class="quiz-option" type="button"
+            data-action="quiz-answer"
+            data-correct="${a.correct ? 'true' : 'false'}"
+            data-right="${escapeHtml(correctAnswer)}">
             ${escapeHtml(a.text)}
           </button>
         `).join('')}
@@ -487,11 +587,13 @@ function renderQuizWithSettings() {
     </div>
   `;
 
-  // update global progress bar in practice header
+  // update progress bar in practice header
   const total = practiceWords.length;
   const current = practiceIndex + 1;
   const progress = total > 0 ? (current / total) * 100 : 0;
-  document.getElementById('practice-progress-bar')?.style && (document.getElementById('practice-progress-bar').style.width = `${progress}%`);
+
+  const bar = document.getElementById('practice-progress-bar');
+  if (bar?.style) bar.style.width = `${progress}%`;
   setText('practice-progress-text', `${current}/${total}`);
 
   if (quizSettings.timeLimit > 0) startQuizTimer();
@@ -541,10 +643,8 @@ function checkQuizAnswerWithSettings(btn, correct) {
     showToast('Sai rồi!', 'error');
   }
 
-  // record history like old (minimal)
   const w = practiceWords[practiceIndex];
   if (w?.id) {
-    // update history in appData (simple)
     const today = new Date().toISOString().split('T')[0];
     if (!appData.history) appData.history = [];
     let entry = appData.history.find(h => h.date === today);
@@ -564,7 +664,6 @@ function checkQuizAnswerWithSettings(btn, correct) {
 function nextQuizQuestion() {
   practiceIndex++;
   if (practiceIndex >= practiceWords.length) {
-    // kết thúc: quay về practice summary đơn giản
     const c = document.getElementById('practice-content');
     if (c) {
       c.innerHTML = `
@@ -583,7 +682,6 @@ function nextQuizQuestion() {
 
 // ===== init + event delegation =====
 export function initQuizSettings() {
-  // Bind events inside quiz settings modal + quiz scope modal + quiz practice UI
   document.addEventListener('click', (e) => {
     // close
     if (e.target.closest('[data-action="quiz-close"]')) {
@@ -591,7 +689,7 @@ export function initQuizSettings() {
       return;
     }
 
-    // tabs
+    // tabs (module way)
     const tabBtn = e.target.closest('[data-quiz-tab]');
     if (tabBtn && tabBtn.closest('#quiz-settings-modal')) {
       switchQuizTab(tabBtn.getAttribute('data-quiz-tab'), tabBtn);
@@ -615,7 +713,7 @@ export function initQuizSettings() {
     if (e.target.closest('[data-action="quiz-timer-minus"]')) { adjustQuizTimer(-5); return; }
     if (e.target.closest('[data-action="quiz-timer-plus"]')) { adjustQuizTimer(5); return; }
 
-    // quiz practice actions
+    // quiz practice actions (legacy renderer)
     const speakBtn = e.target.closest('[data-action="quiz-speak"]');
     if (speakBtn) {
       const w = speakBtn.getAttribute('data-word');
@@ -691,9 +789,20 @@ export function initQuizSettings() {
     }
   });
 
-  // Expose only ONE entry point (open settings) because practice card currently calls onclick openQuizSettings()
-  // Nếu bạn muốn module hoá 100% (không onclick), mình sẽ hướng dẫn sửa practice section sau.
+  // Entry point for existing onclick in practice section
   window.openQuizSettings = openQuizSettings;
+
+  // For inline onclick compatibility (if still present in HTML)
+  window.closeQuizSettings = closeQuizSettings;
+  window.switchQuizTab = switchQuizTab;
+  window.adjustQuizLimit = adjustQuizLimit;
+  window.updateQuizLimit = updateQuizLimit;
+  window.openQuizScopeSelector = openQuizScopeSelector;
+  window.closeQuizScopeSelector = closeQuizScopeSelector;
+  window.refreshQuizScope = refreshQuizScope;
+  window.adjustQuizTimer = adjustQuizTimer;
+  window.updateQuizTimer = updateQuizTimer;
+  window.startQuizWithSettings = startQuizWithSettings;
 
   console.log('✅ QuizSettings module initialized');
 }
