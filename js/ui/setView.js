@@ -149,8 +149,9 @@ function renderWordList(words) {
             <div class="empty-message">
                 <i class="fas fa-book-open"></i>
                 <p>Chưa có từ vựng nào trong bộ này</p>
-                <button class="btn btn-primary" onclick="navigate('add-word')">
-                    <i class="fas fa-plus"></i> Thêm từ mới
+                <button class="btn-add-word" onclick="navigate('add-word')">
+                    <i class="fas fa-plus"></i>
+                    <span>Thêm từ mới</span>
                 </button>
             </div>
         `;
@@ -440,5 +441,6 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
 
 
