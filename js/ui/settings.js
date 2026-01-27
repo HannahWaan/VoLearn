@@ -256,6 +256,7 @@ function bindSettingsEvents() {
     document.getElementById('btn-gdrive-logout')?.addEventListener('click', logoutGoogleDrive);
     document.getElementById('btn-gdrive-backup')?.addEventListener('click', backupToGoogleDrive);
     document.getElementById('btn-gdrive-restore')?.addEventListener('click', restoreFromGoogleDrive);
+    document.getElementById('btn-data-help')?.addEventListener('click', showDataHelpPopup);
 }
 
 // ===== EXPORT FUNCTIONS =====
@@ -687,6 +688,53 @@ async function findBackupFile(token) {
     } catch { return null; }
 }
 
+// ===== HELP POPUP =====
+function showDataHelpPopup() {
+    let overlay = document.getElementById('data-help-popup');
+    
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'data-help-popup';
+        overlay.className = 'help-popup-overlay';
+        overlay.innerHTML = `
+            <div class="help-popup">
+                <div class="help-popup-header">
+                    <h4><i class="fas fa-info-circle"></i> Hướng dẫn sử dụng</h4>
+                    <button class="help-popup-close" onclick="closeDataHelpPopup()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="help-popup-content">
+                    <p><strong>📊 Chuyển file CSV thành bảng trong Excel:</strong></p>
+                    <p>
+                        <code>Data</code> → <code>Text to Columns</code> → <code>Delimited</code> 
+                        → Chọn <code>Comma</code> (Text qualifier: <code>"</code>) → <code>General</code>
+                    </p>
+                    
+                    <div class="help-note">
+                        <p><strong>📁 File JSON:</strong> Sẽ <u>ghi đè</u> lên toàn bộ dữ liệu hiện có.</p>
+                        <p><strong>📄 File CSV:</strong> Chỉ <u>thêm mới</u> từ vựng (không kiểm tra trùng).</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeDataHelpPopup();
+        });
+    }
+    
+    overlay.classList.add('show');
+}
+
+function closeDataHelpPopup() {
+    const overlay = document.getElementById('data-help-popup');
+    if (overlay) overlay.classList.remove('show');
+}
+
+window.closeDataHelpPopup = closeDataHelpPopup;
+
 // ===== UTILITIES =====
 function escapeCSV(value) {
     if (value == null) return '';
@@ -710,6 +758,7 @@ function getDateString() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
 
 
 
