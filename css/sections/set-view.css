@@ -583,3 +583,82 @@
         justify-content: flex-start;
     }
 }
+
+/* ===== EMPTY STATE - BEAUTIFUL ===== */
+.empty-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 30px;
+    text-align: center;
+    color: var(--text-muted);
+    height: 100%;
+    min-height: 300px;
+}
+
+.empty-message i.fa-book-open {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--primary-light);
+    opacity: 0.6;
+}
+
+.empty-message p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    font-style: italic;
+}
+
+/* ===== NÚT THÊM TỪ MỚI - ĐẸPCHỈNH ===== */
+.empty-message .btn-add-word {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
+}
+
+.empty-message .btn-add-word:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(233, 30, 140, 0.4);
+}
+
+.empty-message .btn-add-word:active {
+    transform: translateY(0);
+}
+
+.empty-message .btn-add-word i {
+    font-size: 1.1rem;
+}
+
+/* Fix cho btn btn-primary nếu dùng */
+.empty-message .btn.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
+}
+
+.empty-message .btn.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(233, 30, 140, 0.4);
+}
