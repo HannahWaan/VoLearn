@@ -80,16 +80,16 @@
 /* ===== SET CARD ACTIONS - QUAN TRỌNG ===== */
 .set-card-actions {
     position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
+    top: 10px;              
+    right: 10px;
+    transform: none;        
     display: flex;
-    flex-direction: row;
     gap: 8px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: all 0.2s ease;
     z-index: 10;
 }
+
 
 .set-card:hover .set-card-actions {
     opacity: 1;
@@ -166,3 +166,4 @@
         opacity: 1; /* Luôn hiện trên mobile */
     }
 }
+
