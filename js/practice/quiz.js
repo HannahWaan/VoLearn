@@ -55,13 +55,13 @@ export function startQuiz(scope, settings = {}) {
 
 /* ===== RENDER UI ===== */
 function renderQuizUI() {
-    const container = document.getElementById('practice-area');
+    const container = document.getElementById('practice-content');
     if (!container) return;
 
     container.innerHTML = `
         <div class="quiz-container">
             <div class="quiz-header">
-                <button class="btn-icon btn-back" onclick="window.exitQuiz()">
+                <button class="btn-icon btn-back" onclick="window.handlePracticeBack()">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <div class="quiz-progress">
@@ -267,7 +267,7 @@ export function speakQuizWord() {
 function showQuizResults() {
     const result = finishPractice();
     
-    const container = document.getElementById('practice-area');
+    const container = document.getElementById('practice-content');
     if (!container) return;
 
     const emoji = result.accuracy >= 80 ? '🎉' : result.accuracy >= 50 ? '👍' : '💪';
@@ -309,7 +309,7 @@ function showQuizResults() {
                 <button class="btn-primary" onclick="window.restartQuiz()">
                     <i class="fas fa-redo"></i> Làm lại
                 </button>
-                <button class="btn-secondary" onclick="window.exitQuiz()">
+                <button class="btn-secondary" onclick="window.handlePracticeBack()">
                     <i class="fas fa-home"></i> Quay lại
                 </button>
             </div>
