@@ -8,6 +8,7 @@ import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { speak } from '../utils/speech.js';
 import { showPracticeArea } from './practiceEngine.js'; 
+import { startQuiz } from './quiz.js';
 
 const POS_MAPPING = {
   noun: 'Danh từ',
@@ -414,14 +415,19 @@ function startQuizWithSettings() {
     return;
   }
 
-  practiceWords = words;
-  practiceIndex = 0;
-
   closeQuizSettings();
-  showPracticeArea();
-  renderQuizWithSettings();
 
-  showToast(`Bắt đầu với ${words.length} câu hỏi`, 'success');
+  const scope = { type: 'custom', words };
+
+  const settings = {
+    shuffle: true,
+    optionCount: quizSettings.optionCount || 4,
+    timeLimit: quizSettings.timeLimit || 0,
+    questionType: 'word-to-meaning',
+    speakQuestion: false
+  };
+
+  startQuiz(scope, settings);
 }
 
 function renderQuizWithSettings() {
