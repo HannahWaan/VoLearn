@@ -77,40 +77,44 @@
     display: block;
 }
 
-/* ===== SET CARD ACTIONS - QUAN TRỌNG ===== */
+/* ===== FIX SET CARD ACTIONS ===== */
 .set-card-actions {
     position: absolute;
-    top: 10px;              
+    top: 10px;
     right: 10px;
-    transform: none;        
     display: flex;
     gap: 8px;
     opacity: 0;
-    transition: all 0.2s ease;
-    z-index: 10;
+    transition: opacity 0.2s ease;
+    z-index: 20;
+    background: none;       /* QUAN TRỌNG */
+    border-radius: 0;       /* QUAN TRỌNG */
+    padding: 0;             /* QUAN TRỌNG */
 }
 
-
+/* hover card thì hiện */
 .set-card:hover .set-card-actions {
     opacity: 1;
 }
 
+/* mỗi nút là 1 khối độc lập */
 .btn-edit-set,
 .btn-delete-set {
+    all: unset;                     /* reset style */
     width: 34px;
     height: 34px;
-    border: none;
     border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
     font-size: 14px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.12);
     backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
 }
 
+/* edit */
 .btn-edit-set {
     color: var(--primary-color, #667eea);
 }
@@ -121,6 +125,7 @@
     transform: scale(1.1);
 }
 
+/* delete */
 .btn-delete-set {
     color: #ef4444;
 }
@@ -166,4 +171,5 @@
         opacity: 1; /* Luôn hiện trên mobile */
     }
 }
+
 
