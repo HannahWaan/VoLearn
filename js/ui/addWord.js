@@ -7,6 +7,7 @@ import { showToast } from './toast.js';
 import { speak } from '../utils/speech.js';
 import { escapeHtml, generateId } from '../utils/helpers.js';
 import { renderShelves, populateSetSelect } from './bookshelf.js';
+import { navigate } from '../core/router.js';
 
 /* ===== CONSTANTS ===== */
 const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
@@ -26,7 +27,6 @@ const POS_MAPPING = {
     'phrasal verb': 'Cụm động từ'
 };
 
-// Derivational suffixes for word formation
 const DERIVATIONAL_SUFFIXES = {
     noun: ['-tion', '-sion', '-ment', '-ness', '-ity', '-er', '-or', '-ist', '-ance', '-ence', '-dom', '-ship', '-hood', '-age', '-al', '-ure'],
     verb: ['-ize', '-ise', '-ify', '-ate', '-en'],
@@ -103,6 +103,65 @@ function setupEventListeners() {
     
     // Save word
     document.getElementById('btn-save-word')?.addEventListener('click', saveWord);
+    
+    // ========== EVENT DELEGATION CHO MEANING BLOCKS ==========
+    const meaningsContainer = document.getElementById('meanings-container');
+    if (meaningsContainer) {
+        meaningsContainer.addEventListener('click', function(e) {
+            const target = e.target;
+            
+            // Nút xóa nội dung (clear)
+            const clearBtn = target.closest('.btn-clear-meaning');
+            if (clearBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const block = clearBtn.closest('.meaning-block');
+                if (block) {
+                    clearMeaningBlock(block);
+                }
+                return;
+            }
+            
+            // Nút xóa khối nghĩa (remove)
+            const removeBtn = target.closest('.btn-remove-meaning');
+            if (removeBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const block = removeBtn.closest('.meaning-block');
+                if (block) {
+                    removeMeaningBlock(block);
+                }
+                return;
+            }
+            
+            // Nút phát âm phonetic
+            const speakPhoneticBtn = target.closest('.btn-speak-phonetic');
+            if (speakPhoneticBtn) {
+                e.preventDefault();
+                const accent = speakPhoneticBtn.dataset.accent || 'en-US';
+                const wrapper = speakPhoneticBtn.closest('.phonetic-input-wrapper');
+                const input = wrapper?.querySelector('input');
+                const word = document.getElementById('word-input')?.value.trim();
+                if (word) {
+                    speak(word, accent);
+                }
+                return;
+            }
+            
+            // Nút phát âm text
+            const speakTextBtn = target.closest('.btn-speak-text');
+            if (speakTextBtn) {
+                e.preventDefault();
+                const lang = speakTextBtn.dataset.lang || 'en';
+                const wrapper = speakTextBtn.closest('.textarea-with-speaker');
+                const textarea = wrapper?.querySelector('textarea');
+                if (textarea?.value.trim()) {
+                    speak(textarea.value.trim(), lang === 'en' ? 'en-US' : 'vi-VN');
+                }
+                return;
+            }
+        });
+    }
 }
 
 /* ===== MERRIAM-WEBSTER API ===== */
@@ -167,7 +226,6 @@ async function processLearnerData(data, word) {
     for (const entry of data) {
         if (!entry.meta || !entry.shortdef) continue;
         
-        // Collect word forms from stems
         entry.meta.stems?.forEach(stem => {
             const clean = stem.toLowerCase().replace(/[^a-z-]/g, '');
             if (clean && clean !== word.toLowerCase()) {
@@ -196,11 +254,9 @@ async function processLearnerData(data, word) {
             }
         }
         
-        // Set default if missing
         if (!phoneticUK) phoneticUK = phoneticUS;
         if (!phoneticUS) phoneticUS = phoneticUK;
         
-        // Store global phonetics
         if (!result.phoneticUS && phoneticUS) result.phoneticUS = phoneticUS;
         if (!result.phoneticUK && phoneticUK) result.phoneticUK = phoneticUK;
         if (!result.phonetic && phoneticUS) result.phonetic = phoneticUS;
@@ -208,7 +264,6 @@ async function processLearnerData(data, word) {
         const posEn = entry.fl || 'noun';
         const pos = POS_MAPPING[posEn] || posEn;
         
-        // Add headword to word forms
         const headword = entry.hwi?.hw?.replace(/\*/g, '') || word;
         if (!wordFormsMap.has(headword.toLowerCase())) {
             wordFormsMap.set(headword.toLowerCase(), new Set([posEn]));
@@ -243,7 +298,6 @@ async function processLearnerData(data, word) {
         }
     }
     
-    // Translate all definitions
     const translations = await Promise.all(
         meaningsList.map(m => translateToVietnamese(m.defEn))
     );
@@ -258,7 +312,6 @@ async function processLearnerData(data, word) {
     return result;
 }
 
-/* ===== WORD FORMATION WITH DERIVATIONAL MORPHOLOGY ===== */
 function generateWordFormation(baseWord, wordFormsMap, apiData) {
     const abbr = { 
         'noun': 'n', 
@@ -270,11 +323,8 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     };
     
     const forms = new Map();
-    
-    // Add base word
     const baseWordLower = baseWord.toLowerCase();
     
-    // Get all related forms from API data
     wordFormsMap.forEach((posSet, formWord) => {
         if (posSet.size > 0) {
             const posArray = Array.from(posSet).map(p => abbr[p] || p).filter(p => p);
@@ -284,7 +334,6 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
         }
     });
     
-    // Try to infer POS for forms without it using derivational rules
     forms.forEach((pos, formWord) => {
         if (!pos) {
             const inferredPos = inferPOSFromSuffix(formWord);
@@ -294,7 +343,6 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
         }
     });
     
-    // Also check for common derivational patterns from the base word
     const derivedForms = findDerivedForms(baseWord, apiData);
     derivedForms.forEach((pos, formWord) => {
         if (!forms.has(formWord)) {
@@ -304,7 +352,6 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     
     if (forms.size === 0) return '';
     
-    // Sort: base word first, then alphabetically
     const sortedForms = Array.from(forms.entries()).sort((a, b) => {
         if (a[0] === baseWordLower) return -1;
         if (b[0] === baseWordLower) return 1;
@@ -317,32 +364,17 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
 function inferPOSFromSuffix(word) {
     const wordLower = word.toLowerCase();
     
-    // Check noun suffixes
     for (const suffix of DERIVATIONAL_SUFFIXES.noun) {
-        if (wordLower.endsWith(suffix.replace('-', ''))) {
-            return 'noun';
-        }
+        if (wordLower.endsWith(suffix.replace('-', ''))) return 'noun';
     }
-    
-    // Check adjective suffixes
     for (const suffix of DERIVATIONAL_SUFFIXES.adjective) {
-        if (wordLower.endsWith(suffix.replace('-', ''))) {
-            return 'adjective';
-        }
+        if (wordLower.endsWith(suffix.replace('-', ''))) return 'adjective';
     }
-    
-    // Check adverb suffixes
     for (const suffix of DERIVATIONAL_SUFFIXES.adverb) {
-        if (wordLower.endsWith(suffix.replace('-', ''))) {
-            return 'adverb';
-        }
+        if (wordLower.endsWith(suffix.replace('-', ''))) return 'adverb';
     }
-    
-    // Check verb suffixes
     for (const suffix of DERIVATIONAL_SUFFIXES.verb) {
-        if (wordLower.endsWith(suffix.replace('-', ''))) {
-            return 'verb';
-        }
+        if (wordLower.endsWith(suffix.replace('-', ''))) return 'verb';
     }
     
     return null;
@@ -354,11 +386,9 @@ function findDerivedForms(baseWord, apiData) {
     
     if (!apiData || !Array.isArray(apiData)) return forms;
     
-    // Look through all entries for related forms
     apiData.forEach(entry => {
         if (!entry.meta) return;
         
-        // Check stems
         entry.meta.stems?.forEach(stem => {
             const stemLower = stem.toLowerCase();
             if (stemLower !== baseWord.toLowerCase()) {
@@ -369,7 +399,6 @@ function findDerivedForms(baseWord, apiData) {
             }
         });
         
-        // Check for derivative forms in definitions
         if (entry.uros) {
             entry.uros.forEach(uro => {
                 if (uro.ure) {
@@ -553,9 +582,8 @@ export function selectMeaning(index) {
     if (hasFormContent() && currentFilledWord && 
         newWord.toLowerCase() !== currentFilledWord.toLowerCase()) {
         
-        // Sử dụng modal thay vì confirm()
-        if (typeof showConfirm === 'function') {
-            showConfirm({
+        if (typeof window.showConfirm === 'function') {
+            window.showConfirm({
                 title: 'Thay thế nội dung?',
                 message: `Nội dung của từ "${currentFilledWord}" chưa được lưu.\n\nBạn có muốn thay thế bằng từ "${newWord}" không?`,
                 type: 'warning',
@@ -569,7 +597,6 @@ export function selectMeaning(index) {
             });
             return;
         } else {
-            // Fallback nếu không có showConfirm
             const confirmReplace = confirm(
                 `Nội dung của từ "${currentFilledWord}" chưa được lưu.\n\nBạn có muốn thay thế bằng từ "${newWord}" không?`
             );
@@ -594,7 +621,6 @@ function continueSelectMeaning(data, meaning, container) {
         currentFilledWord = wordInput?.value.trim() || '';
     }
     
-    // Find empty block or create new one
     let targetBlock = null;
     const blocks = document.querySelectorAll('.meaning-block');
     
@@ -609,17 +635,15 @@ function continueSelectMeaning(data, meaning, container) {
     }
     
     if (!targetBlock) {
-        addMeaningBlockSilent(); // Use silent version - no toast
+        addMeaningBlockSilent();
         const allBlocks = document.querySelectorAll('.meaning-block');
         targetBlock = allBlocks[allBlocks.length - 1];
     }
     
     if (!targetBlock) return;
     
-    // Fill the block with phonetics
     fillMeaningBlock(targetBlock, meaning);
     
-    // AUTO FILL: Also fill phonetics for first block if empty
     const firstBlock = document.querySelector('.meaning-block');
     if (firstBlock && firstBlock !== targetBlock) {
         const firstUS = firstBlock.querySelector('.phonetic-us');
@@ -633,7 +657,6 @@ function continueSelectMeaning(data, meaning, container) {
         }
     }
     
-    // Fill word formation
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal && !wordFormGlobal.value.trim() && data.wordForms) {
         wordFormGlobal.value = data.wordForms;
@@ -645,7 +668,6 @@ function continueSelectMeaning(data, meaning, container) {
 }
 
 function fillMeaningBlock(block, meaning) {
-    // Fill phonetics
     const phoneticUS = block.querySelector('.phonetic-us');
     if (phoneticUS && meaning.phoneticUS) {
         phoneticUS.value = '/' + meaning.phoneticUS + '/';
@@ -658,7 +680,6 @@ function fillMeaningBlock(block, meaning) {
         phoneticUK.value = '/' + meaning.phoneticUS + '/';
     }
     
-    // Fill POS
     const posSelect = block.querySelector('.pos-select');
     if (posSelect && meaning.posEn) {
         for (let i = 0; i < posSelect.options.length; i++) {
@@ -669,7 +690,6 @@ function fillMeaningBlock(block, meaning) {
         }
     }
     
-    // Fill other fields
     const defEn = block.querySelector('.def-en');
     const defVi = block.querySelector('.def-vi');
     const example = block.querySelector('.example-input');
@@ -701,7 +721,6 @@ export function addMeaningBlock() {
     showToast(`Đã thêm Nghĩa ${index + 1}`);
 }
 
-// Silent version - no toast (for internal use)
 function addMeaningBlockSilent() {
     const container = document.getElementById('meanings-container');
     if (!container) return;
@@ -726,10 +745,10 @@ function getMeaningBlockHTML(number) {
                 <span class="drag-handle" title="Kéo để sắp xếp">
                     <i class="fas fa-grip-vertical"></i>
                 </span>
-                <button type="button" class="btn-clear-meaning" onclick="window.clearMeaningBlock(this)" title="Xóa nội dung">
+                <button type="button" class="btn-clear-meaning" title="Xóa nội dung">
                     <i class="fas fa-eraser"></i>
                 </button>
-                <button type="button" class="btn-remove-meaning" onclick="window.removeMeaningBlock(this)" title="Xóa nghĩa này">
+                <button type="button" class="btn-remove-meaning" title="Xóa nghĩa này">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -740,7 +759,7 @@ function getMeaningBlockHTML(number) {
                 <label>🇺🇸 US</label>
                 <div class="phonetic-input-wrapper">
                     <input type="text" class="phonetic-us" placeholder="/ˈprɛzənt/">
-                    <button type="button" class="btn-speak-phonetic" onclick="window.speakPhonetic(this, 'en-US')" title="Nghe US">
+                    <button type="button" class="btn-speak-phonetic" data-accent="en-US" title="Nghe US">
                         <i class="fas fa-volume-up"></i>
                     </button>
                 </div>
@@ -749,7 +768,7 @@ function getMeaningBlockHTML(number) {
                 <label>🇬🇧 UK</label>
                 <div class="phonetic-input-wrapper">
                     <input type="text" class="phonetic-uk" placeholder="/ˈprɛzənt/">
-                    <button type="button" class="btn-speak-phonetic" onclick="window.speakPhonetic(this, 'en-GB')" title="Nghe UK">
+                    <button type="button" class="btn-speak-phonetic" data-accent="en-GB" title="Nghe UK">
                         <i class="fas fa-volume-up"></i>
                     </button>
                 </div>
@@ -760,14 +779,14 @@ function getMeaningBlockHTML(number) {
             <label>Loại từ</label>
             <select class="pos-select">
                 <option value="">-- Chọn --</option>
-                <option value="noun">Danh từ</option>
-                <option value="verb">Động từ</option>
-                <option value="adjective">Tính từ</option>
-                <option value="adverb">Trạng từ</option>
-                <option value="pronoun">Đại từ</option>
-                <option value="preposition">Giới từ</option>
-                <option value="conjunction">Liên từ</option>
-                <option value="interjection">Thán từ</option>
+                <option value="noun">Danh từ (noun)</option>
+                <option value="verb">Động từ (verb)</option>
+                <option value="adjective">Tính từ (adj)</option>
+                <option value="adverb">Trạng từ (adv)</option>
+                <option value="pronoun">Đại từ (pron)</option>
+                <option value="preposition">Giới từ (prep)</option>
+                <option value="conjunction">Liên từ (conj)</option>
+                <option value="interjection">Thán từ (interj)</option>
             </select>
         </div>
         
@@ -775,7 +794,7 @@ function getMeaningBlockHTML(number) {
             <label>Định nghĩa (English)</label>
             <div class="textarea-with-speaker">
                 <textarea class="def-en" rows="2" placeholder="Definition in English"></textarea>
-                <button type="button" class="btn-speak-text" onclick="window.speakTextarea(this, 'en')" title="Nghe định nghĩa">
+                <button type="button" class="btn-speak-text" data-lang="en" title="Nghe định nghĩa">
                     <i class="fas fa-volume-up"></i>
                 </button>
             </div>
@@ -790,7 +809,7 @@ function getMeaningBlockHTML(number) {
             <label>Ví dụ</label>
             <div class="textarea-with-speaker">
                 <textarea class="example-input" rows="2" placeholder="Example sentence"></textarea>
-                <button type="button" class="btn-speak-text" onclick="window.speakTextarea(this, 'en')" title="Nghe ví dụ">
+                <button type="button" class="btn-speak-text" data-lang="en" title="Nghe ví dụ">
                     <i class="fas fa-volume-up"></i>
                 </button>
             </div>
@@ -809,12 +828,10 @@ function getMeaningBlockHTML(number) {
     `;
 }
 
-/* ===== CLEAR MEANING BLOCK - SỬ DỤNG MODAL ===== */
-export function clearMeaningBlock(btn) {
-    const block = btn.closest('.meaning-block');
+/* ===== CLEAR MEANING BLOCK - NHẬN BLOCK ELEMENT ===== */
+function clearMeaningBlock(block) {
     if (!block) return;
     
-    // Kiểm tra xem block có nội dung không
     const hasContent = ['.phonetic-us', '.phonetic-uk', '.def-en', '.def-vi', 
         '.example-input', '.synonyms-input', '.antonyms-input'
     ].some(selector => {
@@ -823,14 +840,12 @@ export function clearMeaningBlock(btn) {
     });
     
     if (!hasContent) {
-        // Không có nội dung, xóa trực tiếp
         doClearMeaningBlock(block);
         return;
     }
     
-    // Có nội dung, hiện modal xác nhận
-    if (typeof showConfirm === 'function') {
-        showConfirm({
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm({
             title: 'Xóa nội dung?',
             message: 'Bạn có chắc muốn xóa nội dung của khối nghĩa này?',
             type: 'warning',
@@ -842,8 +857,10 @@ export function clearMeaningBlock(btn) {
             }
         });
     } else {
-        // Fallback
-        doClearMeaningBlock(block);
+        if (confirm('Bạn có chắc muốn xóa nội dung của khối nghĩa này?')) {
+            doClearMeaningBlock(block);
+            showToast('Đã xóa nội dung', 'info');
+        }
     }
 }
 
@@ -858,21 +875,20 @@ function doClearMeaningBlock(block) {
     });
 }
 
-/* ===== REMOVE MEANING BLOCK - SỬ DỤNG MODAL ===== */
-export function removeMeaningBlock(btn) {
-    const block = btn.closest('.meaning-block');
+/* ===== REMOVE MEANING BLOCK - NHẬN BLOCK ELEMENT ===== */
+function removeMeaningBlock(block) {
+    if (!block) return;
+    
     const container = document.getElementById('meanings-container');
     const allBlocks = container.querySelectorAll('.meaning-block');
     
     if (allBlocks.length <= 1) {
-        // If only 1 block, just clear it
-        clearMeaningBlock(btn);
+        clearMeaningBlock(block);
         return;
     }
     
-    // Hiện modal xác nhận
-    if (typeof showConfirm === 'function') {
-        showConfirm({
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm({
             title: 'Xóa khối nghĩa?',
             message: 'Bạn có chắc muốn xóa khối nghĩa này?',
             type: 'danger',
@@ -885,9 +901,11 @@ export function removeMeaningBlock(btn) {
             }
         });
     } else {
-        // Fallback - xóa trực tiếp
-        block.remove();
-        updateMeaningNumbers();
+        if (confirm('Bạn có chắc muốn xóa khối nghĩa này?')) {
+            block.remove();
+            updateMeaningNumbers();
+            showToast('Đã xóa khối nghĩa', 'info');
+        }
     }
 }
 
@@ -1011,21 +1029,19 @@ function clearAllMeaningBlocks() {
     if (wordFormGlobal) wordFormGlobal.value = '';
 }
 
-/* ===== CLEAR WORD FORM - SỬ DỤNG MODAL ===== */
+/* ===== CLEAR WORD FORM ===== */
 export function clearWordForm() {
     const wordInput = document.getElementById('word-input');
     const hasWord = wordInput?.value.trim();
     const hasContent = hasFormContent();
     
     if (!hasWord && !hasContent) {
-        // Không có gì để xóa
         showToast('Form đang trống', 'info');
         return;
     }
     
-    // Hiện modal xác nhận
-    if (typeof showConfirm === 'function') {
-        showConfirm({
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm({
             title: 'Xóa tất cả?',
             message: 'Bạn có chắc muốn xóa toàn bộ nội dung đã nhập?',
             type: 'warning',
@@ -1037,7 +1053,6 @@ export function clearWordForm() {
             }
         });
     } else {
-        // Fallback với confirm() trình duyệt
         if (!confirm('Bạn có chắc muốn xóa tất cả nội dung?')) return;
         doClearWordForm();
         showToast('Đã xóa tất cả nội dung');
@@ -1074,17 +1089,14 @@ export function saveWord() {
         return;
     }
     
-    // Thu thập dữ liệu
     const setSelect = document.getElementById('set-select');
     const wordFormation = document.getElementById('word-formation-global')?.value?.trim() || '';
     const setId = setSelect?.value || null;
     
-    // Thu thập các meanings - SỬA SELECTOR
     const meanings = [];
     const meaningBlocks = document.querySelectorAll('.meaning-block');
     
     meaningBlocks.forEach((block) => {
-        // Dùng CLASS thay vì ID
         const phoneticUS = block.querySelector('.phonetic-us')?.value?.trim() || '';
         const phoneticUK = block.querySelector('.phonetic-uk')?.value?.trim() || '';
         const pos = block.querySelector('.pos-select')?.value || '';
@@ -1094,17 +1106,9 @@ export function saveWord() {
         const synonyms = block.querySelector('.synonyms-input')?.value?.trim() || '';
         const antonyms = block.querySelector('.antonyms-input')?.value?.trim() || '';
         
-        // Chỉ thêm nếu có nội dung
         if (defEn || defVi) {
             meanings.push({
-                phoneticUS,
-                phoneticUK,
-                pos,
-                defEn,
-                defVi,
-                example,
-                synonyms,
-                antonyms
+                phoneticUS, phoneticUK, pos, defEn, defVi, example, synonyms, antonyms
             });
         }
     });
@@ -1114,7 +1118,6 @@ export function saveWord() {
         return;
     }
     
-    // Lưu setId để quay về sau
     const returnToSetId = editingWordId 
         ? (appData.vocabulary?.find(w => w.id === editingWordId)?.setId || setId)
         : setId;
@@ -1122,7 +1125,6 @@ export function saveWord() {
     const now = new Date().toISOString();
     
     if (editingWordId) {
-        // === EDIT MODE ===
         const existingWord = appData.vocabulary?.find(w => w.id === editingWordId);
         if (existingWord) {
             existingWord.word = word;
@@ -1134,7 +1136,6 @@ export function saveWord() {
             showToast(`Đã cập nhật "${word}"`, 'success');
         }
     } else {
-        // === ADD NEW ===
         const newWord = {
             id: generateId(),
             word,
@@ -1152,7 +1153,6 @@ export function saveWord() {
         if (!appData.vocabulary) appData.vocabulary = [];
         appData.vocabulary.push(newWord);
         
-        // Ghi vào history
         if (typeof addToHistory === 'function') {
             addToHistory('add', newWord.id);
         }
@@ -1162,16 +1162,13 @@ export function saveWord() {
     
     saveData(appData);
     
-    // Dispatch event
     document.dispatchEvent(new CustomEvent('volearn:wordSaved', {
         detail: { word, isEdit: !!editingWordId }
     }));
     
-    // Clear form
     clearWordFormSilent();
     editingWordId = null;
     
-    // === QUAY VỀ SET-VIEW NẾU ĐANG EDIT ===
     if (returnToSetId) {
         window.currentSetViewId = returnToSetId;
         navigate('set-view');
@@ -1191,7 +1188,6 @@ function clearWordFormSilent() {
     const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = '';
     
-    // Keep the selected set for next word
     const setSelect = document.getElementById('set-select');
     if (setSelect && lastSelectedSetId) {
         setSelect.value = lastSelectedSetId;
@@ -1226,22 +1222,17 @@ export function loadWordForEdit(wordId) {
     editingWordId = wordId;
     currentFilledWord = word.word;
     
-    // Fill word input
     const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = word.word;
     
-    // Fill word formation
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal) wordFormGlobal.value = word.wordFormation || word.formation || '';
     
-    // Fill set select
     const setSelect = document.getElementById('set-select');
     if (setSelect) setSelect.value = word.setId || '';
     
-    // Clear existing meaning blocks
     clearAllMeaningBlocks();
     
-    // Fill meanings
     const meanings = word.meanings || [];
     const container = document.getElementById('meanings-container');
     
@@ -1258,13 +1249,11 @@ export function loadWordForEdit(wordId) {
         
         if (!block) return;
         
-        // Fill phonetics
         const phoneticUS = block.querySelector('.phonetic-us');
         const phoneticUK = block.querySelector('.phonetic-uk');
         if (phoneticUS) phoneticUS.value = meaning.phoneticUS || meaning.phonetic || word.phonetic || '';
         if (phoneticUK) phoneticUK.value = meaning.phoneticUK || meaning.phonetic || word.phonetic || '';
         
-        // Fill POS
         const posSelect = block.querySelector('.pos-select');
         if (posSelect && meaning.pos) {
             for (let i = 0; i < posSelect.options.length; i++) {
@@ -1275,7 +1264,6 @@ export function loadWordForEdit(wordId) {
             }
         }
         
-        // Fill other fields
         const defEn = block.querySelector('.def-en');
         const defVi = block.querySelector('.def-vi');
         const example = block.querySelector('.example-input');
@@ -1289,13 +1277,11 @@ export function loadWordForEdit(wordId) {
         if (antonyms) antonyms.value = meaning.antonyms || '';
     });
     
-    // Update save button text
     const saveBtn = document.getElementById('btn-save-word');
     if (saveBtn) {
         saveBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật từ vựng';
     }
     
-    // Scroll to form
     const addSection = document.getElementById('add-section');
     if (addSection) {
         addSection.scrollIntoView({ behavior: 'smooth' });
@@ -1307,8 +1293,6 @@ export function loadWordForEdit(wordId) {
 /* ===== GLOBAL EXPORTS ===== */
 window.selectMeaning = selectMeaning;
 window.addMeaningBlock = addMeaningBlock;
-window.clearMeaningBlock = clearMeaningBlock;
-window.removeMeaningBlock = removeMeaningBlock;
 window.clearWordForm = clearWordForm;
 window.searchAlternativeWord = searchAlternativeWord;
 window.saveWord = saveWord;
