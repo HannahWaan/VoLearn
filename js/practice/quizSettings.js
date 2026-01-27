@@ -8,7 +8,6 @@ import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { speak } from '../utils/speech.js';
 import { showPracticeArea } from './practiceEngine.js'; 
-import { updatePracticeProgress } from './practiceEngine.js';
 
 const POS_MAPPING = {
   noun: 'Danh từ',
@@ -478,7 +477,6 @@ function renderQuizWithSettings() {
   const progress = total > 0 ? (current / total) * 100 : 0;
   document.getElementById('practice-progress-bar')?.style && (document.getElementById('practice-progress-bar').style.width = `${progress}%`);
   setText('practice-progress-text', `${current}/${total}`);
-  updatePracticeProgress?.();
 
   if (quizSettings.timeLimit > 0) startQuizTimer();
 }
