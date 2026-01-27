@@ -13,7 +13,6 @@ import {
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
 import { navigate } from '../core/router.js';
-import { appData } from '../core/state.js';
 
 /* ===== STATE ===== */
 let options = [];
@@ -49,51 +48,7 @@ export function startQuiz(scope, settings = {}) {
         return;
     }
 
-    renderQuizUI();
     showCurrentQuestion();
-}
-
-/* ===== RENDER UI ===== */
-function renderQuizUI() {
-    const container = document.getElementById('practice-content');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="quiz-container">
-            <div class="quiz-header">
-                <button class="btn-icon btn-back" onclick="window.handlePracticeBack()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="quiz-progress">
-                    <span id="quiz-progress-text">1 / 10</span>
-                    <div class="progress-bar">
-                        <div id="quiz-progress-bar" class="progress-fill"></div>
-                    </div>
-                </div>
-                <div class="quiz-score">
-                    <span id="quiz-score">0</span>
-                    <i class="fas fa-star text-warning"></i>
-                </div>
-            </div>
-            
-            <div class="quiz-main">
-                <div class="quiz-question" id="quiz-question">
-                    <!-- Question will be rendered here -->
-                </div>
-                
-                <div class="quiz-options" id="quiz-options">
-                    <!-- Options will be rendered here -->
-                </div>
-            </div>
-            
-            <div class="quiz-footer">
-                <div class="quiz-feedback" id="quiz-feedback"></div>
-                <button class="btn-primary btn-next" id="btn-next-quiz" onclick="window.nextQuizQuestion()" style="display: none;">
-                    Tiếp theo <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    `;
 }
 
 /* ===== SHOW CURRENT QUESTION ===== */
@@ -113,47 +68,60 @@ function showCurrentQuestion() {
     
     // Generate options
     options = generateOptions(word, questionType);
+    if (!options || options.length < 2) {
+         showToast('Không đủ dữ liệu để tạo đáp án. Hãy kiểm tra nghĩa (defVi/defEn).', 'warning');
+         showQuizResults();
+         return;
+     }
     
-    // Render question
-    const questionContainer = document.getElementById('quiz-question');
-    if (questionContainer) {
-        if (questionType === 'word-to-meaning') {
-            questionContainer.innerHTML = `
-                <div class="question-word">
-                    <span>${escapeHtml(word.word)}</span>
-                    <button class="btn-icon btn-speak" onclick="window.speakQuizWord()">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                </div>
-                ${word.phonetic ? `<div class="question-phonetic">${escapeHtml(word.phonetic)}</div>` : ''}
-                <p class="question-prompt">Chọn nghĩa đúng:</p>
-            `;
-        } else {
-            questionContainer.innerHTML = `
-                <div class="question-meaning">${escapeHtml(word.meaning)}</div>
-                <p class="question-prompt">Chọn từ đúng:</p>
-            `;
-        }
-    }
+    // Render into VoLearn practice-content (use existing practice header/back/progress)
+    const container = document.getElementById('practice-content');
+    if (!container) return;
+
+    const phonetic = getPhoneticText(word);
+    const prompt = questionType === 'word-to-meaning' ? 'Chọn nghĩa đúng:' : 'Chọn từ đúng:';
+    const questionLabel = questionType === 'word-to-meaning' ? 'TỪ VỰNG' : 'NGHĨA';
+    const questionMain = questionType === 'word-to-meaning'
+       ? escapeHtml(word.word || '')
+       : escapeHtml(getMeaningText(word));
+
+    container.innerHTML = `
+       <div class="quiz-card">
+         <div class="quiz-question-label">${questionLabel}</div>
+         <div class="quiz-word">${questionMain || '(Không có dữ liệu)'}</div>
+         ${
+           questionType === 'word-to-meaning'
+             ? `
+               <div class="quiz-sub">
+                 ${phonetic ? `<div class="question-phonetic">${escapeHtml(phonetic)}</div>` : ''}
+                 <button class="btn-speak" type="button" onclick="window.speakQuizWord()" title="Nghe phát âm">
+                   <i class="fas fa-volume-up"></i>
+                 </button>
+               </div>
+             `
+             : ''
+         }
+         <div class="quiz-answer-label">${prompt}</div>
+         
+         <div class="quiz-options">
+           ${options.map((opt, index) => `
+             <button class="quiz-option" type="button" data-index="${index}" onclick="window.selectQuizOption(${index})">
+               <span class="option-letter">${String.fromCharCode(65   index)}</span>
+               <span class="option-text">${escapeHtml(opt.text)}</span>
+             </button>
+           `).join('')}
+         </div>
+ 
+         <div class="quiz-feedback" id="quiz-feedback"></div>
+         <div class="quiz-actions">
+           <button class="btn-primary" id="btn-next-quiz" onclick="window.nextQuizQuestion()" style="display:none;">
+             Tiếp theo <i class="fas fa-arrow-right"></i>
+           </button>
+         </div>
+       </div>
+     `;
     
-    // Render options
-    const optionsContainer = document.getElementById('quiz-options');
-    if (optionsContainer) {
-        optionsContainer.innerHTML = options.map((opt, index) => `
-            <button class="quiz-option" data-index="${index}" onclick="window.selectQuizOption(${index})">
-                <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                <span class="option-text">${escapeHtml(opt.text)}</span>
-            </button>
-        `).join('');
-    }
-    
-    // Hide feedback and next button
-    const feedback = document.getElementById('quiz-feedback');
-    const nextBtn = document.getElementById('btn-next-quiz');
-    if (feedback) feedback.innerHTML = '';
-    if (nextBtn) nextBtn.style.display = 'none';
-    
-    updateQuizProgress();
+    updatePracticeHeaderProgress();
     
     // Speak if enabled
     if (state.settings?.speakQuestion && questionType === 'word-to-meaning') {
@@ -168,13 +136,13 @@ function generateOptions(correctWord, questionType) {
     
     // Get the correct answer text
     const correctText = questionType === 'word-to-meaning' 
-        ? correctWord.meaning 
+        ? getMeaningText(correctWord)
         : correctWord.word;
     
     // Get wrong options
     const wrongOptions = allWords
         .filter(w => w.id !== correctWord.id)
-        .map(w => questionType === 'word-to-meaning' ? w.meaning : w.word)
+        .map(w => questionType === 'word-to-meaning' ? getMeaningText(w) : w.word)
         .filter(text => text && text !== correctText);
     
     // Shuffle and pick
@@ -225,8 +193,8 @@ export function selectQuizOption(index) {
     const nextBtn = document.getElementById('btn-next-quiz');
     if (nextBtn) nextBtn.style.display = 'block';
     
-    // Update score
-    updateQuizProgress();
+    // Update practice header progress
+    updatePracticeHeaderProgress();
 }
 
 /* ===== NEXT QUESTION ===== */
@@ -234,27 +202,15 @@ export function nextQuizQuestion() {
     showCurrentQuestion();
 }
 
-/* ===== UPDATE PROGRESS ===== */
-function updateQuizProgress() {
-    const state = getPracticeState();
-    
-    const progressText = document.getElementById('quiz-progress-text');
-    const progressBar = document.getElementById('quiz-progress-bar');
-    const scoreEl = document.getElementById('quiz-score');
-    
-    if (progressText) {
-        progressText.textContent = `${state.currentIndex + 1} / ${state.total}`;
-    }
-    
-    if (progressBar) {
-        progressBar.style.width = `${state.progress}%`;
-    }
-    
-    if (scoreEl) {
-        scoreEl.textContent = state.score;
-    }
-}
-
+/* ===== UPDATE PRACTICE HEADER PROGRESS (VoLearn) ===== */
+ function updatePracticeHeaderProgress() {
+     const state = getPracticeState();
+     const bar = document.getElementById('practice-progress-bar');
+     const text = document.getElementById('practice-progress-text');
+     if (bar?.style) bar.style.width = `${state.progress}%`;
+     if (text) text.textContent = `${state.currentIndex}/${state.total}`;
+ }
+ 
 /* ===== SPEAK ===== */
 export function speakQuizWord() {
     const word = getCurrentWord();
@@ -315,6 +271,12 @@ function showQuizResults() {
             </div>
         </div>
     `;
+    
+    // Update header to completed
+     const bar = document.getElementById('practice-progress-bar');
+     const text = document.getElementById('practice-progress-text');
+     if (bar?.style) bar.style.width = `100%`;
+     if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
 /* ===== NAVIGATION ===== */
@@ -329,11 +291,27 @@ export function restartQuiz() {
     startQuiz(scope, settings);
 }
 
+/* ===== WORD DATA HELPERS (VoLearn schema) ===== */
+ function getPrimaryMeaningObj(word) {
+     return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
+ }
+ 
+ function getMeaningText(word) {
+     const m = getPrimaryMeaningObj(word);
+     // ưu tiên VI (UI tiếng Việt), fallback EN
+     return m.defVi || m.defEn || word?.meaning || '';
+ }
+ 
+ function getPhoneticText(word) {
+     const m = getPrimaryMeaningObj(word);
+     return m.phoneticUS || m.phoneticUK || word?.phonetic || '';
+ }
+
 /* ===== UTILITIES ===== */
 function shuffleArray(array) {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i   1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
