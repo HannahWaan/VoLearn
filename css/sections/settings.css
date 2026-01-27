@@ -3,6 +3,10 @@
    ======================================== */
 
 #settings-section {
+    display: none; /* Mặc định ẩn */
+}
+
+#settings-section.active {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -404,3 +408,4 @@
         min-width: 160px;
     }
 }
+
