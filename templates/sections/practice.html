@@ -23,50 +23,67 @@
             <span>Các chế độ luyện tập</span>
         </div>
 
-        <div class="practice-grid">
-            <div class="practice-mode-card">
+        <!-- Practice Grid 2x2 -->
+        <div class="practice-grid-2x2">
+            <!-- Flashcard -->
+            <div class="practice-mode-card" data-mode="flashcard">
                 <div class="mode-icon flashcard-icon">
                     <i class="fas fa-clone"></i>
                 </div>
-                <h3>Flashcard</h3>
-                <p>Lật thẻ để học từ vựng</p>
-                <button class="btn-secondary" onclick="window.openFlashcardSettings()">
-                    <i class="fas fa-play"></i> Bắt đầu
+                <div class="mode-info">
+                    <h3>Flashcard</h3>
+                    <p>Lật thẻ để học từ vựng</p>
+                </div>
+                <button class="btn-mode-start" onclick="openFlashcardSettings()">
+                    <i class="fas fa-cog"></i> Cài đặt & Bắt đầu
                 </button>
             </div>
-            <div class="practice-mode-card">
+
+            <!-- Quiz -->
+            <div class="practice-mode-card" data-mode="quiz">
                 <div class="mode-icon quiz-icon">
                     <i class="fas fa-question-circle"></i>
                 </div>
-                <h3>Trắc nghiệm</h3>
-                <p>Chọn đáp án đúng</p>
-                <button class="btn-secondary" onclick="window.openQuizSettings()">
-                    <i class="fas fa-play"></i> Bắt đầu
+                <div class="mode-info">
+                    <h3>Trắc nghiệm</h3>
+                    <p>Chọn đáp án đúng</p>
+                </div>
+                <button class="btn-mode-start" onclick="openQuizSettings()">
+                    <i class="fas fa-cog"></i> Cài đặt & Bắt đầu
                 </button>
             </div>
-            <div class="practice-mode-card">
+
+            <!-- Dictation -->
+            <div class="practice-mode-card" data-mode="dictation">
                 <div class="mode-icon dictation-icon">
                     <i class="fas fa-headphones"></i>
                 </div>
-                <h3>Nghe - Viết</h3>
-                <p>Nghe và viết lại từ</p>
-                <button class="btn-secondary" onclick="window.openDictationSettings()">
-                    <i class="fas fa-play"></i> Bắt đầu
+                <div class="mode-info">
+                    <h3>Nghe - Viết</h3>
+                    <p>Nghe và viết lại từ</p>
+                </div>
+                <button class="btn-mode-start" onclick="openDictationSettings()">
+                    <i class="fas fa-cog"></i> Cài đặt & Bắt đầu
                 </button>
             </div>
-            <div class="practice-mode-card">
+
+            <!-- Typing -->
+            <div class="practice-mode-card" data-mode="typing">
                 <div class="mode-icon typing-icon">
                     <i class="fas fa-keyboard"></i>
                 </div>
-                <h3>Gõ từ</h3>
-                <p>Nhìn nghĩa, gõ từ tiếng Anh</p>
-                <button class="btn-secondary" onclick="window.openTypingSettings()">
-                    <i class="fas fa-play"></i> Bắt đầu
+                <div class="mode-info">
+                    <h3>Gõ từ</h3>
+                    <p>Nhìn nghĩa, gõ từ tiếng Anh</p>
+                </div>
+                <button class="btn-mode-start" onclick="openTypingSettings()">
+                    <i class="fas fa-cog"></i> Cài đặt & Bắt đầu
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Practice Area -->
     <div id="practice-area" class="practice-area" style="display: none;">
         <div class="practice-header">
             <button class="btn-back" onclick="window.handlePracticeBack()">
@@ -80,7 +97,6 @@
             </div>
         </div>
         <div id="practice-content" class="practice-content">
-            <!-- Practice content rendered here -->
         </div>
     </div>
 </section>
