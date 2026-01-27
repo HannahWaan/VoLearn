@@ -113,32 +113,28 @@ function initSettingsTabs() {
     document.addEventListener('click', (e) => {
         const tab = e.target.closest('.settings-tab');
         if (!tab) return;
-        
+
+        if (tab.hasAttribute('onclick')) return;
+
         const tabId = tab.dataset.tab;
         if (!tabId) return;
-        
-        // Tìm container của tabs
+
         const tabsContainer = tab.closest('.settings-tabs');
         if (!tabsContainer) return;
-        
-        // Tìm modal body chứa tab contents
+
         const modalBody = tabsContainer.closest('.modal-body');
         if (!modalBody) return;
-        
-        // Deactivate all tabs
+
         tabsContainer.querySelectorAll('.settings-tab').forEach(t => {
             t.classList.remove('active');
         });
-        
-        // Activate clicked tab
+
         tab.classList.add('active');
-        
-        // Hide all tab contents
+
         modalBody.querySelectorAll('.settings-tab-content').forEach(content => {
             content.classList.remove('active');
         });
-        
-        // Show selected tab content
+
         const targetContent = modalBody.querySelector(`#${tabId}`);
         if (targetContent) {
             targetContent.classList.add('active');
