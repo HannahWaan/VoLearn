@@ -7,9 +7,9 @@ import { showToast } from './toast.js';
 
 /* ===== VOICE STATE ===== */
 let availableVoices = {
-    us: { male: null, female: null },
-    uk: { male: null, female: null },
-    vi: { male: null, female: null }
+    us: [],
+    uk: [],
+    vi: []
 };
 
 /* ===== INIT ===== */
@@ -28,43 +28,41 @@ function loadVoices() {
         const voices = speechSynthesis.getVoices();
         if (voices.length === 0) return;
         
-        // Chỉ lấy giọng OFFLINE (localService = true hoặc không có "Online" trong tên)
-        const offlineVoices = voices.filter(v => 
-            v.localService === true || !v.name.toLowerCase().includes('online')
+        console.log('All voices:', voices.map(v => `${v.name} (${v.lang}) - local: ${v.localService}`));
+        
+        // Lọc theo ngôn ngữ - KHÔNG filter offline
+        availableVoices.us = voices.filter(v => 
+            v.lang === 'en-US' || v.lang === 'en_US' || v.lang.toLowerCase() === 'en-us'
         );
         
-        // US voices
-        const usVoices = offlineVoices.filter(v => 
-            v.lang === 'en-US' || v.lang === 'en_US'
+        availableVoices.uk = voices.filter(v => 
+            v.lang === 'en-GB' || v.lang === 'en_GB' || v.lang.toLowerCase() === 'en-gb'
         );
         
-        // UK voices  
-        const ukVoices = offlineVoices.filter(v => 
-            v.lang === 'en-GB' || v.lang === 'en_GB'
+        availableVoices.vi = voices.filter(v => 
+            v.lang.startsWith('vi') || v.lang === 'vi-VN' || v.lang === 'vi_VN'
         );
         
-        // Vietnamese voices
-        const viVoices = offlineVoices.filter(v => 
-            v.lang.startsWith('vi')
-        );
+        console.log('US voices:', availableVoices.us.length);
+        console.log('UK voices:', availableVoices.uk.length);
+        console.log('VI voices:', availableVoices.vi.length);
         
-        // Phân loại nam/nữ và chọn 1 giọng mỗi loại
-        availableVoices.us = classifyVoices(usVoices);
-        availableVoices.uk = classifyVoices(ukVoices);
-        availableVoices.vi = classifyVoices(viVoices);
-        
-        // Populate selects
-        populateVoiceSelect('voice-us-select', availableVoices.us, appData.settings?.voiceUS);
-        populateVoiceSelect('voice-uk-select', availableVoices.uk, appData.settings?.voiceUK);
-        populateVoiceSelect('voice-vi-select', availableVoices.vi, appData.settings?.voiceVI);
+        // Populate selects với giọng nam/nữ
+        populateVoiceSelect('voice-us-select', availableVoices.us, appData.settings?.voiceUS, 'US');
+        populateVoiceSelect('voice-uk-select', availableVoices.uk, appData.settings?.voiceUK, 'UK');
+        populateVoiceSelect('voice-vi-select', availableVoices.vi, appData.settings?.voiceVI, 'VN');
     };
     
+    // Load ngay
     loadVoiceList();
     
+    // Listen for voices changed (Chrome cần)
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = loadVoiceList;
     }
     
+    // Retry
+    setTimeout(loadVoiceList, 100);
     setTimeout(loadVoiceList, 500);
     setTimeout(loadVoiceList, 1000);
 }
@@ -102,26 +100,84 @@ function classifyVoices(voices) {
     return { male, female };
 }
 
-function populateVoiceSelect(selectId, voiceObj, currentValue) {
+function populateVoiceSelect(selectId, voices, currentValue, label) {
     const select = document.getElementById(selectId);
     if (!select) return;
     
     select.innerHTML = '';
     
-    if (!voiceObj.female && !voiceObj.male) {
-        select.innerHTML = '<option value="">Không có giọng</option>';
+    if (!voices || voices.length === 0) {
+        select.innerHTML = `<option value="">Không có giọng ${label}</option>`;
         return;
     }
     
-    if (voiceObj.female) {
-        const selected = currentValue === voiceObj.female.name ? 'selected' : '';
-        select.innerHTML += `<option value="${voiceObj.female.name}" ${selected}>♀ Nữ - ${voiceObj.female.name.split(' ')[0]}</option>`;
+    // Phân loại nam/nữ
+    const femaleKeywords = /female|woman|zira|samantha|karen|moira|fiona|susan|hazel|linda|lisa|victoria|anna|maria|huong|mai|linh|thi|nga|female|feminina|femenina/i;
+    const maleKeywords = /male|man|david|mark|james|daniel|george|richard|nam|minh|hung|tuan|son|masculine|masculina/i;
+    
+    let femaleVoice = null;
+    let maleVoice = null;
+    
+    // Tìm giọng nữ và nam
+    for (const voice of voices) {
+        const isFemale = femaleKeywords.test(voice.name);
+        const isMale = maleKeywords.test(voice.name);
+        
+        if (isFemale && !femaleVoice) {
+            femaleVoice = voice;
+        } else if (isMale && !maleVoice) {
+            maleVoice = voice;
+        }
     }
     
-    if (voiceObj.male && voiceObj.male !== voiceObj.female) {
-        const selected = currentValue === voiceObj.male.name ? 'selected' : '';
-        select.innerHTML += `<option value="${voiceObj.male.name}" ${selected}>♂ Nam - ${voiceObj.male.name.split(' ')[0]}</option>`;
+    // Nếu không tìm được qua keyword, lấy theo thứ tự
+    if (!femaleVoice && !maleVoice && voices.length > 0) {
+        femaleVoice = voices[0];
+        if (voices.length > 1) {
+            maleVoice = voices[1];
+        }
+    } else if (!femaleVoice && maleVoice) {
+        // Có nam nhưng không có nữ - tìm giọng khác làm nữ
+        for (const voice of voices) {
+            if (voice !== maleVoice) {
+                femaleVoice = voice;
+                break;
+            }
+        }
+    } else if (femaleVoice && !maleVoice) {
+        // Có nữ nhưng không có nam - tìm giọng khác làm nam
+        for (const voice of voices) {
+            if (voice !== femaleVoice) {
+                maleVoice = voice;
+                break;
+            }
+        }
     }
+    
+    // Thêm options
+    if (femaleVoice) {
+        const shortName = femaleVoice.name.split(' ').slice(0, 2).join(' ');
+        const selected = currentValue === femaleVoice.name ? 'selected' : '';
+        select.innerHTML += `<option value="${femaleVoice.name}" ${selected}>♀ Nữ - ${shortName}</option>`;
+    }
+    
+    if (maleVoice && maleVoice !== femaleVoice) {
+        const shortName = maleVoice.name.split(' ').slice(0, 2).join(' ');
+        const selected = currentValue === maleVoice.name ? 'selected' : '';
+        select.innerHTML += `<option value="${maleVoice.name}" ${selected}>♂ Nam - ${shortName}</option>`;
+    }
+    
+    // Nếu vẫn không có gì, hiển thị tất cả voices
+    if (select.innerHTML === '') {
+        voices.forEach(voice => {
+            const shortName = voice.name.split(' ').slice(0, 2).join(' ');
+            const selected = currentValue === voice.name ? 'selected' : '';
+            select.innerHTML += `<option value="${voice.name}" ${selected}>${shortName}</option>`;
+        });
+    }
+    
+    // Log để debug
+    console.log(`${label} voices:`, { female: femaleVoice?.name, male: maleVoice?.name });
 }
 
 /* ===== LOAD CURRENT SETTINGS ===== */
@@ -257,7 +313,7 @@ function applyFont(font) {
 function testVoice(type) {
     speechSynthesis.cancel();
     
-    let voiceName, text, lang;
+    let voiceName, text, lang, fallbackLang;
     const speed = parseFloat(document.getElementById('speed-slider')?.value) || 1;
     
     switch (type) {
@@ -265,32 +321,42 @@ function testVoice(type) {
             voiceName = document.getElementById('voice-us-select')?.value;
             text = 'Hello! This is American English voice.';
             lang = 'en-US';
+            fallbackLang = 'en';
             break;
         case 'uk':
             voiceName = document.getElementById('voice-uk-select')?.value;
             text = 'Hello! This is British English voice.';
             lang = 'en-GB';
+            fallbackLang = 'en';
             break;
         case 'vi':
             voiceName = document.getElementById('voice-vi-select')?.value;
             text = 'Xin chào! Đây là giọng đọc tiếng Việt.';
             lang = 'vi-VN';
+            fallbackLang = 'vi';
             break;
-    }
-    
-    if (!voiceName) {
-        showToast('Không có giọng đọc khả dụng', 'error');
-        return;
     }
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = speed;
-    utterance.lang = lang;
     
+    // Tìm voice theo tên
     const voices = speechSynthesis.getVoices();
-    const voice = voices.find(v => v.name === voiceName);
+    let voice = voices.find(v => v.name === voiceName);
+    
+    // Fallback: tìm theo ngôn ngữ
+    if (!voice) {
+        voice = voices.find(v => v.lang === lang) || 
+                voices.find(v => v.lang.startsWith(fallbackLang));
+    }
+    
     if (voice) {
         utterance.voice = voice;
+        utterance.lang = voice.lang;
+        console.log('Using voice:', voice.name, voice.lang);
+    } else {
+        utterance.lang = lang;
+        console.log('No specific voice found, using lang:', lang);
     }
     
     speechSynthesis.speak(utterance);
@@ -886,3 +952,4 @@ export function applySettings() {
 /* ===== EXPORTS ===== */
 export { applyTheme, applyFont };
 window.exportData = exportJSON;
+
