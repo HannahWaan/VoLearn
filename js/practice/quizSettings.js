@@ -5,9 +5,9 @@
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
-import { openModal, closeAllModals } from '../ui/modalEngine.js';
+import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { speak } from '../utils/speech.js';
-import { showPracticeArea } from './practiceEngine.js'; // dùng UI chuẩn
+import { showPracticeArea } from './practiceEngine.js'; 
 import { updatePracticeProgress } from './practiceEngine.js';
 
 const POS_MAPPING = {
@@ -163,9 +163,9 @@ function switchQuizTab(tabName, btn) {
 
 // ===== scope selector =====
 function openQuizScopeSelector(type) {
-  const modal = document.getElementById('quiz-scope-selector-modal');
-  const title = document.getElementById('quiz-scope-selector-title');
-  const content = document.getElementById('quiz-scope-selector-content');
+  const modal = document.getElementById('scope-selector-modal');
+  const title = document.getElementById('scope-selector-title');
+  const content = document.getElementById('scope-selector-content');
   if (!modal || !title || !content) return;
 
   if (type === 'set') {
@@ -235,11 +235,11 @@ function openQuizScopeSelector(type) {
     `;
   }
 
-  modal.classList.add('show');
+openModal('scope-selector-modal');
 }
 
 function closeQuizScopeSelector() {
-  document.getElementById('quiz-scope-selector-modal')?.classList.remove('show');
+  closeModal('scope-selector-modal');
 }
 
 function refreshQuizScope() {
