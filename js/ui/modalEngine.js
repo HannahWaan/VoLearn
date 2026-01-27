@@ -117,9 +117,9 @@ export function initModals() {
 function initSettingsTabs() {
     document.addEventListener('click', (e) => {
         const tab = e.target.closest('.settings-tab');
-        if (!tab) return;
-
-        if (tab.hasAttribute('onclick')) return;
+      if (!tab) return;
+      if (tab.hasAttribute('data-quiz-tab')) return;
+      if (tab.hasAttribute('onclick')) return;
 
         const tabId = tab.dataset.tab;
         if (!tabId) return;
