@@ -27,7 +27,6 @@ export function renderShelves() {
 
     const allWordsCount = appData.vocabulary?.length || 0;
     
-    // Card "Tất cả từ vựng"
     let html = `
         <div class="set-card all-words" onclick="window.openSetView('all')">
             <div class="set-color-icon">
@@ -48,7 +47,6 @@ export function renderShelves() {
         );
     }
 
-    // Render từng bộ từ
     sets.forEach(set => {
         const count = appData.vocabulary?.filter(w => w.setId === set.id).length || 0;
         const bgColor = set.color || '#667eea';
@@ -104,7 +102,6 @@ function bindBookshelfEvents() {
         createBtn.addEventListener('click', openCreateSetModal);
     }
     
-    // Bind save button via event delegation
     document.addEventListener('click', (e) => {
         if (e.target.closest('#btn-save-set')) {
             saveSet();
@@ -233,6 +230,24 @@ export function confirmDeleteSet(setId) {
     });
 }
 
+export function deleteSet(setId) {
+    // Chuyển các từ trong bộ về "Tất cả"
+    appData.vocabulary?.forEach(word => {
+        if (word.setId === setId) {
+            word.setId = null;
+        }
+    });
+    
+    // Xóa bộ từ
+    appData.sets = appData.sets?.filter(s => s.id !== setId) || [];
+    
+    // Lưu và cập nhật UI
+    saveData(appData);
+    renderShelves();
+    populateSetSelect();
+    showToast('Đã xóa bộ từ', 'success');
+}
+
 /* ===== GLOBAL EXPORTS ===== */
 window.openSetView = openSetView;
 window.openCreateSetModal = openCreateSetModal;
@@ -245,6 +260,3 @@ window.renderShelves = renderShelves;
 window.populateSetSelect = populateSetSelect;
 
 export { searchQuery };
-
-
-
