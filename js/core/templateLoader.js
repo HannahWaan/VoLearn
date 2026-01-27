@@ -98,15 +98,16 @@ export async function loadAllModals() {
     console.log('📦 Loading modals...');
     
     const modals = [
-        'create-set',
-        'word-detail',
-        'day-detail',
-        'flashcard-settings',
-        'quiz-settings',
-        'dictation-settings',
-        'typing-settings',
-        'scope-selector'
-    ];
+       'create-set',
+       'word-detail',
+       'day-detail',
+       'flashcard-settings',
+       'quiz-settings',
+       'dictation-settings',
+       'typing-settings',
+       'scope-selector',
+       'confirm-modal'
+   ];
 
     for (const modal of modals) {
         try {
@@ -217,3 +218,4 @@ export function showLoadingError(message) {
         }
     }
 }
+
