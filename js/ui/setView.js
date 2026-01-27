@@ -419,16 +419,27 @@ function editWordInView(wordId) {
 
 /* ===== DELETE WORD ===== */
 function deleteWordInView(wordId) {
-    if (!confirm('Bạn có chắc muốn xóa từ này?')) return;
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
     
-    const index = (appData.vocabulary || []).findIndex(w => w.id === wordId);
-    if (index > -1) {
-        appData.vocabulary.splice(index, 1);
-        saveData(appData);
-        showSuccess('Đã xóa từ vựng!');
-        selectedWordId = null;
-        renderSetView();
-    }
+    window.showConfirm({
+        title: 'Xóa từ vựng',
+        message: `Bạn có chắc muốn xóa từ "${word.word}"?`,
+        submessage: 'Hành động này không thể hoàn tác.',
+        type: 'danger',
+        confirmText: 'Xóa',
+        icon: 'fas fa-trash',
+        onConfirm: () => {
+            const index = (appData.vocabulary || []).findIndex(w => w.id === wordId);
+            if (index > -1) {
+                appData.vocabulary.splice(index, 1);
+                saveData(appData);
+                showSuccess('Đã xóa từ vựng!');
+                selectedWordId = null;
+                renderSetView();
+            }
+        }
+    });
 }
 
 /* ===== GLOBAL EXPORTS ===== */
@@ -441,6 +452,7 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
+
 
 
 
