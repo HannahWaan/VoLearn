@@ -285,14 +285,16 @@ function exportCSV() {
             return;
         }
 
-        // ===== HEADER GIỐNG EXCEL =====
+        // ===== HEADER =====
         const headers = [
+            'Word',
+            'Word Formation',
+            'Bookshelf',
             'Phonetic US',
             'Phonetic UK',
             'POS',
             'Definition (EN)',
             'Definition (VI)',
-            'Example',
             'Synonym',
             'Antonym',
             'Mastered',
@@ -302,7 +304,7 @@ function exportCSV() {
         const rows = [];
         rows.push(headers.join(','));
 
-        // ===== DATA: MỖI TỪ = 1 DÒNG =====
+        // ===== DATA =====
         words.forEach(wordData => {
             const meanings = wordData.meanings || [];
             const m = meanings[0] || {}; // lấy nghĩa đầu tiên
@@ -311,16 +313,18 @@ function exportCSV() {
             const antonyms = Array.isArray(m.antonyms) ? m.antonyms.join('; ') : (m.antonyms || '');
 
             const row = [
-                escapeCSV(m.phoneticUS || ''),
-                escapeCSV(m.phoneticUK || ''),
-                escapeCSV(m.pos || ''),
-                escapeCSV(m.definitionEn || ''),
-                escapeCSV(m.definitionVi || ''),
-                escapeCSV(m.example || ''),
-                escapeCSV(synonyms),
-                escapeCSV(antonyms),
-                wordData.mastered ? 'yes' : 'no',
-                wordData.bookmarked ? 'yes' : 'no'
+                escapeCSV(wordData.word || ''),                // Word
+                escapeCSV(wordData.formation || ''),           // Word Formation
+                escapeCSV(wordData.bookshelf || ''),           // Bookshelf
+                escapeCSV(m.phoneticUS || ''),                  // Phonetic US
+                escapeCSV(m.phoneticUK || ''),                  // Phonetic UK
+                escapeCSV(m.pos || ''),                         // POS
+                escapeCSV(m.definitionEn || ''),                // Definition EN
+                escapeCSV(m.definitionVi || ''),                // Definition VI
+                escapeCSV(synonyms),                            // Synonym
+                escapeCSV(antonyms),                            // Antonym
+                wordData.mastered ? 'yes' : 'no',               // Mastered
+                wordData.bookmarked ? 'yes' : 'no'              // Bookmarked
             ];
 
             rows.push(row.join(','));
@@ -693,5 +697,6 @@ function getDateString() {
 
 // ===== EXPORTS =====
 window.exportData = exportJSON;
+
 
 
