@@ -549,68 +549,95 @@
     line-height: 1.5;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .split-view-container {
-        flex-direction: column;
-        height: auto;
-    }
-    
-    .split-left {
-        width: 100%;
-        max-width: none;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        max-height: 300px;
-    }
-    
-    .split-resizer {
-        display: none;
-    }
-    
-    .split-right {
-        min-height: 400px;
-    }
-    
-    .detail-top-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-    
-    .detail-top-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-}
-
 /* ===== EMPTY STATE - BEAUTIFUL ===== */
 .empty-message {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 30px;
+    padding: 50px 20px;
     text-align: center;
     color: var(--text-muted);
     height: 100%;
-    min-height: 300px;
+    min-height: 250px;
 }
 
-.empty-message i.fa-book-open {
-    font-size: 4rem;
-    margin-bottom: 20px;
+.empty-message > i {
+    font-size: 3rem;
+    margin-bottom: 16px;
     color: var(--primary-light);
     opacity: 0.6;
 }
 
 .empty-message p {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
-    margin-bottom: 24px;
+    margin: 0 0 20px 0;
     font-style: italic;
 }
 
+/* ===== NÚT THÊM TỪ MỚI ===== */
+.empty-message .btn-add-word,
+.empty-message .btn.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(233, 30, 140, 0.3);
+    line-height: 1;
+}
+
+.empty-message .btn-add-word i,
+.empty-message .btn.btn-primary i {
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.empty-message .btn-add-word:hover,
+.empty-message .btn.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(233, 30, 140, 0.4);
+}
+
+/* ===== RESPONSIVE - Mobile nhỏ hơn ===== */
+@media (max-width: 768px) {
+    .empty-message {
+        padding: 40px 16px;
+        min-height: 200px;
+    }
+    
+    .empty-message > i {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+    }
+    
+    .empty-message p {
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+    }
+    
+    .empty-message .btn-add-word,
+    .empty-message .btn.btn-primary {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        gap: 6px;
+        border-radius: 8px;
+    }
+    
+    .empty-message .btn-add-word i,
+    .empty-message .btn.btn-primary i {
+        font-size: 0.75rem;
+    }
+}
 /* ===== NÚT THÊM TỪ MỚI - ĐẸPCHỈNH ===== */
 .empty-message .btn-add-word {
     display: inline-flex;
@@ -662,3 +689,4 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 25px rgba(233, 30, 140, 0.4);
 }
+
