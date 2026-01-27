@@ -94,16 +94,22 @@
     color: var(--text-primary);
 }
 
-/* ===== SELECT - TO HƠN ===== */
+/* ===== SELECT ===== */
 .setting-select {
-    min-width: 200px;
-    padding: 10px 14px;
+    min-width: 130px; 
+    max-width: 150px;  
+    padding: 8px 10px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
+}
+
+.setting-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 .setting-select:focus {
@@ -408,5 +414,6 @@
         min-width: 160px;
     }
 }
+
 
 
