@@ -4,7 +4,9 @@
         <h1 class="section-title"><i class="fas fa-cog"></i> Cài đặt</h1>
     </div>
     
-    <div class="settings-container">
+    <div class="settings-grid">
+        <!-- ROW 1: Giao diện + Giọng đọc -->
+        
         <!-- ===== GIAO DIỆN ===== -->
         <div class="settings-card">
             <div class="settings-card-header">
@@ -12,11 +14,9 @@
                 <h3>Giao diện</h3>
             </div>
             <div class="settings-card-body">
-                <!-- Chế độ tối -->
                 <div class="setting-row">
                     <div class="setting-info">
                         <span class="setting-label">Chế độ tối</span>
-                        <span class="setting-desc">Bật/tắt giao diện tối</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="theme-toggle">
@@ -24,11 +24,9 @@
                     </label>
                 </div>
                 
-                <!-- Phông chữ -->
                 <div class="setting-row">
                     <div class="setting-info">
                         <span class="setting-label">Phông chữ</span>
-                        <span class="setting-desc">Chọn font hiển thị</span>
                     </div>
                     <select id="font-select" class="setting-select">
                         <option value="Be Vietnam Pro">Be Vietnam Pro</option>
@@ -48,66 +46,39 @@
                 <h3>Giọng đọc</h3>
             </div>
             <div class="settings-card-body">
-                <!-- Giọng US -->
                 <div class="setting-row">
-                    <div class="setting-info">
-                        <span class="setting-label">🇺🇸 Giọng US</span>
-                        <span class="setting-desc">Chọn giọng nam/nữ US</span>
-                    </div>
-                    <select id="voice-us-select" class="setting-select">
-                        <option value="">Đang tải...</option>
-                    </select>
+                    <span class="setting-label">🇺🇸 US</span>
+                    <select id="voice-us-select" class="setting-select"></select>
                 </div>
                 
-                <!-- Giọng UK -->
                 <div class="setting-row">
-                    <div class="setting-info">
-                        <span class="setting-label">🇬🇧 Giọng UK</span>
-                        <span class="setting-desc">Chọn giọng nam/nữ UK</span>
-                    </div>
-                    <select id="voice-uk-select" class="setting-select">
-                        <option value="">Đang tải...</option>
-                    </select>
+                    <span class="setting-label">🇬🇧 UK</span>
+                    <select id="voice-uk-select" class="setting-select"></select>
                 </div>
                 
-                <!-- Giọng Việt -->
                 <div class="setting-row">
-                    <div class="setting-info">
-                        <span class="setting-label">🇻🇳 Giọng Việt</span>
-                        <span class="setting-desc">Chọn giọng nam/nữ VN</span>
-                    </div>
-                    <select id="voice-vi-select" class="setting-select">
-                        <option value="">Đang tải...</option>
-                    </select>
+                    <span class="setting-label">🇻🇳 VN</span>
+                    <select id="voice-vi-select" class="setting-select"></select>
                 </div>
                 
-                <!-- Tốc độ đọc -->
                 <div class="setting-row">
-                    <div class="setting-info">
-                        <span class="setting-label">Tốc độ đọc</span>
-                        <span class="setting-desc">Điều chỉnh tốc độ phát âm</span>
-                    </div>
+                    <span class="setting-label">Tốc độ</span>
                     <div class="speed-control">
                         <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
                         <span id="speed-value">1.0x</span>
                     </div>
                 </div>
                 
-                <!-- Test giọng -->
-                <div class="voice-test-buttons">
-                    <button id="btn-test-us" class="btn-test-voice">
-                        <i class="fas fa-play"></i> Test US
-                    </button>
-                    <button id="btn-test-uk" class="btn-test-voice">
-                        <i class="fas fa-play"></i> Test UK
-                    </button>
-                    <button id="btn-test-vi" class="btn-test-voice">
-                        <i class="fas fa-play"></i> Test VN
-                    </button>
+                <div class="voice-test-row">
+                    <button id="btn-test-us" class="btn-test">Test US</button>
+                    <button id="btn-test-uk" class="btn-test">Test UK</button>
+                    <button id="btn-test-vi" class="btn-test">Test VN</button>
                 </div>
             </div>
         </div>
 
+        <!-- ROW 2: Quản lý dữ liệu + Google Drive -->
+        
         <!-- ===== QUẢN LÝ DỮ LIỆU ===== -->
         <div class="settings-card">
             <div class="settings-card-header">
@@ -115,37 +86,35 @@
                 <h3>Quản lý dữ liệu</h3>
             </div>
             <div class="settings-card-body">
-                <!-- Thống kê -->
                 <div class="data-stats">
-                    <div class="stat-item">
-                        <span class="stat-value" id="stats-total-words">0</span>
-                        <span class="stat-label">Từ vựng</span>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stats-total-words">0</span>
+                        <span class="stat-txt">Từ vựng</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="stats-total-sets">0</span>
-                        <span class="stat-label">Bộ từ</span>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stats-total-sets">0</span>
+                        <span class="stat-txt">Bộ từ</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="stats-storage">0 KB</span>
-                        <span class="stat-label">Dung lượng</span>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stats-storage">0 KB</span>
+                        <span class="stat-txt">Dung lượng</span>
                     </div>
                 </div>
                 
-                <!-- Buttons -->
-                <div class="data-actions">
+                <div class="data-btns">
                     <button id="btn-export-json" class="btn-data">
-                        <i class="fas fa-download"></i> Xuất JSON
+                        <i class="fas fa-download"></i> JSON
                     </button>
                     <button id="btn-export-csv" class="btn-data">
-                        <i class="fas fa-file-csv"></i> Xuất CSV
+                        <i class="fas fa-file-csv"></i> CSV
                     </button>
                     <button id="btn-import" class="btn-data">
-                        <i class="fas fa-upload"></i> Nhập dữ liệu
+                        <i class="fas fa-upload"></i> Nhập
                     </button>
-                    <input type="file" id="import-file" accept=".json,.csv" hidden>
                 </div>
+                <input type="file" id="import-file" accept=".json,.csv" hidden>
                 
-                <button id="btn-clear-data" class="btn-danger-full">
+                <button id="btn-clear-data" class="btn-danger">
                     <i class="fas fa-trash-alt"></i> Xóa tất cả dữ liệu
                 </button>
             </div>
@@ -155,37 +124,35 @@
         <div class="settings-card">
             <div class="settings-card-header">
                 <i class="fab fa-google-drive"></i>
-                <h3>Google Drive Sync</h3>
+                <h3>Google Drive</h3>
             </div>
             <div class="settings-card-body">
-                <p class="gdrive-desc">Đồng bộ dữ liệu với Google Drive để sao lưu và khôi phục trên nhiều thiết bị.</p>
-                
-                <!-- Trạng thái đăng nhập -->
                 <div id="gdrive-status" class="gdrive-status">
                     <i class="fas fa-circle-notch fa-spin"></i>
                     <span>Đang kiểm tra...</span>
                 </div>
                 
-                <!-- Buttons -->
-                <div class="gdrive-actions">
-                    <button id="btn-gdrive-login" class="btn-gdrive">
+                <div class="gdrive-btns">
+                    <button id="btn-gdrive-login" class="btn-google">
                         <i class="fab fa-google"></i> Đăng nhập Google
                     </button>
-                    <button id="btn-gdrive-logout" class="btn-gdrive btn-logout" style="display:none;">
+                    <button id="btn-gdrive-logout" class="btn-logout-google" style="display:none;">
                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
                     </button>
                 </div>
                 
-                <div class="gdrive-sync-actions" style="display:none;">
+                <div class="gdrive-sync" id="gdrive-sync-section" style="display:none;">
                     <button id="btn-gdrive-backup" class="btn-sync">
-                        <i class="fas fa-cloud-upload-alt"></i> Sao lưu lên Drive
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Sao lưu</span>
                     </button>
                     <button id="btn-gdrive-restore" class="btn-sync">
-                        <i class="fas fa-cloud-download-alt"></i> Khôi phục từ Drive
+                        <i class="fas fa-cloud-download-alt"></i>
+                        <span>Khôi phục</span>
                     </button>
                 </div>
                 
-                <div id="gdrive-last-sync" class="gdrive-last-sync"></div>
+                <div id="gdrive-last-sync" class="gdrive-info"></div>
             </div>
         </div>
     </div>
