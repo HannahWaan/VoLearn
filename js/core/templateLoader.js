@@ -107,7 +107,6 @@ export async function loadAllModals() {
        'typing-settings',
        'scope-selector',
        'confirm-modal',
-       'quiz-scope-selector'
    ];
 
     for (const modal of modals) {
@@ -219,6 +218,7 @@ export function showLoadingError(message) {
         }
     }
 }
+
 
 
 
