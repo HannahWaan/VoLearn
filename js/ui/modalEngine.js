@@ -40,7 +40,12 @@ export function closeAllModals() {
     document.querySelectorAll('.modal.show').forEach(modal => {
         modal.classList.remove('show');
     });
+
     document.body.style.overflow = '';
+
+    document.getElementById('sidebar-overlay')?.classList.remove('show');
+
+    document.body.classList.remove('modal-open');
 }
 
 /**
