@@ -242,9 +242,7 @@ function setupGlobalFunctions() {
     window.MW_THESAURUS_KEY = MW_THESAURUS_KEY;
     
     // Practice Settings 
-    window.openQuizSettings = () => {
-        import('./practice/quiz.js').then(m => m.openQuizSettings && m.openQuizSettings());
-    };
+    window.openQuizSettings = () => openModal('quiz-settings-modal');
     window.openDictationSettings = () => {
         import('./practice/dictation.js').then(m => m.openDictationSettings && m.openDictationSettings());
     };
