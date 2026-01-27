@@ -236,10 +236,7 @@ function setupGlobalFunctions() {
     window.MW_LEARNER_KEY = MW_LEARNER_KEY;
     window.MW_THESAURUS_KEY = MW_THESAURUS_KEY;
     
-    // Practice Settings
-    window.openFlashcardSettings = () => {
-        import('./practice/flashcard.js').then(m => m.openFlashcardSettings && m.openFlashcardSettings());
-    };
+    // Practice Settings 
     window.openQuizSettings = () => {
         import('./practice/quiz.js').then(m => m.openQuizSettings && m.openQuizSettings());
     };
