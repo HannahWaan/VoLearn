@@ -981,22 +981,23 @@ export function saveWord() {
     const wordFormation = document.getElementById('word-formation-global')?.value?.trim() || '';
     const setId = setSelect?.value || null;
     
-    // Thu thập các meanings
+    // Thu thập các meanings - SỬA SELECTOR
     const meanings = [];
     const meaningBlocks = document.querySelectorAll('.meaning-block');
     
-    meaningBlocks.forEach((block, index) => {
-        const phoneticUS = block.querySelector(`#phonetic-us-${index}`)?.value?.trim() || '';
-        const phoneticUK = block.querySelector(`#phonetic-uk-${index}`)?.value?.trim() || '';
-        const pos = block.querySelector(`#pos-${index}`)?.value || '';
-        const defEn = block.querySelector(`#def-en-${index}`)?.value?.trim() || '';
-        const defVi = block.querySelector(`#def-vi-${index}`)?.value?.trim() || '';
-        const example = block.querySelector(`#example-${index}`)?.value?.trim() || '';
-        const synonyms = block.querySelector(`#synonyms-${index}`)?.value?.trim() || '';
-        const antonyms = block.querySelector(`#antonyms-${index}`)?.value?.trim() || '';
+    meaningBlocks.forEach((block) => {
+        // Dùng CLASS thay vì ID
+        const phoneticUS = block.querySelector('.phonetic-us')?.value?.trim() || '';
+        const phoneticUK = block.querySelector('.phonetic-uk')?.value?.trim() || '';
+        const pos = block.querySelector('.pos-select')?.value || '';
+        const defEn = block.querySelector('.def-en')?.value?.trim() || '';
+        const defVi = block.querySelector('.def-vi')?.value?.trim() || '';
+        const example = block.querySelector('.example-input')?.value?.trim() || '';
+        const synonyms = block.querySelector('.synonyms-input')?.value?.trim() || '';
+        const antonyms = block.querySelector('.antonyms-input')?.value?.trim() || '';
         
         // Chỉ thêm nếu có nội dung
-        if (defEn || defVi || phoneticUS || phoneticUK) {
+        if (defEn || defVi) {
             meanings.push({
                 phoneticUS,
                 phoneticUK,
@@ -1069,7 +1070,7 @@ export function saveWord() {
     }));
     
     // Clear form
-    clearWordForm();
+    clearWordFormSilent();
     editingWordId = null;
     
     // === QUAY VỀ SET-VIEW NẾU ĐANG EDIT ===
