@@ -106,7 +106,7 @@ export async function loadAllModals() {
        'dictation-settings',
        'typing-settings',
        'scope-selector',
-       'confirm-modal'
+       'confirm-modal',
        'quiz-scope-selector'
    ];
 
@@ -219,5 +219,6 @@ export function showLoadingError(message) {
         }
     }
 }
+
 
 
