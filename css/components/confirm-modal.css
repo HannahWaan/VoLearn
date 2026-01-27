@@ -1,0 +1,109 @@
+/* ========================================
+   CONFIRM MODAL - VoLearn Style
+   ======================================== */
+
+.modal-confirm {
+    max-width: 420px;
+}
+
+.modal-confirm .modal-header {
+    background: var(--gradient-card);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-confirm .modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.modal-confirm .modal-header h3 i {
+    color: var(--warning-color);
+}
+
+.modal-confirm .modal-header h3.danger i {
+    color: var(--danger-color);
+}
+
+.modal-confirm .modal-header h3.info i {
+    color: var(--info-color);
+}
+
+.modal-confirm .modal-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.modal-confirm .modal-body p {
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.confirm-submessage {
+    margin-top: 12px !important;
+    font-size: 0.9rem !important;
+    color: var(--text-secondary) !important;
+}
+
+.confirm-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.confirm-footer button {
+    min-width: 120px;
+    padding: 12px 24px;
+    font-weight: 600;
+}
+
+/* Danger style */
+.modal-confirm.danger .modal-header h3 i {
+    color: var(--danger-color);
+}
+
+.modal-confirm.danger #confirm-modal-ok {
+    background: var(--danger-color);
+}
+
+.modal-confirm.danger #confirm-modal-ok:hover {
+    background: #dc2626;
+}
+
+/* Warning style */
+.modal-confirm.warning .modal-header h3 i {
+    color: var(--warning-color);
+}
+
+.modal-confirm.warning #confirm-modal-ok {
+    background: var(--warning-color);
+}
+
+.modal-confirm.warning #confirm-modal-ok:hover {
+    background: #d97706;
+}
+
+/* Info style */
+.modal-confirm.info .modal-header h3 i {
+    color: var(--info-color);
+}
+
+.modal-confirm.info #confirm-modal-ok {
+    background: var(--info-color);
+}
+
+.modal-confirm.info #confirm-modal-ok:hover {
+    background: #2563eb;
+}
+
+/* Primary style */
+.modal-confirm.primary #confirm-modal-ok {
+    background: var(--gradient-primary);
+}
