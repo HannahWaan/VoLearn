@@ -38,8 +38,10 @@ import { backupToDrive, restoreFromDrive, initDriveBackup } from './sync/gdriveB
 import { initSpeech, speak, stopSpeaking } from './utils/speech.js';
 import { escapeHtml, generateId, formatDate, debounce } from './utils/helpers.js';
 
-// ===== FLASHCARD SETTINGS IMPORT =====
+// ===== PRACTICE SETTINGS IMPORT =====
 import { initFlashcardSettings } from './practice/flashcardSettings.js';
+import { initQuizSettings } from './practice/quizSettings.js';
+
 
 /* ===== CONSTANTS ===== */
 const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
@@ -94,6 +96,7 @@ async function initApp() {
         // Step 6.1: Initialize Flashcard Settings
         console.log('🃏 Step 6.1: Initializing Flashcard Settings...');
         initFlashcardSettings();
+        initQuizSettings();
         
         // Step 6.5: Initialize Cambridge Widget
         console.log('📚 Step 6.5: Initializing Cambridge Widget...');
