@@ -20,7 +20,6 @@ import { initSetView } from './ui/setView.js';
 import { initCalendar, renderCalendar } from './ui/calendar.js';
 import { initSettings, applySettings } from './ui/settings.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
-import { applySettings } from './js/ui/settings.js';
 
 // ===== PRACTICE IMPORTS =====
 import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
