@@ -89,6 +89,10 @@ async function initApp() {
         console.log('🏋️ Step 6: Initializing practice...');
         initPracticeEngine();
 
+        // Step 6.1: Initialize Flashcard Settings
+        console.log('🃏 Step 6.1: Initializing Flashcard Settings...');
+        initFlashcardSettings();
+        
         // Step 6.5: Initialize Cambridge Widget
         console.log('📚 Step 6.5: Initializing Cambridge Widget...');
         initCambridgeWidget();
