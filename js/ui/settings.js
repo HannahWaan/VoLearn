@@ -6,7 +6,7 @@
 
 import { appData, setAppData, DEFAULT_DATA } from '../core/state.js';
 import { saveData, clearData, loadData } from '../core/storage.js';
-import { toast } from './toast.js';
+import { showToast, showSuccess, showError, showWarning, showInfo } from './toast.js';
 
 // ===== GOOGLE DRIVE CONFIG =====
 const GDRIVE_CLIENT_ID = '1053065016561-s84rn7tjsrc16a31s0b7mhs6kg140rvm.apps.googleusercontent.com';
@@ -90,8 +90,8 @@ function populateVoiceSelect(selectId, voices, label) {
     select.disabled = false;
     
     // Phân loại nam/nữ
-    const femaleKeywords = ['female', 'woman', 'girl', 'zira', 'hazel', 'susan', 'linda', 'samantha', 'karen', 'moira', 'tessa', 'fiona', 'victoria', 'alice', 'ellen', 'monica', 'paulina', 'helena', 'catherine', 'anna', 'linh', 'mai', 'huong', 'female'];
-    const maleKeywords = ['male', 'man', 'boy', 'david', 'mark', 'james', 'daniel', 'george', 'richard', 'alex', 'tom', 'fred', 'lee', 'oliver', 'ryan', 'nam', 'hung', 'minh', 'male'];
+    const femaleKeywords = ['female', 'woman', 'girl', 'zira', 'hazel', 'susan', 'linda', 'samantha', 'karen', 'moira', 'tessa', 'fiona', 'victoria', 'alice', 'ellen', 'monica', 'paulina', 'helena', 'catherine', 'anna', 'linh', 'mai', 'huong'];
+    const maleKeywords = ['male', 'man', 'boy', 'david', 'mark', 'james', 'daniel', 'george', 'richard', 'alex', 'tom', 'fred', 'lee', 'oliver', 'ryan', 'nam', 'hung', 'minh'];
     
     const femaleVoices = [];
     const maleVoices = [];
@@ -109,34 +109,28 @@ function populateVoiceSelect(selectId, voices, label) {
     });
     
     // Thêm giọng nữ
-    if (femaleVoices.length > 0) {
-        femaleVoices.forEach((voice, idx) => {
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `♀ Nữ ${idx + 1} - ${voice.name}`;
-            select.appendChild(option);
-        });
-    }
+    femaleVoices.forEach((voice, idx) => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `♀ Nữ ${idx + 1} - ${voice.name}`;
+        select.appendChild(option);
+    });
     
     // Thêm giọng nam
-    if (maleVoices.length > 0) {
-        maleVoices.forEach((voice, idx) => {
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `♂ Nam ${idx + 1} - ${voice.name}`;
-            select.appendChild(option);
-        });
-    }
+    maleVoices.forEach((voice, idx) => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `♂ Nam ${idx + 1} - ${voice.name}`;
+        select.appendChild(option);
+    });
     
     // Thêm giọng khác
-    if (otherVoices.length > 0) {
-        otherVoices.forEach((voice, idx) => {
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `${voice.name}`;
-            select.appendChild(option);
-        });
-    }
+    otherVoices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = voice.name;
+        select.appendChild(option);
+    });
     
     // Load saved value
     const savedValue = localStorage.getItem(`volearn-voice-${selectId}`);
@@ -149,7 +143,7 @@ function testVoice(type) {
     const selectId = `voice-${type}-select`;
     const select = document.getElementById(selectId);
     if (!select || !select.value) {
-        toast.warning('Chưa chọn giọng đọc!');
+        showWarning('Chưa chọn giọng đọc!');
         return;
     }
     
@@ -158,7 +152,7 @@ function testVoice(type) {
     const voice = voices.find(v => v.name === voiceName);
     
     if (!voice) {
-        toast.error('Không tìm thấy giọng đọc!');
+        showError('Không tìm thấy giọng đọc!');
         return;
     }
     
@@ -181,7 +175,7 @@ function testVoice(type) {
     utterance.rate = speedSlider ? parseFloat(speedSlider.value) : 1;
     
     speechSynthesis.speak(utterance);
-    toast.success(`Đang phát giọng: ${voice.name}`);
+    showSuccess(`Đang phát giọng: ${voice.name}`);
 }
 
 // ===== SETTINGS MANAGEMENT =====
@@ -256,7 +250,7 @@ function bindSettingsEvents() {
     if (themeToggle) {
         themeToggle.addEventListener('change', (e) => {
             applyTheme(e.target.checked);
-            toast.success(e.target.checked ? 'Đã bật chế độ tối' : 'Đã bật chế độ sáng');
+            showSuccess(e.target.checked ? 'Đã bật chế độ tối' : 'Đã bật chế độ sáng');
         });
     }
     
@@ -265,7 +259,7 @@ function bindSettingsEvents() {
     if (fontSelect) {
         fontSelect.addEventListener('change', (e) => {
             applyFont(e.target.value);
-            toast.success(`Đã đổi font: ${e.target.value}`);
+            showSuccess(`Đã đổi font: ${e.target.value}`);
         });
     }
     
@@ -346,11 +340,11 @@ function exportJSON() {
         
         const jsonStr = JSON.stringify(exportData, null, 2);
         downloadFile(jsonStr, `volearn-backup-${getDateString()}.json`, 'application/json');
-        toast.success('Đã xuất dữ liệu JSON!');
+        showSuccess('Đã xuất dữ liệu JSON!');
         
     } catch (error) {
         console.error('Export JSON error:', error);
-        toast.error('Lỗi khi xuất JSON!');
+        showError('Lỗi khi xuất JSON!');
     }
 }
 
@@ -359,7 +353,7 @@ function exportCSV() {
         const words = appData.vocabulary || [];
         
         if (words.length === 0) {
-            toast.warning('Không có dữ liệu để xuất!');
+            showWarning('Không có dữ liệu để xuất!');
             return;
         }
         
@@ -443,11 +437,11 @@ function exportCSV() {
         const csvContent = '\ufeff' + rows.join('\n');
         
         downloadFile(csvContent, `volearn-vocabulary-${getDateString()}.csv`, 'text/csv;charset=utf-8');
-        toast.success(`Đã xuất ${words.length} từ vựng ra CSV!`);
+        showSuccess(`Đã xuất ${words.length} từ vựng ra CSV!`);
         
     } catch (error) {
         console.error('Export CSV error:', error);
-        toast.error('Lỗi khi xuất CSV!');
+        showError('Lỗi khi xuất CSV!');
     }
 }
 
@@ -466,7 +460,7 @@ function handleImport(e) {
         } else if (file.name.endsWith('.csv')) {
             importCSV(content);
         } else {
-            toast.error('Chỉ hỗ trợ file .json hoặc .csv!');
+            showError('Chỉ hỗ trợ file .json hoặc .csv!');
         }
         
         // Reset input
@@ -474,7 +468,7 @@ function handleImport(e) {
     };
     
     reader.onerror = () => {
-        toast.error('Lỗi đọc file!');
+        showError('Lỗi đọc file!');
     };
     
     reader.readAsText(file);
@@ -486,7 +480,7 @@ function importJSON(content) {
         
         // Validate
         if (!data.vocabulary && !data.sets) {
-            toast.error('File JSON không hợp lệ!');
+            showError('File JSON không hợp lệ!');
             return;
         }
         
@@ -502,14 +496,14 @@ function importJSON(content) {
             });
             
             saveData();
-            toast.success('Đã nhập dữ liệu thành công!');
+            showSuccess('Đã nhập dữ liệu thành công!');
             
             setTimeout(() => location.reload(), 1000);
         }
         
     } catch (error) {
         console.error('Import JSON error:', error);
-        toast.error('File JSON không hợp lệ!');
+        showError('File JSON không hợp lệ!');
     }
 }
 
@@ -519,7 +513,7 @@ function importCSV(content) {
         const lines = content.split('\n').filter(line => line.trim());
         
         if (lines.length < 2) {
-            toast.error('File CSV không có dữ liệu!');
+            showError('File CSV không có dữ liệu!');
             return;
         }
         
@@ -545,7 +539,7 @@ function importCSV(content) {
         
         // Kiểm tra cột Word
         if (colIndex.word === -1) {
-            toast.error('File CSV phải có cột "Word"!');
+            showError('File CSV phải có cột "Word"!');
             return;
         }
         
@@ -618,7 +612,7 @@ function importCSV(content) {
         }
         
         if (importedWords.length === 0) {
-            toast.error('Không tìm thấy từ vựng hợp lệ!');
+            showError('Không tìm thấy từ vựng hợp lệ!');
             return;
         }
         
@@ -627,14 +621,14 @@ function importCSV(content) {
             appData.vocabulary.push(...importedWords);
             
             saveData();
-            toast.success(`Đã nhập ${importedWords.length} từ vựng!`);
+            showSuccess(`Đã nhập ${importedWords.length} từ vựng!`);
             
             setTimeout(() => location.reload(), 1000);
         }
         
     } catch (error) {
         console.error('Import CSV error:', error);
-        toast.error('Lỗi khi nhập CSV: ' + error.message);
+        showError('Lỗi khi nhập CSV: ' + error.message);
     }
 }
 
@@ -685,7 +679,7 @@ function confirmClearData() {
     if (confirm('⚠️ Bạn có chắc muốn XÓA TẤT CẢ dữ liệu?\n\nHành động này không thể hoàn tác!')) {
         if (confirm('Xác nhận lần cuối: XÓA TOÀN BỘ từ vựng và bộ từ?')) {
             clearData();
-            toast.success('Đã xóa toàn bộ dữ liệu!');
+            showSuccess('Đã xóa toàn bộ dữ liệu!');
             setTimeout(() => location.reload(), 1000);
         }
     }
@@ -707,7 +701,7 @@ function checkOAuthCallback() {
             // Clear hash
             history.replaceState(null, '', window.location.pathname);
             
-            toast.success('Đăng nhập Google Drive thành công!');
+            showSuccess('Đăng nhập Google Drive thành công!');
             showGoogleDriveConnected();
         }
     }
@@ -781,13 +775,13 @@ function logoutGoogleDrive() {
     localStorage.removeItem('volearn-gdrive-lastsync');
     
     showGoogleDriveDisconnected();
-    toast.success('Đã đăng xuất Google Drive!');
+    showSuccess('Đã đăng xuất Google Drive!');
 }
 
 async function backupToGoogleDrive() {
     const token = localStorage.getItem('volearn-gdrive-token');
     if (!token) {
-        toast.error('Vui lòng đăng nhập Google Drive trước!');
+        showError('Vui lòng đăng nhập Google Drive trước!');
         return;
     }
     
@@ -839,7 +833,7 @@ async function backupToGoogleDrive() {
         }
         
         localStorage.setItem('volearn-gdrive-lastsync', new Date().toISOString());
-        toast.success('Đã sao lưu lên Google Drive!');
+        showSuccess('Đã sao lưu lên Google Drive!');
         
         const lastSyncEl = document.getElementById('gdrive-last-sync');
         if (lastSyncEl) {
@@ -851,9 +845,9 @@ async function backupToGoogleDrive() {
         
         if (error.message.includes('401')) {
             logoutGoogleDrive();
-            toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!');
+            showError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!');
         } else {
-            toast.error('Lỗi sao lưu: ' + error.message);
+            showError('Lỗi sao lưu: ' + error.message);
         }
     } finally {
         if (btn) {
@@ -866,7 +860,7 @@ async function backupToGoogleDrive() {
 async function restoreFromGoogleDrive() {
     const token = localStorage.getItem('volearn-gdrive-token');
     if (!token) {
-        toast.error('Vui lòng đăng nhập Google Drive trước!');
+        showError('Vui lòng đăng nhập Google Drive trước!');
         return;
     }
     
@@ -880,7 +874,7 @@ async function restoreFromGoogleDrive() {
         const file = await findBackupFile(token);
         
         if (!file) {
-            toast.warning('Không tìm thấy file backup trên Google Drive!');
+            showWarning('Không tìm thấy file backup trên Google Drive!');
             return;
         }
         
@@ -912,7 +906,7 @@ async function restoreFromGoogleDrive() {
             });
             
             saveData();
-            toast.success('Đã khôi phục từ Google Drive!');
+            showSuccess('Đã khôi phục từ Google Drive!');
             
             setTimeout(() => location.reload(), 1000);
         }
@@ -922,9 +916,9 @@ async function restoreFromGoogleDrive() {
         
         if (error.message.includes('401')) {
             logoutGoogleDrive();
-            toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!');
+            showError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!');
         } else {
-            toast.error('Lỗi khôi phục: ' + error.message);
+            showError('Lỗi khôi phục: ' + error.message);
         }
     } finally {
         if (btn) {
