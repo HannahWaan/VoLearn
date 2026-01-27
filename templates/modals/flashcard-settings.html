@@ -1,159 +1,136 @@
-<!-- ==================== FLASHCARD SETTINGS MODAL ==================== -->
-<div id="flashcard-settings-modal" class="modal">
+<!-- FLASHCARD SETTINGS MODAL -->
+<div class="modal-overlay" id="flashcard-settings-modal">
     <div class="modal-content modal-large">
         <div class="modal-header">
-            <h3><i class="fas fa-clone"></i> Cài đặt Flashcard</h3>
-            <button class="modal-close" data-modal="flashcard-settings-modal">
+            <h2><i class="fas fa-clone"></i> Cài đặt Flashcard</h2>
+            <button class="btn-close" onclick="closeFlashcardSettings()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="modal-body flashcard-settings-body">
+        
+        <div class="modal-body practice-settings-body">
             <!-- Tabs -->
             <div class="settings-tabs">
-                <button class="settings-tab active" data-tab="fc-target">Mục tiêu</button>
-                <button class="settings-tab" data-tab="fc-view">Hiển thị</button>
+                <button class="settings-tab active" data-tab="fc-target">
+                    <i class="fas fa-bullseye"></i> Mục tiêu
+                </button>
+                <button class="settings-tab" data-tab="fc-display">
+                    <i class="fas fa-eye"></i> Hiển thị
+                </button>
             </div>
 
-            <!-- Tab: Mục tiêu -->
-            <div id="fc-tab-target" class="settings-tab-content active">
-                <!-- Giới hạn số lượng -->
-                <div class="setting-section">
-                    <div class="setting-row">
-                        <span class="setting-label">Giới hạn số lượng thẻ</span>
-                        <div class="setting-value">
-                            <button class="btn-circle" id="fc-limit-minus"><i class="fas fa-minus"></i></button>
-                            <span id="fc-limit-value">Không giới hạn</span>
-                            <button class="btn-circle" id="fc-limit-plus"><i class="fas fa-plus"></i></button>
-                        </div>
+            <!-- Tab Content: Mục tiêu -->
+            <div class="settings-tab-content active" id="fc-target">
+                <div class="setting-group">
+                    <label class="setting-label">Số lượng thẻ</label>
+                    <div class="limit-control">
+                        <button class="btn-limit" onclick="adjustFcLimit(-5)">-5</button>
+                        <span class="limit-value" id="fc-limit-value">20</span>
+                        <button class="btn-limit" onclick="adjustFcLimit(5)">+5</button>
                     </div>
-                    <input type="range" id="fc-limit-slider" min="0" max="100" value="0" class="full-slider">
+                    <input type="range" id="fc-limit-slider" min="5" max="100" value="20" step="5" 
+                           oninput="updateFcLimit(this.value)">
                 </div>
 
-                <!-- Phạm vi -->
-                <div class="setting-section">
-                    <div class="section-header">
-                        <h4><i class="fas fa-crosshairs"></i> Phạm vi</h4>
-                        <button class="btn-refresh" id="fc-refresh-scope" title="Đặt lại">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <p class="section-desc">Chọn bộ từ vựng hoặc ngày cụ thể</p>
-                    
-                    <div class="scope-option" id="fc-scope-set">
-                        <i class="fas fa-layer-group"></i>
-                        <span id="fc-selected-set">Tất cả từ vựng</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    <div class="scope-option" id="fc-scope-date">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span id="fc-selected-date">Tất cả ngày</span>
-                        <i class="fas fa-chevron-right"></i>
+                <div class="setting-group">
+                    <label class="setting-label">Bộ từ vựng</label>
+                    <select id="fc-set-select" class="setting-select-full">
+                        <option value="all">Tất cả từ vựng</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Bao gồm</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="fc-include-learning" checked>
+                            <span>Đang học</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="fc-include-mastered">
+                            <span>Đã thuộc</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="fc-include-bookmarked">
+                            <span>Đã đánh dấu</span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- Đánh dấu từ -->
-                <div class="setting-section">
-                    <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-include-unmarked" checked>
-                        <span class="checkbox-label">Chưa đánh dấu (<span id="fc-count-unmarked">0</span>)</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-include-mastered" checked>
-                        <span class="checkbox-label">Đã thuộc (<span id="fc-count-mastered">0</span>)</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-include-learning" checked>
-                        <span class="checkbox-label">Chưa thuộc (<span id="fc-count-learning">0</span>)</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-include-bookmarked" checked>
-                        <span class="checkbox-label">Đã đánh dấu sao (<span id="fc-count-bookmarked">0</span>)</span>
-                    </label>
-                </div>
-
-                <!-- Sắp xếp -->
-                <div class="setting-section">
-                    <h4><i class="fas fa-sort"></i> Sắp xếp theo</h4>
+                <div class="setting-group">
+                    <label class="setting-label">Thứ tự</label>
                     <div class="radio-group">
                         <label class="radio-item">
-                            <input type="radio" name="fc-sort" value="random" checked>
+                            <input type="radio" name="fc-order" value="random" checked>
                             <span>Ngẫu nhiên</span>
                         </label>
                         <label class="radio-item">
-                            <input type="radio" name="fc-sort" value="newest">
-                            <span>Mới nhất</span>
+                            <input type="radio" name="fc-order" value="newest">
+                            <span>Mới nhất trước</span>
                         </label>
                         <label class="radio-item">
-                            <input type="radio" name="fc-sort" value="oldest">
-                            <span>Cũ nhất</span>
-                        </label>
-                        <label class="radio-item">
-                            <input type="radio" name="fc-sort" value="az">
-                            <span>A-Z</span>
-                        </label>
-                        <label class="radio-item">
-                            <input type="radio" name="fc-sort" value="za">
-                            <span>Z-A</span>
+                            <input type="radio" name="fc-order" value="oldest">
+                            <span>Cũ nhất trước</span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab: Hiển thị -->
-            <div id="fc-tab-view" class="settings-tab-content">
-                <!-- Mặt trước -->
-                <div class="setting-section">
-                    <h4><i class="fas fa-eye"></i> Mặt trước (Câu hỏi)</h4>
-                    <p class="section-desc">Chọn nội dung hiển thị ở mặt trước thẻ</p>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-front-word" checked>
-                        <span class="checkbox-label">Từ vựng</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-front-phonetic" checked>
-                        <span class="checkbox-label">Phiên âm</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-front-pos">
-                        <span class="checkbox-label">Loại từ</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-front-example">
-                        <span class="checkbox-label">Ví dụ</span>
-                    </label>
-                </div>
-
-                <!-- Mặt sau -->
-                <div class="setting-section">
-                    <h4><i class="fas fa-eye-slash"></i> Mặt sau (Đáp án)</h4>
-                    <p class="section-desc">Chọn nội dung hiển thị khi lật thẻ</p>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-back-defvi" checked>
-                        <span class="checkbox-label">Nghĩa tiếng Việt</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-back-defen">
-                        <span class="checkbox-label">Định nghĩa tiếng Anh</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-back-example" checked>
-                        <span class="checkbox-label">Ví dụ</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-back-synonyms">
-                        <span class="checkbox-label">Từ đồng nghĩa</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="fc-back-antonyms">
-                        <span class="checkbox-label">Từ trái nghĩa</span>
-                    </label>
+            <!-- Tab Content: Hiển thị -->
+            <div class="settings-tab-content" id="fc-display">
+                <div class="display-sides">
+                    <div class="display-side">
+                        <h4><i class="fas fa-square"></i> Mặt trước (Front)</h4>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-front-word" checked disabled>
+                                <span>Từ vựng</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-front-phonetic" checked>
+                                <span>Phiên âm</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-front-pos">
+                                <span>Loại từ</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-front-example">
+                                <span>Ví dụ</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="display-side">
+                        <h4><i class="fas fa-square"></i> Mặt sau (Back)</h4>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-back-vi" checked>
+                                <span>Nghĩa tiếng Việt</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-back-en" checked>
+                                <span>Định nghĩa tiếng Anh</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-back-example" checked>
+                                <span>Ví dụ</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="fc-back-synonym">
+                                <span>Từ đồng nghĩa</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="modal-footer">
-            <button class="btn-primary" id="btn-start-flashcard">
+            <div class="word-count-badge">
+                <i class="fas fa-layer-group"></i>
+                <span id="fc-word-count">0</span> từ phù hợp
+            </div>
+            <button class="btn-primary btn-start" onclick="startFlashcard()">
                 <i class="fas fa-play"></i> Bắt đầu học
             </button>
         </div>
