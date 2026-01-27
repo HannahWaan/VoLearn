@@ -1,5 +1,5 @@
 /* ========================================
-   VoLearn - Quiz Settings (Module hoá từ code cũ)
+   VoLearn - Quiz Settings
    ======================================== */
 
 import { appData } from '../core/state.js';
