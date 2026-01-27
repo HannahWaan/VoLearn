@@ -4,9 +4,9 @@
    ======================================== */
 
 import { appData } from '../core/state.js';
+import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeAllModals } from '../ui/modalEngine.js';
-import { escapeHtml } from '../utils/helpers.js';
 
 /* ===== CONSTANTS ===== */
 const POS_MAPPING = {
@@ -44,6 +44,14 @@ let isFlipped = false;
 let practiceWordsReviewed = 0;
 let showingSummary = false;
 
+/* ===== HELPER: escapeHtml ===== */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 /* ===== OPEN FLASHCARD SETTINGS ===== */
 export function openFlashcardSettings() {
     updateFlashcardSettingsCounts();
@@ -56,18 +64,15 @@ export function closeFlashcardSettings() {
 
 /* ===== TAB SWITCHING ===== */
 export function switchFlashcardTab(tabName, btn) {
-    // Remove active from all tabs
     document.querySelectorAll('#flashcard-settings-modal .settings-tab').forEach(t => {
         t.classList.remove('active');
     });
     btn.classList.add('active');
 
-    // Hide all tab contents
     document.querySelectorAll('#flashcard-settings-modal .settings-tab-content').forEach(c => {
         c.classList.remove('active');
     });
 
-    // Show selected tab content
     const tabContent = document.getElementById(`fc-tab-${tabName}`);
     if (tabContent) {
         tabContent.classList.add('active');
@@ -77,7 +82,7 @@ export function switchFlashcardTab(tabName, btn) {
 /* ===== UPDATE COUNTS ===== */
 export function updateFlashcardSettingsCounts() {
     const vocabulary = appData.vocabulary || [];
-    
+
     const unmarked = vocabulary.filter(w => !w.mastered && !w.bookmarked).length;
     const mastered = vocabulary.filter(w => w.mastered).length;
     const learning = vocabulary.filter(w => !w.mastered).length;
@@ -98,7 +103,7 @@ export function updateFlashcardSettingsCounts() {
 export function adjustCardLimit(delta) {
     const slider = document.getElementById('card-limit-slider');
     if (!slider) return;
-    
+
     let newValue = parseInt(slider.value) + delta;
     newValue = Math.max(0, Math.min(100, newValue));
     slider.value = newValue;
@@ -132,7 +137,6 @@ export function openScopeSelector(type) {
 
         let html = '<div class="scope-list scope-multiple">';
 
-        // Option "Tất cả"
         html += `
             <label class="scope-list-item-checkbox ${isAllSelected ? 'selected' : ''}">
                 <input type="checkbox" ${isAllSelected ? 'checked' : ''} 
@@ -144,7 +148,6 @@ export function openScopeSelector(type) {
             </label>
         `;
 
-        // Các bộ từ vựng
         sets.forEach(set => {
             const count = vocabulary.filter(w => w.setId === set.id).length;
             const isSelected = flashcardSettings.selectedSetIds.includes(set.id);
@@ -203,7 +206,6 @@ export function toggleFlashcardSetScope(setId, checked) {
     if (setId === 'all') {
         if (checked) {
             flashcardSettings.selectedSetIds = ['all'];
-            // Disable tất cả checkbox khác
             document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
                 const input = item.querySelector('input');
                 const isAllCheckbox = input?.getAttribute('onchange')?.includes("'all'");
@@ -216,7 +218,6 @@ export function toggleFlashcardSetScope(setId, checked) {
             });
         } else {
             flashcardSettings.selectedSetIds = [];
-            // Enable lại tất cả checkbox
             document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
                 item.style.opacity = '1';
                 item.style.pointerEvents = 'auto';
@@ -225,7 +226,6 @@ export function toggleFlashcardSetScope(setId, checked) {
             });
         }
     } else {
-        // Bỏ 'all' nếu đang có
         flashcardSettings.selectedSetIds = flashcardSettings.selectedSetIds.filter(id => id !== 'all');
 
         if (checked) {
@@ -237,7 +237,6 @@ export function toggleFlashcardSetScope(setId, checked) {
         }
     }
 
-    // Update visual state
     document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
         const input = item.querySelector('input');
         item.classList.toggle('selected', input?.checked);
@@ -275,13 +274,13 @@ export function selectScope(type, value, label) {
 export function refreshScope() {
     flashcardSettings.selectedSetIds = ['all'];
     flashcardSettings.selectedDateRange = 'all';
-    
+
     const setNameEl = document.getElementById('selected-set-name');
     const dateRangeEl = document.getElementById('selected-date-range');
-    
+
     if (setNameEl) setNameEl.textContent = 'Tất Cả Từ Vựng';
     if (dateRangeEl) dateRangeEl.textContent = 'Tất Cả Ngày';
-    
+
     showToast('Đã đặt lại phạm vi', 'success');
 }
 
@@ -301,7 +300,6 @@ export function getFlashcardSettingsFromForm() {
     const sortRadio = document.querySelector('input[name="fc-sort"]:checked');
     flashcardSettings.sortBy = sortRadio?.value || 'random';
 
-    // Get selected fields for front
     flashcardSettings.frontFields = [];
     document.querySelectorAll('#front-fields .field-item input:checked').forEach(input => {
         const fieldItem = input.closest('.field-item');
@@ -310,7 +308,6 @@ export function getFlashcardSettingsFromForm() {
         }
     });
 
-    // Get selected fields for back
     flashcardSettings.backFields = [];
     document.querySelectorAll('#back-fields .field-item input:checked').forEach(input => {
         const fieldItem = input.closest('.field-item');
@@ -326,12 +323,10 @@ export function getFlashcardSettingsFromForm() {
 export function getFilteredWordsForFlashcard() {
     let words = [...(appData.vocabulary || [])];
 
-    // Filter by sets (multiple)
     if (!flashcardSettings.selectedSetIds.includes('all') && flashcardSettings.selectedSetIds.length > 0) {
         words = words.filter(w => flashcardSettings.selectedSetIds.includes(w.setId));
     }
 
-    // Filter by date
     if (flashcardSettings.selectedDateRange !== 'all') {
         const now = new Date();
         let startDate;
@@ -349,14 +344,12 @@ export function getFilteredWordsForFlashcard() {
         }
     }
 
-    // Filter by marks
     words = words.filter(w => {
         if (w.mastered && !flashcardSettings.includeMastered) return false;
         if (!w.mastered && !flashcardSettings.includeLearning) return false;
         return true;
     });
 
-    // Sort
     switch (flashcardSettings.sortBy) {
         case 'newest':
             words.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -375,7 +368,6 @@ export function getFilteredWordsForFlashcard() {
             break;
     }
 
-    // Limit
     if (flashcardSettings.cardLimit > 0) {
         words = words.slice(0, flashcardSettings.cardLimit);
     }
@@ -432,11 +424,11 @@ export function hidePracticeArea() {
 
 /* ===== UPDATE PROGRESS ===== */
 function updatePracticeProgress() {
-    const progress = ((practiceIndex + 1) / practiceWords.length) * 100;
-    
+    const progress = practiceWords.length > 0 ? ((practiceIndex + 1) / practiceWords.length) * 100 : 0;
+
     const progressBar = document.getElementById('practice-progress-bar');
     const progressText = document.getElementById('practice-progress-text');
-    
+
     if (progressBar) progressBar.style.width = `${progress}%`;
     if (progressText) progressText.textContent = `${practiceIndex + 1}/${practiceWords.length}`;
 }
@@ -451,7 +443,6 @@ export function renderFlashcardWithSettings() {
 
     const meaning = word.meanings?.[0] || {};
 
-    // Function to create content for a field
     function getFieldContent(field) {
         const posVi = POS_MAPPING[meaning.pos] || meaning.pos || '';
 
@@ -478,13 +469,9 @@ export function renderFlashcardWithSettings() {
         }
     }
 
-    // Create front content
     let frontContent = flashcardSettings.frontFields.map(f => getFieldContent(f)).filter(c => c).join('');
-
-    // Create back content
     let backContent = flashcardSettings.backFields.map(f => getFieldContent(f)).filter(c => c).join('');
 
-    // Default content if empty
     if (!frontContent) frontContent = `<div class="flashcard-word">${escapeHtml(word.word)}</div>`;
     if (!backContent) backContent = `<div class="flashcard-meaning">${escapeHtml(meaning.defVi || meaning.defEn || 'Không có nghĩa')}</div>`;
 
@@ -496,14 +483,14 @@ export function renderFlashcardWithSettings() {
             <div class="flashcard ${isFlipped ? 'flipped' : ''}" onclick="window.flipCard()">
                 <div class="flashcard-inner">
                     <div class="flashcard-front">
-                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak('${escapeHtml(word.word)}')" title="Nghe phát âm">
+                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak && window.speak('${escapeHtml(word.word)}')" title="Nghe phát âm">
                             <i class="fas fa-volume-up"></i>
                         </button>
                         ${frontContent}
                         <p class="flip-hint">Nhấn để xem nghĩa</p>
                     </div>
                     <div class="flashcard-back">
-                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak('${escapeHtml(meaning.defEn || word.word)}')" title="Nghe">
+                        <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak && window.speak('${escapeHtml(meaning.defEn || word.word)}')" title="Nghe">
                             <i class="fas fa-volume-up"></i>
                         </button>
                         ${backContent}
@@ -548,12 +535,10 @@ export function flipCard() {
 export function flashcardAnswerWithSettings(answer) {
     const word = practiceWords[practiceIndex];
 
-    // Update review history
     updateReviewHistory(word?.id);
     practiceWordsReviewed++;
 
-    // Save data
-    if (window.saveData) window.saveData();
+    saveData(appData);
 
     isFlipped = false;
     practiceIndex++;
@@ -569,11 +554,11 @@ export function flashcardAnswerWithSettings(answer) {
 /* ===== UPDATE REVIEW HISTORY ===== */
 function updateReviewHistory(wordId) {
     if (!wordId) return;
-    
+
     const today = new Date().toISOString().split('T')[0];
-    
+
     if (!appData.history) appData.history = [];
-    
+
     let historyEntry = appData.history.find(h => h.date === today);
 
     if (!historyEntry) {
@@ -603,19 +588,17 @@ function endPractice() {
         </div>
     `;
 
-    // Update streak
     const today = new Date().toISOString().split('T')[0];
     if (appData.lastStudyDate !== today) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        appData.streak = appData.lastStudyDate === yesterday.toISOString().split('T')[0] 
-            ? (appData.streak || 0) + 1 
+        appData.streak = appData.lastStudyDate === yesterday.toISOString().split('T')[0]
+            ? (appData.streak || 0) + 1
             : 1;
         appData.lastStudyDate = today;
-        if (window.saveData) window.saveData();
+        saveData(appData);
     }
 
-    // Update stats
     if (window.updateStats) window.updateStats();
     if (window.updateSRSCount) window.updateSRSCount();
 }
@@ -685,7 +668,7 @@ export function continuePractice() {
 
 /* ===== INIT MODULE ===== */
 export function initFlashcardSettings() {
-    // Register global functions
+    // Register all global functions
     window.openFlashcardSettings = openFlashcardSettings;
     window.closeFlashcardSettings = closeFlashcardSettings;
     window.switchFlashcardTab = switchFlashcardTab;
