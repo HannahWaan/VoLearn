@@ -385,12 +385,28 @@ function importJSON(content) {
             return;
         }
         
-        if (confirm(`Tìm thấy ${(data.vocabulary || []).length} từ và ${(data.sets || []).length} bộ.\nGhi đè dữ liệu hiện tại?`)) {
-            setAppData({ ...DEFAULT_DATA, vocabulary: data.vocabulary || [], sets: data.sets || [], history: data.history || {} });
-            saveData();
-            showSuccess('Đã nhập dữ liệu!');
-            setTimeout(() => location.reload(), 1000);
-        }
+        const wordCount = (data.vocabulary || []).length;
+        const setCount = (data.sets || []).length;
+        
+        window.showConfirm({
+            title: 'Nhập dữ liệu JSON',
+            message: `Tìm thấy ${wordCount} từ và ${setCount} bộ từ.`,
+            submessage: 'Dữ liệu hiện tại sẽ bị GHI ĐÈ.',
+            type: 'warning',
+            confirmText: 'Ghi đè',
+            icon: 'fas fa-file-import',
+            onConfirm: () => {
+                setAppData({ 
+                    ...DEFAULT_DATA, 
+                    vocabulary: data.vocabulary || [], 
+                    sets: data.sets || [], 
+                    history: data.history || {} 
+                });
+                saveData();
+                showSuccess('Đã nhập dữ liệu!');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
     } catch (error) {
         console.error('Import JSON error:', error);
         showError('File JSON không hợp lệ!');
@@ -480,13 +496,21 @@ function importCSV(content) {
             return;
         }
         
-        if (confirm(`Tìm thấy ${importedWords.length} từ.\nThêm vào dữ liệu hiện tại?`)) {
-            appData.vocabulary = appData.vocabulary || [];
-            appData.vocabulary.push(...importedWords);
-            saveData();
-            showSuccess(`Đã nhập ${importedWords.length} từ vựng!`);
-            setTimeout(() => location.reload(), 1000);
-        }
+        window.showConfirm({
+            title: 'Nhập dữ liệu CSV',
+            message: `Tìm thấy ${importedWords.length} từ vựng.`,
+            submessage: 'Các từ sẽ được THÊM vào dữ liệu hiện tại.',
+            type: 'info',
+            confirmText: 'Thêm vào',
+            icon: 'fas fa-file-csv',
+            onConfirm: () => {
+                appData.vocabulary = appData.vocabulary || [];
+                appData.vocabulary.push(...importedWords);
+                saveData();
+                showSuccess(`Đã nhập ${importedWords.length} từ vựng!`);
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
     } catch (error) {
         console.error('Import CSV error:', error);
         showError('Lỗi khi nhập CSV!');
@@ -530,13 +554,19 @@ function parseCSVLine(line) {
 
 // ===== DATA MANAGEMENT =====
 function confirmClearData() {
-    if (confirm('⚠️ XÓA TẤT CẢ dữ liệu?\n\nKhông thể hoàn tác!')) {
-        if (confirm('Xác nhận lần cuối: XÓA TOÀN BỘ?')) {
+    window.showConfirm({
+        title: 'Xóa toàn bộ dữ liệu',
+        message: 'Bạn có chắc muốn XÓA TẤT CẢ dữ liệu?',
+        submessage: '⚠️ Hành động này KHÔNG THỂ hoàn tác!',
+        type: 'danger',
+        confirmText: 'Xóa tất cả',
+        icon: 'fas fa-trash-alt',
+        onConfirm: () => {
             clearData();
             showSuccess('Đã xóa toàn bộ dữ liệu!');
             setTimeout(() => location.reload(), 1000);
         }
-    }
+    });
 }
 
 // ===== GOOGLE DRIVE =====
@@ -887,17 +917,25 @@ async function selectRestoreFile(fileId, token) {
         const wordCount = (data.vocabulary || []).length;
         const setCount = (data.sets || []).length;
         
-        if (confirm(`File chứa ${wordCount} từ và ${setCount} bộ từ.\n\nKhôi phục sẽ GHI ĐÈ dữ liệu hiện tại. Tiếp tục?`)) {
-            setAppData({
-                ...DEFAULT_DATA,
-                vocabulary: data.vocabulary || [],
-                sets: data.sets || [],
-                history: data.history || {}
-            });
-            saveData();
-            showSuccess('Đã khôi phục thành công!');
-            setTimeout(() => location.reload(), 1000);
-        }
+        window.showConfirm({
+            title: 'Khôi phục từ Google Drive',
+            message: `File chứa ${wordCount} từ và ${setCount} bộ từ.`,
+            submessage: 'Dữ liệu hiện tại sẽ bị GHI ĐÈ.',
+            type: 'warning',
+            confirmText: 'Khôi phục',
+            icon: 'fas fa-cloud-download-alt',
+            onConfirm: () => {
+                setAppData({
+                    ...DEFAULT_DATA,
+                    vocabulary: data.vocabulary || [],
+                    sets: data.sets || [],
+                    history: data.history || {}
+                });
+                saveData();
+                showSuccess('Đã khôi phục thành công!');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
         
     } catch (error) {
         console.error('Restore error:', error);
@@ -979,5 +1017,6 @@ function getDateString() {
 window.exportData = exportJSON;
 window.closeRestoreSelector = closeRestoreSelector;
 window.selectRestoreFile = selectRestoreFile;
+
 
 
