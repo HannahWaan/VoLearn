@@ -385,10 +385,10 @@ function exportCSV() {
             return;
         }
         
-        // Headers ở cột A (dọc)
+        // Headers - dòng đầu tiên
         const headers = [
             'Word',
-            'Word Formation', 
+            'Word Formation',
             'Bookshelf',
             'Phonetic US',
             'Phonetic UK',
@@ -402,36 +402,31 @@ function exportCSV() {
             'Bookmarked'
         ];
         
-        // Tạo ma trận dữ liệu
-        const rows = [];
+        // Tạo các dòng dữ liệu
+        const rows = [headers];
         
-        // Dòng đầu: Headers + dữ liệu từ vựng
-        for (let i = 0; i < headers.length; i++) {
-            const row = [headers[i]];
+        vocabulary.forEach(word => {
+            const meaning = word.meanings?.[0] || {};
+            const setName = appData.sets?.find(s => s.id === word.setId)?.name || 'Tất cả';
             
-            vocabulary.forEach(word => {
-                const meaning = word.meanings?.[0] || {};
-                const setName = appData.sets?.find(s => s.id === word.setId)?.name || 'Tất cả';
-                
-                switch (i) {
-                    case 0: row.push(word.word || ''); break;
-                    case 1: row.push(word.formation || ''); break;
-                    case 2: row.push(setName); break;
-                    case 3: row.push(meaning.phoneticUS || word.phoneticUS || ''); break;
-                    case 4: row.push(meaning.phoneticUK || word.phoneticUK || ''); break;
-                    case 5: row.push(meaning.pos || ''); break;
-                    case 6: row.push(meaning.defEn || ''); break;
-                    case 7: row.push(meaning.defVi || ''); break;
-                    case 8: row.push(meaning.example || ''); break;
-                    case 9: row.push(meaning.synonyms || ''); break;
-                    case 10: row.push(meaning.antonyms || ''); break;
-                    case 11: row.push(word.mastered ? 'Yes' : 'No'); break;
-                    case 12: row.push(word.bookmarked ? 'Yes' : 'No'); break;
-                }
-            });
+            const row = [
+                word.word || '',
+                word.formation || '',
+                setName,
+                meaning.phoneticUS || word.phoneticUS || '',
+                meaning.phoneticUK || word.phoneticUK || '',
+                meaning.pos || '',
+                meaning.defEn || '',
+                meaning.defVi || '',
+                meaning.example || '',
+                meaning.synonyms || '',
+                meaning.antonyms || '',
+                word.mastered ? 'yes' : 'no',
+                word.bookmarked ? 'yes' : 'no'
+            ];
             
             rows.push(row);
-        }
+        });
         
         // Chuyển thành CSV string
         const csv = rows.map(row => 
@@ -511,51 +506,56 @@ function importCSV(content) {
         return;
     }
     
-    // Parse CSV theo cấu trúc: cột A là headers, cột B trở đi là dữ liệu
-    const rows = lines.map(line => parseCSVLine(line));
+    // Parse header (dòng đầu tiên)
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
     
-    // Tìm index của từng header
-    const headerMap = {};
-    const headerNames = ['Word', 'Word Formation', 'Bookshelf', 'Phonetic US', 'Phonetic UK', 
-                         'POS', 'Definition (EN)', 'Definition (VI)', 'Example', 
-                         'Synonym', 'Antonym', 'Mastered', 'Bookmarked'];
+    // Tìm index của từng cột
+    const colIndex = {
+        word: headers.findIndex(h => h === 'word'),
+        formation: headers.findIndex(h => h.includes('formation')),
+        bookshelf: headers.findIndex(h => h === 'bookshelf'),
+        phoneticUS: headers.findIndex(h => h.includes('phonetic') && h.includes('us')),
+        phoneticUK: headers.findIndex(h => h.includes('phonetic') && h.includes('uk')),
+        pos: headers.findIndex(h => h === 'pos'),
+        defEn: headers.findIndex(h => h.includes('definition') && h.includes('en')),
+        defVi: headers.findIndex(h => h.includes('definition') && h.includes('vi')),
+        example: headers.findIndex(h => h === 'example'),
+        synonym: headers.findIndex(h => h.includes('synonym')),
+        antonym: headers.findIndex(h => h.includes('antonym')),
+        mastered: headers.findIndex(h => h === 'mastered'),
+        bookmarked: headers.findIndex(h => h === 'bookmarked')
+    };
     
-    rows.forEach((row, index) => {
-        const header = row[0]?.trim();
-        if (headerNames.includes(header)) {
-            headerMap[header] = index;
-        }
-    });
-    
-    // Số từ vựng = số cột - 1 (trừ cột header)
-    const wordCount = Math.max(...rows.map(r => r.length)) - 1;
-    
-    if (wordCount <= 0) {
-        showToast('Không tìm thấy từ vựng trong file CSV', 'error');
+    // Kiểm tra cột Word bắt buộc
+    if (colIndex.word === -1) {
+        showToast('File CSV thiếu cột "Word"', 'error');
         return;
     }
+    
+    const wordCount = lines.length - 1; // Trừ header
     
     if (!confirm(`Tìm thấy ${wordCount} từ vựng.\n\nNhập CSV sẽ THÊM vào dữ liệu hiện tại.\nBạn có muốn tiếp tục?`)) {
         return;
     }
     
-    // Parse từng từ vựng
+    // Parse từng dòng dữ liệu (bắt đầu từ dòng 2)
     const newWords = [];
     
-    for (let col = 1; col <= wordCount; col++) {
-        const getValue = (headerName) => {
-            const rowIndex = headerMap[headerName];
-            if (rowIndex === undefined) return '';
-            return rows[rowIndex]?.[col]?.trim() || '';
+    for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        
+        const getValue = (index) => {
+            if (index === -1 || index >= row.length) return '';
+            return row[index]?.trim() || '';
         };
         
-        const word = getValue('Word');
+        const word = getValue(colIndex.word);
         if (!word) continue;
         
         // Tìm hoặc tạo set
-        const bookshelfName = getValue('Bookshelf');
+        const bookshelfName = getValue(colIndex.bookshelf);
         let setId = null;
-        if (bookshelfName && bookshelfName !== 'Tất cả') {
+        if (bookshelfName && bookshelfName !== 'Tất cả' && bookshelfName.toLowerCase() !== 'tất cả') {
             let set = appData.sets?.find(s => s.name === bookshelfName);
             if (!set) {
                 set = {
@@ -573,20 +573,22 @@ function importCSV(content) {
         const newWord = {
             id: generateId(),
             word: word,
-            formation: getValue('Word Formation'),
+            formation: getValue(colIndex.formation),
             setId: setId,
+            phoneticUS: getValue(colIndex.phoneticUS),
+            phoneticUK: getValue(colIndex.phoneticUK),
             meanings: [{
-                phoneticUS: getValue('Phonetic US'),
-                phoneticUK: getValue('Phonetic UK'),
-                pos: getValue('POS'),
-                defEn: getValue('Definition (EN)'),
-                defVi: getValue('Definition (VI)'),
-                example: getValue('Example'),
-                synonyms: getValue('Synonym'),
-                antonyms: getValue('Antonym')
+                phoneticUS: getValue(colIndex.phoneticUS),
+                phoneticUK: getValue(colIndex.phoneticUK),
+                pos: getValue(colIndex.pos),
+                defEn: getValue(colIndex.defEn),
+                defVi: getValue(colIndex.defVi),
+                example: getValue(colIndex.example),
+                synonyms: getValue(colIndex.synonym),
+                antonyms: getValue(colIndex.antonym)
             }],
-            mastered: getValue('Mastered').toLowerCase() === 'yes',
-            bookmarked: getValue('Bookmarked').toLowerCase() === 'yes',
+            mastered: getValue(colIndex.mastered).toLowerCase() === 'yes',
+            bookmarked: getValue(colIndex.bookmarked).toLowerCase() === 'yes',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -952,4 +954,5 @@ export function applySettings() {
 /* ===== EXPORTS ===== */
 export { applyTheme, applyFont };
 window.exportData = exportJSON;
+
 
