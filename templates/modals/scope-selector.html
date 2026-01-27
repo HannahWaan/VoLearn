@@ -1,54 +1,12 @@
-<!-- ==================== SCOPE SELECTOR MODAL ==================== -->
+<!-- Scope Selector Modal -->
 <div id="scope-selector-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="scope-selector-title"><i class="fas fa-filter"></i> Chọn phạm vi</h3>
-            <button class="modal-close" data-modal="scope-selector-modal">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3 id="scope-selector-title">Chọn Bộ Từ Vựng</h3>
+            <button class="modal-close" onclick="closeScopeSelector()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" id="scope-selector-content">
-            <!-- Content will be dynamically loaded based on scope type (set/date) -->
-            
-            <!-- For Set Selection -->
-            <div id="scope-sets-list" class="scope-list">
-                <div class="scope-item active" data-set-id="all">
-                    <i class="fas fa-globe"></i>
-                    <span>Tất cả từ vựng</span>
-                    <span class="scope-count">0</span>
-                </div>
-                <!-- Dynamic set items -->
-            </div>
-            
-            <!-- For Date Selection -->
-            <div id="scope-date-options" class="scope-list" style="display: none;">
-                <div class="scope-item" data-date="all">
-                    <i class="fas fa-calendar"></i>
-                    <span>Tất cả ngày</span>
-                </div>
-                <div class="scope-item" data-date="today">
-                    <i class="fas fa-calendar-day"></i>
-                    <span>Hôm nay</span>
-                </div>
-                <div class="scope-item" data-date="week">
-                    <i class="fas fa-calendar-week"></i>
-                    <span>7 ngày qua</span>
-                </div>
-                <div class="scope-item" data-date="month">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>30 ngày qua</span>
-                </div>
-                <div class="scope-item" data-date="custom">
-                    <i class="fas fa-calendar-plus"></i>
-                    <span>Tùy chỉnh...</span>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-secondary modal-cancel" data-modal="scope-selector-modal">Hủy</button>
-            <button class="btn-primary" id="btn-apply-scope">
-                <i class="fas fa-check"></i> Áp dụng
-            </button>
+            <!-- Content will be injected by JS -->
         </div>
     </div>
 </div>
