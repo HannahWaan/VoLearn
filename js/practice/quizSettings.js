@@ -254,9 +254,11 @@ function toggleQuizSetScopeInternal(setId, checked) {
   if (setId === 'all') {
     if (checked) {
       quizSettings.selectedSetIds = ['all'];
-      document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(...)
+
+      document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
         const input = item.querySelector('input');
         const isAll = input?.getAttribute('data-quiz-scope-toggle') === 'all';
+
         if (input && !isAll) {
           item.style.opacity = '0.5';
           item.style.pointerEvents = 'none';
@@ -266,7 +268,8 @@ function toggleQuizSetScopeInternal(setId, checked) {
       });
     } else {
       quizSettings.selectedSetIds = [];
-      document.querySelectorAll('#quiz-scope-selector-content .scope-list-item-checkbox').forEach(item => {
+
+      document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
         item.style.opacity = '1';
         item.style.pointerEvents = 'auto';
         const input = item.querySelector('input');
@@ -275,6 +278,7 @@ function toggleQuizSetScopeInternal(setId, checked) {
     }
   } else {
     quizSettings.selectedSetIds = quizSettings.selectedSetIds.filter(id => id !== 'all');
+
     if (checked) {
       if (!quizSettings.selectedSetIds.includes(setId)) quizSettings.selectedSetIds.push(setId);
     } else {
@@ -282,7 +286,7 @@ function toggleQuizSetScopeInternal(setId, checked) {
     }
   }
 
-  document.querySelectorAll('#quiz-scope-selector-content .scope-list-item-checkbox').forEach(item => {
+  document.querySelectorAll('#scope-selector-content .scope-list-item-checkbox').forEach(item => {
     const input = item.querySelector('input');
     item.classList.toggle('selected', !!input?.checked);
   });
