@@ -1,0 +1,175 @@
+/* ========================================
+   Test legacy Quiz Card UI (scoped)
+   Apply only inside practice content
+   ======================================== */
+
+#practice-content .quiz-card {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 20px;
+
+  background: transparent; /* Test cũ thường để card "thoáng" */
+}
+
+/* Labels (đúng snippet Test bạn gửi) */
+#practice-content .quiz-question-label,
+#practice-content .quiz-answer-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#practice-content .quiz-answer-label {
+  margin-top: 20px;
+}
+
+/* Timer pill (đúng snippet Test bạn gửi) */
+#practice-content .quiz-timer {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* Question main */
+#practice-content .quiz-word {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 6px 0 10px;
+  line-height: 1.15;
+}
+
+#practice-content .question-phonetic {
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-family: "Noto Sans", system-ui, sans-serif;
+}
+
+/* Speak button (nhỏ gọn kiểu Test) */
+#practice-content .btn-speak {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-fast);
+}
+#practice-content .btn-speak:hover { filter: brightness(1.05); transform: translateY(-1px); }
+#practice-content .btn-speak:active { transform: translateY(0); }
+
+/* Options list (đúng “đẹp như hình 2”) */
+#practice-content .quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+/* Option button */
+#practice-content .quiz-option {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+#practice-content .quiz-option:hover {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+#practice-content .quiz-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+/* Letter bubble A/B/C/D */
+#practice-content .option-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+#practice-content .option-text {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* Correct / Wrong styles (giống Test: viền + nền) */
+#practice-content .quiz-option.correct {
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.15);
+}
+#practice-content .quiz-option.correct .option-letter {
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+#practice-content .quiz-option.wrong {
+  border-color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.12);
+}
+#practice-content .quiz-option.wrong .option-letter {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+/* Feedback row */
+#practice-content .quiz-feedback {
+  margin-top: 14px;
+  min-height: 22px;
+  font-weight: 700;
+}
+#practice-content .feedback-correct { color: var(--success-color); }
+#practice-content .feedback-wrong { color: var(--danger-color); }
+
+/* Actions */
+#practice-content .quiz-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
