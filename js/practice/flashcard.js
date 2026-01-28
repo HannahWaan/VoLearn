@@ -1,15 +1,16 @@
 /* ===== FLASHCARD MODE ===== */
 /* VoLearn v2.1.0 - Chế độ luyện tập Flashcard */
 
-import { 
-    initPractice, 
-    getCurrentWord, 
-    submitAnswer, 
-    skipWord,
-    finishPractice, 
-    getPracticeState,
-    getWordsByScope,
-    resetPractice
+import {
+  initPractice,
+  getCurrentWord,
+  submitAnswer,
+  skipWord,
+  finishPractice,
+  getPracticeState,
+  getWordsByScope,
+  resetPractice,
+  showPracticeArea
 } from './practiceEngine.js';
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
@@ -44,6 +45,8 @@ export function startFlashcard(scope, settings = {}) {
     if (!initPractice('flashcard', words, mergedSettings)) {
         return;
     }
+    
+    showPracticeArea();
 
     autoPlayEnabled = mergedSettings.autoPlay;
     
@@ -399,6 +402,7 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
 
 
 
