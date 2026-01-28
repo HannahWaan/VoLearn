@@ -57,19 +57,7 @@ function renderFlashcardUI() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="flashcard-container">
-            <div class="flashcard-header">
-                <button class="btn-icon btn-back" onclick="window.handlePracticeBack()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="flashcard-actions">
-                    <button class="btn-icon" id="btn-autoplay" onclick="window.toggleAutoPlay()" 
-                            title="Tự động lật">
-                        <i class="fas fa-play-circle"></i>
-                    </button>
-                </div>
-            </div>
-            
+        <div class="flashcard-container">            
             <div class="flashcard-main">
                 <div class="flashcard" id="flashcard" onclick="window.flipCard()">
                     <div class="flashcard-inner">
@@ -405,4 +393,5 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
 
