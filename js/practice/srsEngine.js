@@ -65,7 +65,7 @@ export function renderSRSCard() {
     
     container.innerHTML = `
         <div class="srs-container">
-            <div class="flashcard ${srsState.isFlipped ? 'flipped' : ''}" onclick="window.flipCard()">
+            <div class="flashcard ${srsState.isFlipped ? 'flipped' : ''}" onclick="window.srsFlipCard()">
                 <div class="flashcard-inner">
                     <div class="flashcard-front">
                         <button class="btn-speak-card" onclick="event.stopPropagation(); window.speak('${escapeHtml(word.word)}')" title="Nghe phát âm">
