@@ -516,9 +516,10 @@ function startQuizWithSettings() {
     optionCount: quizSettings.optionCount || 4,
     timeLimit: quizSettings.timeLimit || 0,
 
-    // bạn có thể map theo UI sau; tạm giữ default
-    questionType: 'word-to-meaning',
-    speakQuestion: false
+    // Field-based quiz (from Settings)
+     questionFieldIds: [...(quizSettings.questionFields || [])],
+     answerFieldIds: [...(quizSettings.answerFields || [])],
+     speakQuestion: false
   };
 
   startQuiz(scope, settings);
