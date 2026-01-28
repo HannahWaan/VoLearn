@@ -131,26 +131,27 @@ function showCurrentCard() {
     flashcard.classList.remove('flipped');
 
     // Render front (word)
+    const m = (word.meanings && word.meanings[0]) ? word.meanings[0] : {};
+    const phonetic = m.phoneticUS || m.phoneticUK || word.phonetic || '';
+    const pos = m.pos || word.partOfSpeech || '';
+    const defVi = m.defVi || '';
+    const defEn = m.defEn || '';
+    const example = m.example || '';
+    
     front.innerHTML = `
-        <div class="card-word">${escapeHtml(word.word)}</div>
-        ${word.phonetic ? `<div class="card-phonetic">${escapeHtml(word.phonetic)}</div>` : ''}
-        ${word.partOfSpeech ? `<div class="card-pos">${escapeHtml(word.partOfSpeech)}</div>` : ''}
+      <div class="card-word">${escapeHtml(word.word || '')}</div>
+      ${phonetic ? `<div class="card-phonetic">${escapeHtml(phonetic)}</div>` : ''}
+      ${pos ? `<div class="card-pos">${escapeHtml(pos)}</div>` : ''}
     `;
-
-    // Render back (meaning)
+    
     back.innerHTML = `
-        <div class="card-meaning">${escapeHtml(word.meaning)}</div>
-        ${word.example ? `
-            <div class="card-example">
-                <i class="fas fa-quote-left"></i>
-                "${escapeHtml(word.example)}"
-            </div>
-        ` : ''}
-        ${word.synonyms?.length ? `
-            <div class="card-synonyms">
-                <strong>Đồng nghĩa:</strong> ${word.synonyms.join(', ')}
-            </div>
-        ` : ''}
+      <div class="card-meaning">${escapeHtml(defVi || defEn || '')}</div>
+      ${example ? `
+        <div class="card-example">
+          <i class="fas fa-quote-left"></i>
+          "${escapeHtml(example)}"
+        </div>
+      ` : ''}
     `;
 
     updateProgress();
@@ -416,5 +417,6 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
