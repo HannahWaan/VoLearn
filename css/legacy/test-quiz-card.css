@@ -10,8 +10,9 @@
   margin: 0 auto;
   text-align: center;
   padding: 20px;
+  backdrop-filter: blur(10px);
 
-  background: transparent; /* Test cũ thường để card "thoáng" */
+  background: transparent; 
 }
 
 /* Labels (đúng snippet Test bạn gửi) */
