@@ -365,8 +365,8 @@ export function reviewWrongFlashcards() {
     }
 
     const wrongWords = wrongAnswers.map(a => {
-        // Find the word object
-        return getCurrentWord(); // This needs proper implementation
+        
+        return getCurrentWord(); 
     }).filter(Boolean);
 
     if (wrongWords.length > 0) {
@@ -410,5 +410,6 @@ window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
+
 
 
