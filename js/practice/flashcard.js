@@ -64,7 +64,7 @@ function renderFlashcardUI() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="flashcard-container">            
+        <div class="flashcard-container" data-render="flashcard-ui">     
             <div class="flashcard-main">
                 <div class="flashcard" id="flashcard" onclick="window.flipCard()">
                     <div class="flashcard-inner">
@@ -406,6 +406,7 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
 
 
 
