@@ -397,6 +397,11 @@ export function flashcardGrade(level) {
     showCurrentCard();
 }
 
+export function renderFlashcard() {
+  renderFlashcardUI();
+  showCurrentCard();
+}
+
 /* ===== EXPORTS ===== */
 window.startFlashcard = startFlashcard;
 window.flipCard = flipCard;
@@ -410,6 +415,6 @@ window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
-
+window.renderFlashcard = renderFlashcard;
 
 
