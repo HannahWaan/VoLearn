@@ -178,7 +178,6 @@ function showCurrentCard() {
     updateProgress();
     
     // Speak if enabled
-    const state = getPracticeState();
     if (state.settings?.speakOnShow) {
         speak(word.word);
     }
@@ -438,6 +437,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
