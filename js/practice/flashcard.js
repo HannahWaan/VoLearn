@@ -381,6 +381,12 @@ function formatDuration(seconds) {
     return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
+// Cho practiceEngine.continuePractice() gọi lại UI hiện tại
+export function renderFlashcard() {
+  renderFlashcardUI();
+  showCurrentCard();
+}
+
 /* ===== EXPORTS ===== */
 window.startFlashcard = startFlashcard;
 window.flipCard = flipCard;
@@ -393,5 +399,6 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
 
 
