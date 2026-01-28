@@ -530,6 +530,7 @@ export function showPracticeArea() {
     
     if (practiceArea) practiceArea.style.display = 'block';
     if (practiceModes) practiceModes.style.display = 'none';
+      document.getElementById('practice-section')?.classList.add('in-session');
 }
 
 // Continue practice
