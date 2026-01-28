@@ -1,9 +1,11 @@
 /* ========================================
-   Test legacy Quiz Card UI (scoped)
-   Apply only inside practice content
+   Test legacy Quiz + Flashcard UI (scoped)
+   Only active during a practice session:
+   #practice-section.in-session
    ======================================== */
 
-#practice-content .quiz-card {
+/* ===================== QUIZ ===================== */
+#practice-section.in-session #practice-content .quiz-card {
   position: relative;
   width: 100%;
   max-width: 600px;
@@ -11,13 +13,12 @@
   text-align: center;
   padding: 20px;
   backdrop-filter: blur(10px);
-
-  background: transparent; 
+  background: transparent;
 }
 
-/* Labels (đúng snippet Test bạn gửi) */
-#practice-content .quiz-question-label,
-#practice-content .quiz-answer-label {
+/* Labels */
+#practice-section.in-session #practice-content .quiz-question-label,
+#practice-section.in-session #practice-content .quiz-answer-label {
   font-size: 0.9rem;
   color: var(--text-muted);
   margin-bottom: 8px;
@@ -25,12 +26,12 @@
   letter-spacing: 0.5px;
 }
 
-#practice-content .quiz-answer-label {
+#practice-section.in-session #practice-content .quiz-answer-label {
   margin-top: 20px;
 }
 
-/* Timer pill (đúng snippet Test bạn gửi) */
-#practice-content .quiz-timer {
+/* Timer pill */
+#practice-section.in-session #practice-content .quiz-timer {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -46,7 +47,7 @@
 }
 
 /* Question main */
-#practice-content .quiz-word {
+#practice-section.in-session #practice-content .quiz-word {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--text-primary);
@@ -54,14 +55,14 @@
   line-height: 1.15;
 }
 
-#practice-content .question-phonetic {
+#practice-section.in-session #practice-content .question-phonetic {
   color: var(--text-muted);
   margin-bottom: 8px;
   font-family: "Noto Sans", system-ui, sans-serif;
 }
 
-/* Speak button (nhỏ gọn kiểu Test) */
-#practice-content .btn-speak {
+/* Speak button */
+#practice-section.in-session #practice-content .btn-speak {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -74,11 +75,11 @@
   box-shadow: var(--shadow-md);
   transition: var(--transition-fast);
 }
-#practice-content .btn-speak:hover { filter: brightness(1.05); transform: translateY(-1px); }
-#practice-content .btn-speak:active { transform: translateY(0); }
+#practice-section.in-session #practice-content .btn-speak:hover { filter: brightness(1.05); transform: translateY(-1px); }
+#practice-section.in-session #practice-content .btn-speak:active { transform: translateY(0); }
 
-/* Options list (đúng “đẹp như hình 2”) */
-#practice-content .quiz-options {
+/* Options list */
+#practice-section.in-session #practice-content .quiz-options {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -86,7 +87,7 @@
 }
 
 /* Option button */
-#practice-content .quiz-option {
+#practice-section.in-session #practice-content .quiz-option {
   width: 100%;
   text-align: left;
   display: flex;
@@ -103,18 +104,18 @@
   transition: var(--transition-fast);
 }
 
-#practice-content .quiz-option:hover {
+#practice-section.in-session #practice-content .quiz-option:hover {
   border-color: var(--primary-color);
   background: var(--bg-secondary);
 }
 
-#practice-content .quiz-option:disabled {
+#practice-section.in-session #practice-content .quiz-option:disabled {
   cursor: not-allowed;
   opacity: 0.85;
 }
 
 /* Letter bubble A/B/C/D */
-#practice-content .option-letter {
+#practice-section.in-session #practice-content .option-letter {
   width: 28px;
   height: 28px;
   border-radius: 10px;
@@ -132,7 +133,7 @@
   margin-top: 1px;
 }
 
-#practice-content .option-text {
+#practice-section.in-session #practice-content .option-text {
   flex: 1;
   font-size: 0.95rem;
   line-height: 1.35;
@@ -140,55 +141,55 @@
   word-break: break-word;
 }
 
-/* Correct / Wrong styles (giống Test: viền + nền) */
-#practice-content .quiz-option.correct {
+/* Correct / Wrong */
+#practice-section.in-session #practice-content .quiz-option.correct {
   border-color: var(--success-color);
   background: rgba(16, 185, 129, 0.15);
 }
-#practice-content .quiz-option.correct .option-letter {
+#practice-section.in-session #practice-content .quiz-option.correct .option-letter {
   border-color: var(--success-color);
   color: var(--success-color);
 }
 
-#practice-content .quiz-option.wrong {
+#practice-section.in-session #practice-content .quiz-option.wrong {
   border-color: var(--danger-color);
   background: rgba(239, 68, 68, 0.12);
 }
-#practice-content .quiz-option.wrong .option-letter {
+#practice-section.in-session #practice-content .quiz-option.wrong .option-letter {
   border-color: var(--danger-color);
   color: var(--danger-color);
 }
 
 /* Feedback row */
-#practice-content .quiz-feedback {
+#practice-section.in-session #practice-content .quiz-feedback {
   margin-top: 14px;
   min-height: 22px;
   font-weight: 700;
 }
-#practice-content .feedback-correct { color: var(--success-color); }
-#practice-content .feedback-wrong { color: var(--danger-color); }
+#practice-section.in-session #practice-content .feedback-correct { color: var(--success-color); }
+#practice-section.in-session #practice-content .feedback-wrong { color: var(--danger-color); }
 
 /* Actions */
-#practice-content .quiz-actions {
+#practice-section.in-session #practice-content .quiz-actions {
   margin-top: 14px;
   display: flex;
   justify-content: center;
 }
 
-/* ===== Flashcard (scoped, avoid conflict with SRS .flashcard styles) ===== */
-#practice-content [data-render="flashcard-ui"]{
+/* ===================== FLASHCARD (custom classes to avoid SRS conflict) ===================== */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"]{
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
 }
 
-#practice-content [data-render="flashcard-ui"] .flashcard-main{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-main{
   display: flex;
   justify-content: center;
   margin: 10px 0 14px;
 }
 
-#practice-content [data-render="flashcard-ui"] .fc-card{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card{
   width: 100%;
   max-width: 520px;
   height: 280px;
@@ -199,7 +200,7 @@
   perspective: 1200px;
 }
 
-#practice-content [data-render="flashcard-ui"] .fc-card-inner{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-inner{
   position: relative;
   width: 100%;
   height: 100%;
@@ -207,12 +208,12 @@
   transition: transform 0.6s;
 }
 
-#practice-content #flashcard.flipped .fc-card-inner {
+#practice-section.in-session #practice-content #flashcard.flipped .fc-card-inner {
   transform: rotateY(180deg);
 }
 
-#practice-content [data-render="flashcard-ui"] .fc-card-front,
-#practice-content [data-render="flashcard-ui"] .fc-card-back {
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-front,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-back {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
@@ -226,12 +227,12 @@
   text-align: center;
 }
 
-#practice-content [data-render="flashcard-ui"] .fc-card-back {
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-back {
   transform: rotateY(180deg);
 }
 
-/* Buttons row */
-#practice-content [data-render="flashcard-ui"] .flashcard-controls.srs-buttons{
+/* Controls rows */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-controls.srs-buttons{
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -239,7 +240,7 @@
   margin-top: 12px;
 }
 
-#practice-content [data-render="flashcard-ui"] .flashcard-nav{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-nav{
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -247,45 +248,43 @@
   margin-top: 12px;
 }
 
-/* Flashcard text sizing */
-#practice-content [data-render="flashcard-ui"] .card-word{
+/* Text */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-line{
+  font-size: 1rem;
+  line-height: 1.35;
+  opacity: 0.98;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-word{
   font-size: 2.2rem;
   font-weight: 800;
   line-height: 1.15;
   margin-bottom: 8px;
 }
 
-#practice-content [data-render="flashcard-ui"] .card-phonetic{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-phonetic{
   font-size: 1rem;
   opacity: 0.9;
   margin-bottom: 6px;
 }
 
-#practice-content [data-render="flashcard-ui"] .card-pos{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-pos{
   font-size: 0.95rem;
   opacity: 0.9;
 }
 
-#practice-content [data-render="flashcard-ui"] .card-meaning{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defVi,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defEn,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-meaning{
   font-size: 1.3rem;
   font-weight: 700;
   line-height: 1.3;
   margin-bottom: 10px;
 }
 
-#practice-content [data-render="flashcard-ui"] .card-example{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-example{
   font-size: 1rem;
   opacity: 0.95;
   line-height: 1.35;
   max-width: 36ch;
 }
-
-#practice-content [data-render="flashcard-ui"] .card-line{
-  font-size: 1rem;
-  line-height: 1.35;
-  opacity: 0.98;
-}
-
-#practice-content [data-render="flashcard-ui"] .card-word{ font-size: 2.2rem; font-weight: 800; }
-#practice-content [data-render="flashcard-ui"] .card-defVi,
-#practice-content [data-render="flashcard-ui"] .card-defEn{ font-size: 1.3rem; font-weight: 700; }
