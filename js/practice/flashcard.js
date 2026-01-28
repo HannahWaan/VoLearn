@@ -53,21 +53,15 @@ export function startFlashcard(scope, settings = {}) {
 
 /* ===== RENDER UI ===== */
 function renderFlashcardUI() {
-    const container = document.getElementById('practice-area');
+    const container = document.getElementById('practice-content');
     if (!container) return;
 
     container.innerHTML = `
         <div class="flashcard-container">
             <div class="flashcard-header">
-                <button class="btn-icon btn-back" onclick="window.exitFlashcard()">
+                <button class="btn-icon btn-back" onclick="window.handlePracticeBack()">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <div class="flashcard-progress">
-                    <span id="flashcard-progress-text">1 / 10</span>
-                    <div class="progress-bar">
-                        <div id="flashcard-progress-bar" class="progress-fill"></div>
-                    </div>
-                </div>
                 <div class="flashcard-actions">
                     <button class="btn-icon" id="btn-autoplay" onclick="window.toggleAutoPlay()" 
                             title="Tự động lật">
@@ -286,16 +280,11 @@ export function speakCurrentFlashcard() {
 function updateProgress() {
     const state = getPracticeState();
     
-    const progressText = document.getElementById('flashcard-progress-text');
-    const progressBar = document.getElementById('flashcard-progress-bar');
-    
-    if (progressText) {
-        progressText.textContent = `${state.currentIndex + 1} / ${state.total}`;
-    }
-    
-    if (progressBar) {
-        progressBar.style.width = `${state.progress}%`;
-    }
+    // Đồng bộ progress lên header practice của VoLearn (thanh trên cùng)
+    const bar2 = document.getElementById('practice-progress-bar');
+    const text2 = document.getElementById('practice-progress-text');
+    if (bar2?.style) bar2.style.width = `${state.progress}%`;
+    if (text2) text2.textContent = `${state.currentIndex}/${state.total}`;
 }
 
 /* ===== SHOW RESULTS ===== */
@@ -304,7 +293,7 @@ function showResults() {
     
     const result = finishPractice();
     
-    const container = document.getElementById('practice-area');
+    const container = document.getElementById('practice-content');
     if (!container) return;
 
     container.innerHTML = `
@@ -416,3 +405,4 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
