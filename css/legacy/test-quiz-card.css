@@ -174,3 +174,40 @@
   display: flex;
   justify-content: center;
 }
+
+/* ===== Flashcard UI (scoped) ===== */
+#practice-content .flashcard-container{
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: var(--border-radius-lg);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+}
+
+#practice-content .flashcard-main{
+  display:flex;
+  justify-content:center;
+  margin-bottom: 14px;
+}
+
+#practice-content .flashcard{
+  width: 100%;
+  max-width: 520px;
+  height: 280px;
+  border-radius: var(--border-radius-lg);
+  background: var(--gradient-primary);
+  overflow: hidden;
+}
+
+#practice-content .flashcard-controls,
+#practice-content .flashcard-nav{
+  display:flex;
+  gap: 12px;
+  justify-content:center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
