@@ -255,6 +255,6 @@ function updateStreak() {
 /* ===== GLOBALS ===== */
 window.startSRSReview = startSRSReview;
 window.answerSRS = answerSRS;
-window.flipCard = flipCard;
+window.srsFlipCard = flipCard;
 
 export { srsState };
