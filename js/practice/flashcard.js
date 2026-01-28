@@ -62,12 +62,12 @@ function renderFlashcardUI() {
     container.innerHTML = `
         <div class="flashcard-container" data-render="flashcard-ui">     
             <div class="flashcard-main">
-                <div class="flashcard" id="flashcard" onclick="window.flipCard()">
-                    <div class="flashcard-inner">
-                        <div class="flashcard-front" id="flashcard-front">
+                <div class="fc-card" id="flashcard" onclick="window.flipCard()">
+                    <div class="fc-card-inner">
+                        <div class="fc-card-front" id="flashcard-front">
                             <!-- Word will be rendered here -->
                         </div>
-                        <div class="flashcard-back" id="flashcard-back">
+                        <div class="fc-card-back" id="flashcard-back">
                             <!-- Meaning will be rendered here -->
                         </div>
                     </div>
@@ -410,4 +410,5 @@ window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
+
 
