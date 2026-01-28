@@ -211,7 +211,7 @@
   transform: rotateY(180deg);
 }
 
-#practice-content [data-render="flashcard-ui"] .fc-card-front{
+#practice-content [data-render="flashcard-ui"] .fc-card-front,
 #practice-content [data-render="flashcard-ui"] .fc-card-back {
   position: absolute;
   inset: 0;
