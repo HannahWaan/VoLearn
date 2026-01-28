@@ -9,7 +9,7 @@
 }
 
 .practice-modes {
-    max-width: 900px;
+    max-width: 950px;
     margin: 0 auto;
 }
 
@@ -181,7 +181,7 @@
 
 /* ===== PRACTICE AREA ===== */
 .practice-area {
-    max-width: 800px;
+    max-width: 950px;
     margin: 0 auto;
 }
 
@@ -275,3 +275,4 @@
 #practice-section:not(.in-session) .practice-area {
     display: none !important;
 }
+
