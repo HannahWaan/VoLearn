@@ -74,18 +74,22 @@ function renderFlashcardUI() {
                 </div>
             </div>
             
-            <div class="flashcard-controls">
-                <button class="btn-flashcard btn-wrong" onclick="window.markWrong()">
+            <div class="flashcard-controls srs-buttons">
+                <button class="btn-srs btn-again" onclick="window.flashcardGrade('forgot')">
                     <i class="fas fa-times"></i>
-                    <span>Chưa thuộc</span>
+                    <span>Quên</span>
                 </button>
-                <button class="btn-flashcard btn-flip" onclick="window.flipCard()">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Lật</span>
+                <button class="btn-srs btn-hard" onclick="window.flashcardGrade('hard')">
+                    <i class="fas fa-frown"></i>
+                    <span>Khó</span>
                 </button>
-                <button class="btn-flashcard btn-correct" onclick="window.markCorrect()">
-                    <i class="fas fa-check"></i>
-                    <span>Đã thuộc</span>
+                <button class="btn-srs btn-good" onclick="window.flashcardGrade('good')">
+                    <i class="fas fa-smile"></i>
+                    <span>Nhớ</span>
+                </button>
+                <button class="btn-srs btn-easy" onclick="window.flashcardGrade('easy')">
+                    <i class="fas fa-grin-stars"></i>
+                    <span>Dễ</span>
                 </button>
             </div>
             
@@ -384,10 +388,13 @@ function formatDuration(seconds) {
     return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
-// Cho practiceEngine.continuePractice() gọi lại UI hiện tại
-export function renderFlashcard() {
-  renderFlashcardUI();
-  showCurrentCard();
+export function flashcardGrade(level) {
+    stopAutoPlay();
+
+    const isCorrect = (level === 'good' || level === 'easy');
+
+    submitAnswer(level, isCorrect);
+    showCurrentCard();
 }
 
 /* ===== EXPORTS ===== */
@@ -402,10 +409,5 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
-
-
-
-
-
-
+window.flashcardGrade = flashcardGrade;
 
