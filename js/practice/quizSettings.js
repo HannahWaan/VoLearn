@@ -519,7 +519,7 @@ function startQuizWithSettings() {
     // Field-based quiz (from Settings)
      questionFieldIds: [...(quizSettings.questionFields || [])],
      answerFieldIds: [...(quizSettings.answerFields || [])],
-     speakQuestion: false
+     speakQuestion: false,
   };
 
   startQuiz(scope, settings);
