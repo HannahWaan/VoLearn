@@ -1,214 +1,247 @@
-/* ========================================
-   Test legacy Quiz + Flashcard UI (scoped)
-   Only active during a practice session:
-   #practice-section.in-session
-   ======================================== */
+/* ==========================================================================
+   Legacy "Test" dark quiz/flashcard card styles
+   Scoped to Practice session only:
+   Requires: #practice-section.in-session
+   ========================================================================== */
 
-/* ===================== QUIZ ===================== */
+/* -----------------------------
+   QUIZ CARD (Test Dark)
+------------------------------ */
 #practice-section.in-session #practice-content .quiz-card {
-  position: relative;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  text-align: center;
   padding: 20px;
+  border-radius: var(--border-radius-lg);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(10px);
-  background: transparent;
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-color);
+  position: relative;
 }
 
-/* Labels */
 #practice-section.in-session #practice-content .quiz-question-label,
 #practice-section.in-session #practice-content .quiz-answer-label {
   font-size: 0.9rem;
   color: var(--text-muted);
-  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
 #practice-section.in-session #practice-content .quiz-answer-label {
   margin-top: 20px;
 }
 
-/* Timer pill */
 #practice-section.in-session #practice-content .quiz-timer {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: var(--gradient-primary);
-  color: white;
-  border-radius: 20px;
+  top: 14px;
+  right: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   font-weight: 600;
-  z-index: 2;
+  color: #fff;
+  background: var(--gradient-primary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Question main */
+#practice-section.in-session #practice-content .quiz-timer i {
+  opacity: 0.9;
+}
+
 #practice-section.in-session #practice-content .quiz-word {
   font-size: 2.2rem;
   font-weight: 800;
-  color: var(--text-primary);
-  margin: 6px 0 10px;
   line-height: 1.15;
+  margin: 6px 0 6px;
+  text-align: center;
 }
 
 #practice-section.in-session #practice-content .question-phonetic {
+  text-align: center;
   color: var(--text-muted);
-  margin-bottom: 8px;
-  font-family: "Noto Sans", system-ui, sans-serif;
+  margin-bottom: 12px;
+  font-size: 1rem;
 }
 
-/* Speak button */
+#practice-section.in-session #practice-content .quiz-question {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
 #practice-section.in-session #practice-content .btn-speak {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  color: white;
   border: none;
+  border-radius: 50%;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
-  transition: var(--transition-fast);
+  color: #fff;
+  background: var(--gradient-primary);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
-#practice-section.in-session #practice-content .btn-speak:hover { filter: brightness(1.05); transform: translateY(-1px); }
-#practice-section.in-session #practice-content .btn-speak:active { transform: translateY(0); }
 
-/* Options list */
+#practice-section.in-session #practice-content .btn-speak:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+#practice-section.in-session #practice-content .btn-speak:active {
+  transform: translateY(0px) scale(0.98);
+}
+
 #practice-section.in-session #practice-content .quiz-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 14px;
 }
 
-/* Option button */
 #practice-section.in-session #practice-content .quiz-option {
-  width: 100%;
-  text-align: left;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-
+  width: 100%;
   padding: 14px 16px;
-  background: var(--bg-tertiary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-
-  color: var(--text-primary);
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--text-color);
   cursor: pointer;
-  transition: var(--transition-fast);
+  text-align: left;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.10s ease;
 }
 
 #practice-section.in-session #practice-content .quiz-option:hover {
-  border-color: var(--primary-color);
-  background: var(--bg-secondary);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
 }
 
 #practice-section.in-session #practice-content .quiz-option:disabled {
   cursor: not-allowed;
   opacity: 0.85;
+  transform: none;
 }
 
-/* Letter bubble A/B/C/D */
 #practice-section.in-session #practice-content .option-letter {
   width: 28px;
   height: 28px;
-  border-radius: 10px;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.9rem;
-
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  color: var(--text-secondary);
-
-  flex-shrink: 0;
-  margin-top: 1px;
+  font-size: 0.95rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex: 0 0 auto;
 }
 
 #practice-section.in-session #practice-content .option-text {
-  flex: 1;
-  font-size: 0.95rem;
+  flex: 1 1 auto;
+  font-size: 1rem;
   line-height: 1.35;
-  color: var(--text-primary);
-  word-break: break-word;
 }
 
-/* Correct / Wrong */
 #practice-section.in-session #practice-content .quiz-option.correct {
-  border-color: var(--success-color);
-  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(46, 213, 115, 0.65);
+  background: rgba(46, 213, 115, 0.12);
 }
+
 #practice-section.in-session #practice-content .quiz-option.correct .option-letter {
-  border-color: var(--success-color);
-  color: var(--success-color);
+  background: rgba(46, 213, 115, 0.55);
+  border-color: rgba(46, 213, 115, 0.65);
 }
 
 #practice-section.in-session #practice-content .quiz-option.wrong {
-  border-color: var(--danger-color);
-  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(255, 71, 87, 0.65);
+  background: rgba(255, 71, 87, 0.12);
 }
+
 #practice-section.in-session #practice-content .quiz-option.wrong .option-letter {
-  border-color: var(--danger-color);
-  color: var(--danger-color);
+  background: rgba(255, 71, 87, 0.55);
+  border-color: rgba(255, 71, 87, 0.65);
 }
 
-/* Feedback row */
 #practice-section.in-session #practice-content .quiz-feedback {
-  margin-top: 14px;
-  min-height: 22px;
+  margin: 14px 0 0;
+  min-height: 26px;
   font-weight: 700;
+  text-align: center;
 }
-#practice-section.in-session #practice-content .feedback-correct { color: var(--success-color); }
-#practice-section.in-session #practice-content .feedback-wrong { color: var(--danger-color); }
 
-/* Actions */
+#practice-section.in-session #practice-content .feedback-correct {
+  color: rgba(46, 213, 115, 0.95);
+}
+
+#practice-section.in-session #practice-content .feedback-wrong {
+  color: rgba(255, 71, 87, 0.95);
+}
+
 #practice-section.in-session #practice-content .quiz-actions {
-  margin-top: 14px;
   display: flex;
   justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
 }
 
-/* ===================== FLASHCARD (custom classes to avoid SRS conflict) ===================== */
-#practice-section.in-session #practice-content [data-render="flashcard-ui"]{
+/* -----------------------------
+   FLASHCARD UI (avoid SRS conflicts)
+   Requires container marker: data-render="flashcard-ui"
+------------------------------ */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
 }
 
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-main{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-main {
   display: flex;
   justify-content: center;
   margin: 10px 0 14px;
 }
 
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card{
+/* The flip card shell */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card {
   width: 100%;
   max-width: 520px;
   height: 280px;
   border-radius: var(--border-radius-lg);
   background: var(--gradient-primary);
-  overflow: hidden;
-  cursor: pointer;
+  position: relative;
   perspective: 1200px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-inner{
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-inner {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.6s;
+  transition: transform 0.6s ease;
 }
 
-#practice-section.in-session #practice-content #flashcard.flipped .fc-card-inner {
+/* When JS adds .flipped to #flashcard */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] #flashcard.flipped .fc-card-inner {
   transform: rotateY(180deg);
 }
 
@@ -231,60 +264,56 @@
   transform: rotateY(180deg);
 }
 
-/* Controls rows */
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-controls.srs-buttons{
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-nav{
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-/* Text */
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-line{
+/* Field line styling (for checkbox-driven fields) */
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-line {
   font-size: 1rem;
   line-height: 1.35;
   opacity: 0.98;
+  margin: 4px 0;
 }
 
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-word{
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.15;
-  margin-bottom: 8px;
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-word {
+  font-size: 2.1rem;
+  font-weight: 900;
+  margin: 2px 0 6px;
 }
 
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-phonetic{
-  font-size: 1rem;
-  opacity: 0.9;
-  margin-bottom: 6px;
-}
-
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-pos{
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defVi,
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defEn,
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-meaning{
-  font-size: 1.3rem;
-  font-weight: 700;
-  line-height: 1.3;
-  margin-bottom: 10px;
-}
-
-#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-example{
-  font-size: 1rem;
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-phonetic {
+  font-size: 1.05rem;
   opacity: 0.95;
-  line-height: 1.35;
-  max-width: 36ch;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-pos {
+  font-size: 0.98rem;
+  opacity: 0.92;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-meaning,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defVi,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defEn {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-example {
+  margin-top: 10px;
+  font-size: 0.98rem;
+  opacity: 0.95;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-controls.srs-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
