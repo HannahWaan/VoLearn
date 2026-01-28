@@ -7,6 +7,7 @@ import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeAllModals } from '../ui/modalEngine.js';
+import { startFlashcard } from './flashcard.js';
 
 /* ===== CONSTANTS ===== */
 const POS_MAPPING = {
@@ -470,7 +471,7 @@ export function startFlashcardWithSettings() {
     getFlashcardSettingsFromForm();
 
     const words = getFilteredWordsForFlashcard();
-
+   
     if (words.length === 0) {
         showToast('Không có từ vựng nào phù hợp với bộ lọc!', 'error');
         return;
@@ -485,8 +486,12 @@ export function startFlashcardWithSettings() {
     isFlipped = false;
 
     closeAllModals();
-    showPracticeArea();
-    renderFlashcardWithSettings();
+    startFlashcard(
+        { type: 'custom', words },
+        {
+            shuffle: false, 
+        }
+    );
 
     showToast(`Bắt đầu với ${words.length} từ vựng`, 'success');
 }
@@ -779,11 +784,6 @@ export function initFlashcardSettings() {
     window.refreshScope = refreshScope;
     window.closeScopeSelector = closeScopeSelector;
     window.startFlashcardWithSettings = startFlashcardWithSettings;
-    window.flipCard = flipCard;
-    window.flashcardAnswerWithSettings = flashcardAnswerWithSettings;
-    window.hidePracticeArea = hidePracticeArea;
-    window.handlePracticeBack = handlePracticeBack;
-    window.continuePractice = continuePractice;
     window.toggleFrontField = toggleFrontField;
     window.toggleBackField = toggleBackField;
 
