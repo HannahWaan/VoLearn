@@ -175,10 +175,41 @@
   justify-content: center;
 }
 
-/* ===== Flashcard (avoid conflict with SRS .flashcard styles) ===== */
-#practice-content .fc-card { position: relative; cursor: pointer; perspective: 1200px; }
-#practice-content .fc-card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s; }
-#practice-content #flashcard.flipped .fc-card-inner { transform: rotateY(180deg); }
+/* ===== Flashcard (scoped, avoid conflict with SRS .flashcard styles) ===== */
+#practice-content .flashcard-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+#practice-content .flashcard-main {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 14px;
+}
+
+#practice-content .fc-card {
+  width: 100%;
+  max-width: 520px;
+  height: 280px;
+  border-radius: var(--border-radius-lg);
+  background: var(--gradient-primary);
+  overflow: hidden;
+  cursor: pointer;
+  perspective: 1200px;
+}
+
+#practice-content .fc-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+#practice-content #flashcard.flipped .fc-card-inner {
+  transform: rotateY(180deg);
+}
 
 #practice-content .fc-card-front,
 #practice-content .fc-card-back {
@@ -191,6 +222,27 @@
   justify-content: center;
   align-items: center;
   padding: 24px;
+  color: #fff;
+  text-align: center;
 }
 
-#practice-content .fc-card-back { transform: rotateY(180deg); }
+#practice-content .fc-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Buttons row */
+#practice-content .flashcard-controls.srs-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+#practice-content .flashcard-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
