@@ -111,6 +111,31 @@ function renderFlashcardUI() {
 }
 
 /* ===== SHOW CURRENT CARD ===== */
+function getFieldValueForFlashcard(word, fieldId) {
+  const m = (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
+
+  const asText = (v) => {
+    if (v == null) return '';
+    if (Array.isArray(v)) return v.filter(Boolean).join(', ');
+    return String(v).trim();
+  };
+
+  switch (fieldId) {
+    case 'word': return asText(word?.word);
+    case 'phonetic': return asText(m.phoneticUS || m.phoneticUK || word?.phonetic);
+    case 'pos': return asText(m.pos || word?.partOfSpeech);
+
+    case 'defVi': return asText(m.defVi);
+    case 'defEn': return asText(m.defEn);
+    case 'example': return asText(m.example);
+
+    case 'synonyms': return asText(m.synonyms);
+    case 'antonyms': return asText(m.antonyms);
+
+    default: return '';
+  }
+}
+
 function showCurrentCard() {
     const word = getCurrentWord();
     
@@ -130,30 +155,26 @@ function showCurrentCard() {
     // Reset flip state
     flashcard.classList.remove('flipped');
 
-    // Render front (word)
-    const m = (word.meanings && word.meanings[0]) ? word.meanings[0] : {};
-    const phonetic = m.phoneticUS || m.phoneticUK || word.phonetic || '';
-    const pos = m.pos || word.partOfSpeech || '';
-    const defVi = m.defVi || '';
-    const defEn = m.defEn || '';
-    const example = m.example || '';
+    // Đọc settings từ practiceEngine (được truyền từ flashcardSettings.js)
+    const state = getPracticeState();
+    const frontFields = Array.isArray(state.settings?.frontFields) ? state.settings.frontFields : ['word', 'phonetic'];
+    const backFields  = Array.isArray(state.settings?.backFields)  ? state.settings.backFields  : ['defVi', 'example'];
     
-    front.innerHTML = `
-      <div class="card-word">${escapeHtml(word.word || '')}</div>
-      ${phonetic ? `<div class="card-phonetic">${escapeHtml(phonetic)}</div>` : ''}
-      ${pos ? `<div class="card-pos">${escapeHtml(pos)}</div>` : ''}
-    `;
+    // Render theo fields đã tick
+    const renderSide = (fields) => {
+      return (fields || [])
+        .map(f => {
+          const val = getFieldValueForFlashcard(word, f);
+          if (!val) return '';
+          return `<div class="card-line card-${f}">${escapeHtml(val)}</div>`;
+        })
+        .filter(Boolean)
+        .join('');
+    };
     
-    back.innerHTML = `
-      <div class="card-meaning">${escapeHtml(defVi || defEn || '')}</div>
-      ${example ? `
-        <div class="card-example">
-          <i class="fas fa-quote-left"></i>
-          "${escapeHtml(example)}"
-        </div>
-      ` : ''}
-    `;
-
+    front.innerHTML = renderSide(frontFields) || `<div class="card-line card-word">${escapeHtml(word.word || '')}</div>`;
+    back.innerHTML  = renderSide(backFields)  || `<div class="card-line card-defVi">${escapeHtml(getFieldValueForFlashcard(word, 'defVi') || getFieldValueForFlashcard(word, 'defEn') || '')}</div>`;
+      
     updateProgress();
     
     // Speak if enabled
@@ -417,6 +438,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
