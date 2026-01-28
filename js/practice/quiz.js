@@ -36,10 +36,13 @@ export function startQuiz(scope, settings = {}) {
     const defaultSettings = {
         shuffle: true,
         optionCount: 4,
-        timeLimit: 0,       // 0 = no limit
+        timeLimit: 0,      
         showHint: false,
-        questionType: 'word-to-meaning',  // 'word-to-meaning' | 'meaning-to-word'
         speakQuestion: false
+        
+        // Field-based settings (from quizSettings.js)
+        questionFieldIds: [1, 5],
+        answerFieldIds: [5]
     };
 
     const mergedSettings = { ...defaultSettings, ...settings };
@@ -64,10 +67,20 @@ function showCurrentQuestion() {
     selectedOption = null;
     
     const state = getPracticeState();
-    const questionType = state.settings?.questionType || 'word-to-meaning';
+    const qIds = Array.isArray(state.settings?.questionFieldIds) ? state.settings.questionFieldIds : [1, 5];
+    const aIds = Array.isArray(state.settings?.answerFieldIds) ? state.settings.answerFieldIds : [5];
     
-    // Generate options
-    options = generateOptions(word, questionType);
+    const qFieldId = pickRandom(qIds) ?? qIds[0];
+    // ưu tiên answerField khác questionField
+    const aPool = aIds.filter(id => id !== qFieldId);
+    const aFieldId = pickRandom(aPool.length ? aPool : aIds) ?? aIds[0];
+    
+    const questionText = getFieldText(word, qFieldId);
+    const correctText = getFieldText(word, aFieldId);
+    currentQA = { qFieldId, aFieldId, correctText };
+    
+    // Generate options by answer field
+    options = generateOptionsByField(word, aFieldId);
     if (!options || options.length < 2) {
          showToast('Không đủ dữ liệu để tạo đáp án. Hãy kiểm tra nghĩa (defVi/defEn).', 'warning');
          showQuizResults();
@@ -77,32 +90,25 @@ function showCurrentQuestion() {
     // Render into VoLearn practice-content (use existing practice header/back/progress)
     const container = document.getElementById('practice-content');
     if (!container) return;
-
+    
+    const questionLabel = (getFieldLabel(qFieldId) || 'CÂU HỎI').toUpperCase();
+    const answerLabel = `Chọn ${getFieldLabel(aFieldId)?.toLowerCase() || 'đáp án'} đúng:`;
+    const questionMain = escapeHtml(questionText || '(Không có dữ liệu)');
     const phonetic = getPhoneticText(word);
-    const prompt = questionType === 'word-to-meaning' ? 'Chọn nghĩa đúng:' : 'Chọn từ đúng:';
-    const questionLabel = questionType === 'word-to-meaning' ? 'TỪ VỰNG' : 'NGHĨA';
-    const questionMain = questionType === 'word-to-meaning'
-       ? escapeHtml(word.word || '')
-       : escapeHtml(getMeaningText(word));
 
     container.innerHTML = `
        <div class="quiz-card">
          <div class="quiz-question-label">${questionLabel}</div>
          <div class="quiz-word">${questionMain || '(Không có dữ liệu)'}</div>
-         ${
-           questionType === 'word-to-meaning'
-             ? `
-               <div class="quiz-sub">
-                 ${phonetic ? `<div class="question-phonetic">${escapeHtml(phonetic)}</div>` : ''}
-                 <button class="btn-speak" type="button" onclick="window.speakQuizWord()" title="Nghe phát âm">
-                   <i class="fas fa-volume-up"></i>
-                 </button>
-               </div>
-             `
-             : ''
-         }
-         <div class="quiz-answer-label">${prompt}</div>
-         
+         <div class="quiz-sub">
+             ${phonetic ? `<div class="question-phonetic">${escapeHtml(phonetic)}</div>` : ''}
+             
+             <button class="btn-speak" type="button" onclick="window.speakQuizWord()" title="Nghe phát âm">
+                 <i class="fas fa-volume-up"></i>
+             </button>
+            </div>
+            <div class="quiz-answer-label">${escapeHtml(answerLabel)}</div>
+            
          <div class="quiz-options">
            ${options.map((opt, index) => `
              <button class="quiz-option" type="button" data-index="${index}" onclick="window.selectQuizOption(${index})">
@@ -124,36 +130,29 @@ function showCurrentQuestion() {
     updatePracticeHeaderProgress();
     
     // Speak if enabled
-    if (state.settings?.speakQuestion && questionType === 'word-to-meaning') {
-        speak(word.word);
-    }
+    if (state.settings?.speakQuestion) speak(word.word);
 }
 
 /* ===== GENERATE OPTIONS ===== */
-function generateOptions(correctWord, questionType) {
+function generateOptionsByField(correctWord, answerFieldId) {
     const allWords = getWordsByScope({ type: 'all' });
     const optionCount = getPracticeState().settings?.optionCount || 4;
     
-    // Get the correct answer text
-    const correctText = questionType === 'word-to-meaning' 
-        ? getMeaningText(correctWord)
-        : correctWord.word;
+    const correctText = getFieldText(correctWord, answerFieldId);
+    if (!correctText) return [];
     
-    // Get wrong options
-    const wrongOptions = allWords
-        .filter(w => w.id !== correctWord.id)
-        .map(w => questionType === 'word-to-meaning' ? getMeaningText(w) : w.word)
-        .filter(text => text && text !== correctText);
+    const wrongPool = allWords
+        .filter(w => w && w.id !== correctWord.id)
+        .map(w => getFieldText(w, answerFieldId))
+        .filter(t => t && t !== correctText);
+
+    const wrongUnique = Array.from(new Set(wrongPool));
+    const shuffledWrong = shuffleArray(wrongUnique).slice(0, Math.max(0, optionCount - 1));
     
-    // Shuffle and pick
-    const shuffledWrong = shuffleArray(wrongOptions).slice(0, optionCount - 1);
-    
-    // Combine and shuffle
     const allOptions = [
         { text: correctText, isCorrect: true },
         ...shuffledWrong.map(text => ({ text, isCorrect: false }))
     ];
-    
     return shuffleArray(allOptions);
 }
 
@@ -328,6 +327,66 @@ function formatDuration(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
+}
+
+/* ===== FIELD MAPPING (match quizSettings field IDs) ===== */
+function getFieldLabel(fieldId) {
+    const map = {
+        1: 'Từ vựng',
+        2: 'Phát âm',
+        3: 'Loại từ',
+        4: 'Định nghĩa (EN)',
+        5: 'Nghĩa (VI)',
+        6: 'Ví dụ',
+        7: 'Từ đồng nghĩa',
+        8: 'Từ trái nghĩa'
+    };
+    return map[fieldId] || 'Nội dung';
+}
+    
+function getFieldText(word, fieldId) {
+    const m = getPrimaryMeaningObj(word);
+    switch (fieldId) {
+        case 1: return (word?.word || '').trim();
+        case 2: return (m.phoneticUS || m.phoneticUK || word?.phonetic || '').trim();
+        case 3: return (m.pos || '').trim();
+        case 4: return (m.defEn || '').trim();
+        case 5: return (m.defVi || '').trim();
+        case 6: return (m.example || '').trim();
+        case 7: return (m.synonyms || '').trim();
+        case 8: return (m.antonyms || '').trim();
+        default: return '';
+    }
+}
+
+function firstNonEmptyFieldId(word, fieldIds) {
+  if (!word || !Array.isArray(fieldIds)) return null;
+  for (const id of fieldIds) {
+    const t = getFieldText(word, id);
+    if (t && String(t).trim()) return id;
+  }
+  return null;
+}
+
+function pickAnswerFieldWithFallback(word, qFieldId, answerFieldIds) {
+  // 1) ưu tiên các answerField khác questionField
+  const preferred = (Array.isArray(answerFieldIds) ? answerFieldIds : []).filter(id => id !== qFieldId);
+  let aId = firstNonEmptyFieldId(word, preferred);
+  if (aId) return aId;
+
+  // 2) nếu không có, thử cả list answerFieldIds (kể cả trùng qField)
+  aId = firstNonEmptyFieldId(word, answerFieldIds);
+  if (aId) return aId;
+
+  // 3) fallback cứng theo độ “chắc có dữ liệu” trong VoLearn
+  const hardFallback = [5, 4, 1]; // defVi, defEn, word
+  aId = firstNonEmptyFieldId(word, hardFallback);
+  return aId;
+}
+
+function pickRandom(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 /* ===== EXPORTS ===== */
