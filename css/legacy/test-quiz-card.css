@@ -1,11 +1,13 @@
 /* ==========================================================================
-   TEST DARK - Quiz UI 
+   TEST DARK - Quiz UI (VoLearn)
+   Scoped to practice session only:
+   #practice-section.in-session
    ========================================================================== */
 
 /* ---------- QUIZ CARD SHELL ---------- */
 #practice-section.in-session #practice-content .quiz-card{
   width:100%;
-  max-width: 954px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0;
   border-radius: 14px;
@@ -205,8 +207,10 @@
 }
 
 /* ---------- RESPONSIVE ---------- */
-@media (max-width: 900px){
+@media (max-width: 1100px){
   #practice-section.in-session #practice-content .quiz-card{ max-width: 100%; }
+}
+@media (max-width: 900px){
   #practice-section.in-session #practice-content .quiz-word{ font-size: 38px; }
 }
 @media (max-width: 520px){
