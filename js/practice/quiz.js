@@ -394,6 +394,10 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+export function renderQuiz() {
+  showCurrentQuestion();
+}
+
 /* ===== EXPORTS ===== */
 window.startQuiz = startQuiz;
 window.selectQuizOption = selectQuizOption;
