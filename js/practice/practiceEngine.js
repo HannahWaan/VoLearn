@@ -385,6 +385,7 @@ function updateStreak() {
 export function getPracticeState() {
     return {
         mode: practiceState.mode,
+        settings: practiceState.settings,
         currentIndex: practiceState.currentIndex,
         total: practiceState.words.length,
         score: practiceState.score,
