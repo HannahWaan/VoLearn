@@ -168,7 +168,7 @@ function setupGlobalFunctions() {
     // Practice
     window.startSRSReview = startSRSReview;
     window.answerSRS = answerSRS;
-    window.flipCard = srsFlipCard;
+    window.srsFlipCard = srsFlipCard;
     window.startFlashcard = startFlashcard;
     window.startQuiz = startQuiz;
     window.startDictation = startDictation;
