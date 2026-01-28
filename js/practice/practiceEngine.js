@@ -520,6 +520,9 @@ export function hidePracticeArea() {
     const practiceContent = document.getElementById('practice-content');
     if (practiceContent) practiceContent.innerHTML = '';
     
+    document.getElementById('practice-section')?.classList.remove('in-session');
+    
+    
     resetPractice();
 }
 
