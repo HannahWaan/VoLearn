@@ -21,7 +21,7 @@ body.sidebar-collapsed .main-content {
     padding: 24px;
     animation: fadeIn 0.3s ease;
     width: 100%;
-    max-width: 1200px;
+    max-width: 950px;
     margin: 0 auto;
     box-sizing: border-box;
 }
@@ -93,3 +93,4 @@ body.sidebar-collapsed .main-content {
         padding: 12px;
     }
 }
+
