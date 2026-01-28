@@ -255,3 +255,23 @@
         padding: 20px;
     }
 }
+
+/* ===== FIX: Đảm bảo practice-modes hiển thị đúng sau khi thoát ===== */
+
+/* Khi đang trong session - ẩn modes, hiện area */
+#practice-section.in-session .practice-modes {
+    display: none !important;
+}
+
+#practice-section.in-session .practice-area {
+    display: block !important;
+}
+
+/* Khi không trong session - hiện modes, ẩn area */
+#practice-section:not(.in-session) .practice-modes {
+    display: block !important;
+}
+
+#practice-section:not(.in-session) .practice-area {
+    display: none !important;
+}
