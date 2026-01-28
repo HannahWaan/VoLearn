@@ -517,6 +517,9 @@ export function hidePracticeArea() {
     if (practiceArea) practiceArea.style.display = 'none';
     if (practiceModes) practiceModes.style.display = 'flex';
     
+    const practiceContent = document.getElementById('practice-content');
+    if (practiceContent) practiceContent.innerHTML = '';
+    
     resetPractice();
 }
 
