@@ -47,11 +47,7 @@ export function startFlashcard(scope, settings = {}) {
     }
     
     showPracticeArea();
-    console.log('[flashcard] rendering into #practice-content', !!document.getElementById('practice-content'));
-  renderFlashcardUI();
-  console.log('[flashcard] rendered len=', document.getElementById('practice-content')?.innerHTML?.length);
 
-  
     autoPlayEnabled = mergedSettings.autoPlay;
     
     renderFlashcardUI();
@@ -406,6 +402,7 @@ window.speakCurrentFlashcard = speakCurrentFlashcard;
 window.exitFlashcard = exitFlashcard;
 window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
+
 
 
 
