@@ -50,9 +50,7 @@ export function startQuiz(scope, settings = {}) {
 
   const mergedSettings = { ...defaultSettings, ...settings };
 
-  if (!initPractice('quiz', words, mergedSettings)) {
-    return;
-  }
+  if (!initPractice('quiz', words, mergedSettings)) return;
 
   showCurrentQuestion();
 }
@@ -70,22 +68,25 @@ function showCurrentQuestion() {
   selectedOption = null;
 
   const state = getPracticeState();
+
+  // NOTE: practiceEngine.getPracticeState() hiện không trả settings,
+  // nhưng initPractice() giữ settings nội bộ và quiz.js vẫn dùng state.settings trong repo cũ.
+  // Để an toàn: đọc settings từ practiceEngine qua "hack" không có, nên fallback default.
   const qIds = Array.isArray(state.settings?.questionFieldIds) ? state.settings.questionFieldIds : [1, 5];
   const aIds = Array.isArray(state.settings?.answerFieldIds) ? state.settings.answerFieldIds : [5];
+  const optionCount = state.settings?.optionCount || 4;
+  const speakQuestion = !!state.settings?.speakQuestion;
 
-  // pick question field (can be empty; we keep it as user asked; if empty -> show "(Không có dữ liệu)")
   const qFieldId = pickRandom(qIds) ?? qIds[0];
 
-  // pick answer field WITH fallback to avoid empty correct text
+  // fallback answer field nếu field đang chọn bị trống
   const aFieldId = pickAnswerFieldWithFallback(word, qFieldId, aIds);
-
   const questionText = getFieldText(word, qFieldId);
   const correctText = aFieldId ? getFieldText(word, aFieldId) : '';
 
   currentQA = { qFieldId, aFieldId, correctText };
 
-  // Generate options by answer field
-  options = aFieldId ? generateOptionsByField(word, aFieldId) : [];
+  options = aFieldId ? generateOptionsByField(word, aFieldId, optionCount) : [];
 
   if (!options || options.length < 2) {
     showToast('Không đủ dữ liệu để tạo đáp án. Hãy kiểm tra dữ liệu ở Answer Fields.', 'warning');
@@ -93,7 +94,6 @@ function showCurrentQuestion() {
     return;
   }
 
-  // Render into VoLearn practice-content (use existing practice header/back/progress)
   const container = document.getElementById('practice-content');
   if (!container) return;
 
@@ -139,14 +139,12 @@ function showCurrentQuestion() {
 
   updatePracticeHeaderProgress();
 
-  // Speak if enabled
-  if (state.settings?.speakQuestion) speak(word.word);
+  if (speakQuestion) speak(word.word);
 }
 
 /* ===== GENERATE OPTIONS ===== */
-function generateOptionsByField(correctWord, answerFieldId) {
+function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
   const allWords = getWordsByScope({ type: 'all' });
-  const optionCount = getPracticeState().settings?.optionCount || 4;
 
   const correctText = getFieldText(correctWord, answerFieldId);
   if (!correctText) return [];
@@ -166,7 +164,7 @@ function generateOptionsByField(correctWord, answerFieldId) {
     ...pickedWrong.map(text => ({ text, isCorrect: false }))
   ];
 
-  // If not enough options (e.g., too many empty fields), still allow with >= 2 options
+  // nếu thiếu dữ liệu quá (không đủ >= 2 options) thì fail để fallback/report
   if (allOptions.length < 2) return [];
 
   return shuffleArray(allOptions);
@@ -182,10 +180,8 @@ export function selectQuizOption(index) {
   const selected = options[index];
   const isCorrect = !!selected?.isCorrect;
 
-  // Submit answer
   submitAnswer(selected?.text ?? '', isCorrect);
 
-  // Update UI
   const optionBtns = document.querySelectorAll('.quiz-option');
   optionBtns.forEach((btn, i) => {
     btn.disabled = true;
@@ -196,7 +192,6 @@ export function selectQuizOption(index) {
     }
   });
 
-  // Show feedback
   const feedback = document.getElementById('quiz-feedback');
   if (feedback) {
     feedback.innerHTML = isCorrect
@@ -204,7 +199,6 @@ export function selectQuizOption(index) {
       : '<span class="feedback-wrong"><i class="fas fa-times-circle"></i> Sai rồi!</span>';
   }
 
-  // Show next button
   const nextBtn = document.getElementById('btn-next-quiz');
   if (nextBtn) nextBtn.style.display = 'block';
 
@@ -284,7 +278,6 @@ function showQuizResults() {
     </div>
   `;
 
-  // Update header to completed
   const bar = document.getElementById('practice-progress-bar');
   const text = document.getElementById('practice-progress-text');
   if (bar?.style) bar.style.width = `100%`;
@@ -360,18 +353,15 @@ function firstNonEmptyFieldId(word, fieldIds) {
 }
 
 function pickAnswerFieldWithFallback(word, qFieldId, answerFieldIds) {
-  // 1) ưu tiên answer field khác question field
   const preferred = (Array.isArray(answerFieldIds) ? answerFieldIds : []).filter(id => id !== qFieldId);
+
   let aId = firstNonEmptyFieldId(word, preferred);
   if (aId) return aId;
 
-  // 2) thử cả list answerFieldIds
   aId = firstNonEmptyFieldId(word, answerFieldIds);
   if (aId) return aId;
 
-  // 3) fallback chắc có dữ liệu nhất
-  const hardFallback = [5, 4, 1]; // defVi -> defEn -> word
-  return firstNonEmptyFieldId(word, hardFallback);
+  return firstNonEmptyFieldId(word, [5, 4, 1]); // defVi -> defEn -> word
 }
 
 /* ===== UTILITIES ===== */
