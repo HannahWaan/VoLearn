@@ -513,17 +513,38 @@ export function showPracticeSummary() {
 export function hidePracticeArea() {
     const practiceArea = document.getElementById('practice-area');
     const practiceModes = document.getElementById('practice-modes');
+    const practiceSection = document.getElementById('practice-section');
     
-    if (practiceArea) practiceArea.style.display = 'none';
-    if (practiceModes) practiceModes.style.display = 'flex';
+    // Hide practice area
+    if (practiceArea) {
+        practiceArea.style.display = 'none';
+    }
     
+    // Show practice modes với đúng layout
+    if (practiceModes) {
+        practiceModes.style.display = '';  // Reset về CSS default (không dùng 'flex')
+        practiceModes.style.visibility = 'visible';
+        practiceModes.style.opacity = '1';
+    }
+    
+    // Clear practice content
     const practiceContent = document.getElementById('practice-content');
-    if (practiceContent) practiceContent.innerHTML = '';
+    if (practiceContent) {
+        practiceContent.innerHTML = '';
+    }
     
-    document.getElementById('practice-section')?.classList.remove('in-session');
+    // Remove in-session class
+    if (practiceSection) {
+        practiceSection.classList.remove('in-session');
+    }
     
-    
+    // Reset practice state
     resetPractice();
+    
+    // Update SRS count
+    updateSRSCount();
+    
+    console.log('✅ Practice area hidden, modes visible');
 }
 
 // Show practice area
