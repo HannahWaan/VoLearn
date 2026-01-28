@@ -5,13 +5,13 @@
    ========================================================================== */
 
 /* -----------------------------
-   QUIZ CARD (Test Dark)
+   QUIZ CARD (Test Dark) - RESPONSIVE
 ------------------------------ */
 #practice-section.in-session #practice-content .quiz-card {
   width: 100%;
-  max-width: 600px;
+  max-width: 900px;  /* Rộng hơn */
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px 32px;
   border-radius: var(--border-radius-lg);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -24,22 +24,24 @@
 
 #practice-section.in-session #practice-content .quiz-question-label,
 #practice-section.in-session #practice-content .quiz-answer-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-align: center;
 }
 
 #practice-section.in-session #practice-content .quiz-answer-label {
   margin-top: 20px;
+  margin-bottom: 14px;
 }
 
 #practice-section.in-session #practice-content .quiz-timer {
   position: absolute;
   top: 14px;
   right: 14px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -56,17 +58,25 @@
 }
 
 #practice-section.in-session #practice-content .quiz-word {
-  font-size: 2.2rem;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-weight: 800;
-  line-height: 1.15;
-  margin: 6px 0 6px;
+  line-height: 1.2;
+  margin: 6px 0 8px;
   text-align: center;
+  word-break: break-word;
+}
+
+#practice-section.in-session #practice-content .quiz-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
 #practice-section.in-session #practice-content .question-phonetic {
   text-align: center;
   color: var(--text-muted);
-  margin-bottom: 12px;
   font-size: 1rem;
 }
 
@@ -74,13 +84,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 6px;
 }
 
 #practice-section.in-session #practice-content .btn-speak {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -89,47 +99,50 @@
   justify-content: center;
   color: #fff;
   background: var(--gradient-primary);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   transition: transform 0.12s ease, filter 0.12s ease;
+  flex-shrink: 0;
 }
 
 #practice-section.in-session #practice-content .btn-speak:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  filter: brightness(1.1);
+  transform: translateY(-2px);
 }
 
 #practice-section.in-session #practice-content .btn-speak:active {
-  transform: translateY(0px) scale(0.98);
+  transform: translateY(0px) scale(0.96);
 }
 
+/* ===== QUIZ OPTIONS - 2 CỘT ===== */
 #practice-section.in-session #practice-content .quiz-options {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
 #practice-section.in-session #practice-content .quiz-option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   width: 100%;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.10);
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.15);
   color: var(--text-color);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.12s ease, background 0.12s ease, transform 0.10s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  min-height: 56px;
 }
 
 #practice-section.in-session #practice-content .quiz-option:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-1px);
+  border-color: var(--primary-color);
+  background: rgba(233, 30, 140, 0.1);
+  transform: translateY(-2px);
 }
 
 #practice-section.in-session #practice-content .quiz-option:disabled {
@@ -141,48 +154,54 @@
 #practice-section.in-session #practice-content .option-letter {
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  min-width: 28px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 0.9rem;
   color: #fff;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
 }
 
 #practice-section.in-session #practice-content .option-text {
-  flex: 1 1 auto;
-  font-size: 1rem;
-  line-height: 1.35;
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
+/* Đúng */
 #practice-section.in-session #practice-content .quiz-option.correct {
-  border-color: rgba(46, 213, 115, 0.65);
-  background: rgba(46, 213, 115, 0.12);
+  border-color: rgba(46, 213, 115, 0.7);
+  background: rgba(46, 213, 115, 0.15);
 }
 
 #practice-section.in-session #practice-content .quiz-option.correct .option-letter {
-  background: rgba(46, 213, 115, 0.55);
-  border-color: rgba(46, 213, 115, 0.65);
+  background: rgba(46, 213, 115, 0.6);
+  border-color: rgba(46, 213, 115, 0.7);
 }
 
+/* Sai */
 #practice-section.in-session #practice-content .quiz-option.wrong {
-  border-color: rgba(255, 71, 87, 0.65);
-  background: rgba(255, 71, 87, 0.12);
+  border-color: rgba(255, 71, 87, 0.7);
+  background: rgba(255, 71, 87, 0.15);
 }
 
 #practice-section.in-session #practice-content .quiz-option.wrong .option-letter {
-  background: rgba(255, 71, 87, 0.55);
-  border-color: rgba(255, 71, 87, 0.65);
+  background: rgba(255, 71, 87, 0.6);
+  border-color: rgba(255, 71, 87, 0.7);
 }
 
+/* Feedback */
 #practice-section.in-session #practice-content .quiz-feedback {
-  margin: 14px 0 0;
-  min-height: 26px;
+  margin: 16px 0 0;
+  min-height: 28px;
   font-weight: 700;
+  font-size: 1rem;
   text-align: center;
 }
 
@@ -190,10 +209,19 @@
   color: rgba(46, 213, 115, 0.95);
 }
 
+#practice-section.in-session #practice-content .feedback-correct i {
+  margin-right: 6px;
+}
+
 #practice-section.in-session #practice-content .feedback-wrong {
   color: rgba(255, 71, 87, 0.95);
 }
 
+#practice-section.in-session #practice-content .feedback-wrong i {
+  margin-right: 6px;
+}
+
+/* Actions */
 #practice-section.in-session #practice-content .quiz-actions {
   display: flex;
   justify-content: center;
@@ -202,13 +230,76 @@
   flex-wrap: wrap;
 }
 
+#practice-section.in-session #practice-content .quiz-actions .btn-primary {
+  min-width: 150px;
+}
+
+/* ===== RESPONSIVE - Tablet & Mobile ===== */
+@media (max-width: 768px) {
+  #practice-section.in-session #practice-content .quiz-card {
+    max-width: 100%;
+    padding: 20px;
+  }
+  
+  #practice-section.in-session #practice-content .quiz-word {
+    font-size: 1.5rem;
+  }
+  
+  /* Vẫn giữ 2 cột trên tablet */
+  #practice-section.in-session #practice-content .quiz-options {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  #practice-section.in-session #practice-content .quiz-option {
+    padding: 12px 14px;
+    min-height: 50px;
+  }
+  
+  #practice-section.in-session #practice-content .option-text {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 500px) {
+  #practice-section.in-session #practice-content .quiz-card {
+    padding: 16px;
+  }
+  
+  #practice-section.in-session #practice-content .quiz-word {
+    font-size: 1.3rem;
+  }
+  
+  /* 1 cột trên mobile nhỏ */
+  #practice-section.in-session #practice-content .quiz-options {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  #practice-section.in-session #practice-content .quiz-option {
+    padding: 12px;
+    min-height: auto;
+  }
+  
+  #practice-section.in-session #practice-content .option-letter {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    font-size: 0.85rem;
+  }
+  
+  #practice-section.in-session #practice-content .option-text {
+    font-size: 0.85rem;
+  }
+}
+
 /* -----------------------------
    FLASHCARD UI (avoid SRS conflicts)
    Requires container marker: data-render="flashcard-ui"
 ------------------------------ */
 #practice-section.in-session #practice-content [data-render="flashcard-ui"] {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
@@ -221,8 +312,8 @@
 /* The flip card shell */
 #practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card {
   width: 100%;
-  max-width: 520px;
-  height: 280px;
+  max-width: 580px;
+  height: 300px;
   border-radius: var(--border-radius-lg);
   background: var(--gradient-primary);
   position: relative;
@@ -316,4 +407,21 @@
   justify-content: center;
   flex-wrap: wrap;
   margin-top: 12px;
+}
+
+/* Responsive flashcard */
+@media (max-width: 600px) {
+  #practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card {
+    height: 250px;
+  }
+  
+  #practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-word {
+    font-size: 1.6rem;
+  }
+  
+  #practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-meaning,
+  #practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defVi,
+  #practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defEn {
+    font-size: 1.1rem;
+  }
 }
