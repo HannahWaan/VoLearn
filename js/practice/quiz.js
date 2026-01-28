@@ -8,7 +8,8 @@ import {
   finishPractice,
   getPracticeState,
   getWordsByScope,
-  resetPractice
+  resetPractice,
+  showPracticeArea
 } from './practiceEngine.js';
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
@@ -51,7 +52,8 @@ export function startQuiz(scope, settings = {}) {
   const mergedSettings = { ...defaultSettings, ...settings };
 
   if (!initPractice('quiz', words, mergedSettings)) return;
-
+  
+  showPracticeArea();
   showCurrentQuestion();
 }
 
