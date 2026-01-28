@@ -188,7 +188,7 @@
   margin: 10px 0 14px;
 }
 
-#practice-content .fc-card {
+#practice-content [data-render="flashcard-ui"] .fc-card{
   width: 100%;
   max-width: 520px;
   height: 280px;
@@ -199,7 +199,7 @@
   perspective: 1200px;
 }
 
-#practice-content .fc-card-inner {
+#practice-content [data-render="flashcard-ui"] .fc-card-inner{
   position: relative;
   width: 100%;
   height: 100%;
@@ -211,8 +211,8 @@
   transform: rotateY(180deg);
 }
 
-#practice-content .fc-card-front,
-#practice-content .fc-card-back {
+#practice-content [data-render="flashcard-ui"] .fc-card-front{
+#practice-content [data-render="flashcard-ui"] .fc-card-back {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
@@ -226,7 +226,7 @@
   text-align: center;
 }
 
-#practice-content .fc-card-back {
+#practice-content [data-render="flashcard-ui"] .fc-card-back {
   transform: rotateY(180deg);
 }
 
