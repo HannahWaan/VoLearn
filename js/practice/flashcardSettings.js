@@ -489,9 +489,11 @@ export function startFlashcardWithSettings() {
     startFlashcard(
         { type: 'custom', words },
         {
-            shuffle: false, 
+          shuffle: false,
+          frontFields: [...flashcardSettings.frontFields],
+          backFields: [...flashcardSettings.backFields],
         }
-    );
+      );
 
     showToast(`Bắt đầu với ${words.length} từ vựng`, 'success');
 }
