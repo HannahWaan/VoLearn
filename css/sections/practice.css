@@ -181,7 +181,7 @@
 
 /* ===== PRACTICE AREA ===== */
 .practice-area {
-    max-width: 954px;
+    max-width: 1717px;
     margin: 0 auto;
 }
 
@@ -224,7 +224,7 @@
 
 /* ===== PRACTICE CONTENT ===== */
 .practice-content {
-    min-height: 400px;
+    min-height: 690px;
 }
 
 /* Style mặc định khi chưa vào session */
@@ -514,3 +514,4 @@
         grid-template-columns: 1fr;
     }
 }
+
