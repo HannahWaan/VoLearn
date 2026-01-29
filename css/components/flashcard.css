@@ -10,7 +10,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 900px;
+    max-width: 1100px; /* was 900px */
     margin: 0 auto;
     padding: 32px;
 }
@@ -19,8 +19,8 @@
 #practice-section.in-session .flashcard,
 #practice-section.in-session .fc-card {
     width: 100%;
-    max-width: 750px;
-    height: 280px;
+    max-width: 1100px; /* was 750px */
+    height: 308px;     /* +10% from 280px */
     background: transparent;
     cursor: pointer;
     perspective: 1200px;
@@ -78,7 +78,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
+    background:
         radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
     pointer-events: none;
@@ -330,25 +330,25 @@
     #practice-section.in-session #practice-content .flashcard-main {
         padding: 20px;
     }
-    
+
     #practice-section.in-session .flashcard,
     #practice-section.in-session .fc-card {
         height: 240px;
         max-width: 100%;
     }
-    
+
     #practice-section.in-session .card-word,
     #practice-section.in-session .fc-card-front .card-line.card-word {
         font-size: 2rem;
     }
-    
+
     #practice-section.in-session .srs-buttons,
     #practice-section.in-session .flashcard-controls {
         flex-wrap: wrap;
         gap: 12px;
         max-width: 100%;
     }
-    
+
     #practice-section.in-session .srs-buttons .btn-srs,
     #practice-section.in-session .flashcard-controls .btn-srs {
         flex: 1 1 45%;
@@ -356,18 +356,18 @@
         max-width: none;
         padding: 16px 20px;
     }
-    
+
     #practice-section.in-session .flashcard-nav {
         gap: 14px;
         max-width: 100%;
     }
-    
+
     #practice-section.in-session .flashcard-nav .btn-secondary {
         padding: 12px 20px;
         min-width: 100px;
         font-size: 0.95rem;
     }
-    
+
     #practice-section.in-session .flashcard-nav .btn-speak,
     #practice-section.in-session .flashcard-nav .btn-icon {
         width: 48px;
@@ -382,37 +382,37 @@
     #practice-section.in-session .fc-card {
         height: 220px;
     }
-    
+
     #practice-section.in-session .card-word,
     #practice-section.in-session .fc-card-front .card-line.card-word {
         font-size: 1.7rem;
     }
-    
+
     #practice-section.in-session .fc-card-back .card-line.card-defVi,
     #practice-section.in-session .fc-card-back .card-line.card-defEn {
         font-size: 1.2rem;
     }
-    
+
     #practice-section.in-session .srs-buttons .btn-srs,
     #practice-section.in-session .flashcard-controls .btn-srs {
         padding: 14px 16px;
     }
-    
+
     #practice-section.in-session .srs-buttons .btn-srs i,
     #practice-section.in-session .flashcard-controls .btn-srs i {
         font-size: 1.3rem;
     }
-    
+
     #practice-section.in-session .flashcard-nav {
         gap: 10px;
     }
-    
+
     #practice-section.in-session .flashcard-nav .btn-secondary {
         padding: 10px 16px;
         min-width: 90px;
         font-size: 0.9rem;
     }
-    
+
     #practice-section.in-session .flashcard-nav .btn-speak,
     #practice-section.in-session .flashcard-nav .btn-icon {
         width: 44px;
