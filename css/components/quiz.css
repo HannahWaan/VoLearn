@@ -5,8 +5,9 @@
 
 /* ===== QUIZ CARD ===== */
 #practice-section.in-session #practice-content .quiz-card {
-    width: 100%;
-    max-width: 900px;
+    width: 1100px; 
+    max-width: 1100px;
+    min-height: 550px;  
     margin: 0 auto;
     padding: 40px;
     border-radius: 20px;
