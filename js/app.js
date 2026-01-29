@@ -41,7 +41,7 @@ import { escapeHtml, generateId, formatDate, debounce } from './utils/helpers.js
 // ===== PRACTICE SETTINGS IMPORT =====
 import { initFlashcardSettings } from './practice/flashcardSettings.js';
 import { initQuizSettings } from './practice/quizSettings.js';
-
+import { initDictationSettings } from './practice/dictationSettings.js';
 
 /* ===== CONSTANTS ===== */
 const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
@@ -97,6 +97,7 @@ async function initApp() {
         console.log('🃏 Step 6.1: Initializing Flashcard Settings...');
         initFlashcardSettings();
         initQuizSettings();
+        initDictationSettings();
         
         // Step 6.5: Initialize Cambridge Widget
         console.log('📚 Step 6.5: Initializing Cambridge Widget...');
@@ -243,7 +244,7 @@ function setupGlobalFunctions() {
     
     // Practice Settings 
     window.openDictationSettings = () => {
-        import('./practice/dictation.js').then(m => m.openDictationSettings && m.openDictationSettings());
+        import('./practice/dictationSettings.js').then(m => m.openDictationSettings && m.openDictationSettings());
     };
     window.openTypingSettings = () => {
         import('./practice/typing.js').then(m => m.openTypingSettings && m.openTypingSettings());
