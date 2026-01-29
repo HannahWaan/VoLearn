@@ -514,21 +514,21 @@ export function hidePracticeArea() {
     const practiceArea = document.getElementById('practice-area');
     const practiceModes = document.getElementById('practice-modes');
     const practiceSection = document.getElementById('practice-section');
+    const practiceContent = document.getElementById('practice-content');
     
     // Hide practice area
     if (practiceArea) {
         practiceArea.style.display = 'none';
     }
     
-    // Show practice modes với đúng layout
+    // Show practice modes
     if (practiceModes) {
-        practiceModes.style.display = '';  // Reset về CSS default (không dùng 'flex')
+        practiceModes.style.display = '';
         practiceModes.style.visibility = 'visible';
         practiceModes.style.opacity = '1';
     }
     
     // Clear practice content
-    const practiceContent = document.getElementById('practice-content');
     if (practiceContent) {
         practiceContent.innerHTML = '';
     }
@@ -544,7 +544,12 @@ export function hidePracticeArea() {
     // Update SRS count
     updateSRSCount();
     
-    console.log('✅ Practice area hidden, modes visible');
+    // Navigate về trang practice (5 mode)
+    import('../core/router.js').then(router => {
+        router.navigate('practice');
+    });
+    
+    console.log('✅ Practice area hidden, back to practice modes');
 }
 
 // Show practice area
