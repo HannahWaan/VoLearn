@@ -43,8 +43,8 @@ let quizSettings = {
   timeLimit: 0,
   autoSkip: false,
   autoNext: true,
-
-  // MC options
+  showPhonetic: false,
+   
   optionCount: 4
 };
 
@@ -381,7 +381,8 @@ function getQuizSettingsFromForm() {
 
   const sortRadio = document.querySelector('input[name="quiz-sort"]:checked');
   quizSettings.sortBy = sortRadio?.value || 'random';
-
+  quizSettings.showPhonetic = document.getElementById('quiz-show-phonetic')?.checked ?? false;
+   
   quizSettings.autoSkip = document.getElementById('quiz-auto-skip')?.checked ?? false;
   quizSettings.autoNext = document.getElementById('quiz-auto-next')?.checked ?? true;
 
@@ -523,7 +524,7 @@ function startQuizWithSettings() {
    
      questionFieldIds: [...(quizSettings.questionFields || [])],
      answerFieldIds: [...(quizSettings.answerFields || [])],
-   
+     showPhonetic: !!quizSettings.showPhonetic,
      speakQuestion: false
    };
 
