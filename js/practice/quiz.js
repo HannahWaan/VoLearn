@@ -22,21 +22,17 @@ let options = [];
 let selectedOption = null;
 let answered = false;
 
-// settings snapshot for current run (do NOT rely on getPracticeState().settings)
+// snapshot settings for this run (don’t rely on getPracticeState().settings)
 let quizSettings = {};
-
-// track current question/answer mapping (debug + future use)
-let currentQA = { qFieldId: null, aFieldId: null, correctText: '' };
 
 // timers
 let autoNextTimer = null;
-let countdownInterval = null;
+let autoNextInterval = null;
+
 let questionTimer = null;
-let questionRemaining = 0;
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
-  // stop any old timers if restarting quickly
   clearAutoNextTimer();
   clearQuestionTimer();
 
@@ -55,9 +51,14 @@ export function startQuiz(scope, settings = {}) {
   const defaultSettings = {
     shuffle: true,
     optionCount: 4,
-    timeLimit: 0,        // autoSkip when > 0
-    autoNext: false,     // autoNext after answering
-    autoNextSeconds: 5,  // seconds
+
+    // timeLimit = autoSkip when > 0
+    timeLimit: 0,
+
+    // autoNext after answering
+    autoNext: false,
+    autoNextSeconds: 5,
+
     showHint: false,
     speakQuestion: false,
 
@@ -66,23 +67,20 @@ export function startQuiz(scope, settings = {}) {
     answerFieldIds: [5]
   };
 
-  const mergedSettings = { ...defaultSettings, ...settings };
-  quizSettings = mergedSettings;
+  quizSettings = { ...defaultSettings, ...settings };
 
-  if (!initPractice('quiz', words, mergedSettings)) return;
+  if (!initPractice('quiz', words, quizSettings)) return;
 
   showPracticeArea();
   showCurrentQuestion();
 }
 
-/* ===== SHOW CURRENT QUESTION ===== */
+/* ===== RENDER CURRENT QUESTION ===== */
 function showCurrentQuestion() {
-  // new question => kill timers from previous question
   clearAutoNextTimer();
   clearQuestionTimer();
 
   const word = getCurrentWord();
-
   if (!word) {
     showQuizResults();
     return;
@@ -91,7 +89,6 @@ function showCurrentQuestion() {
   answered = false;
   selectedOption = null;
 
-  // IMPORTANT: do not rely on state.settings for config
   const qIds = Array.isArray(quizSettings.questionFieldIds) && quizSettings.questionFieldIds.length
     ? quizSettings.questionFieldIds
     : [1, 5];
@@ -100,17 +97,14 @@ function showCurrentQuestion() {
     ? quizSettings.answerFieldIds
     : [5];
 
-  const optionCount = Number(quizSettings.optionCount || 4);
+  const optionCount = Math.max(2, Number(quizSettings.optionCount || 4));
   const speakQuestion = !!quizSettings.speakQuestion;
 
   const qFieldId = pickRandom(qIds) ?? qIds[0];
-
-  // fallback answer field nếu field đang chọn bị trống
   const aFieldId = pickAnswerFieldWithFallback(word, qFieldId, aIds);
-  const questionText = getFieldText(word, qFieldId);
-  const correctText = aFieldId ? getFieldText(word, aFieldId) : '';
 
-  currentQA = { qFieldId, aFieldId, correctText };
+  const questionText = getFieldText(word, qFieldId);
+  const phonetic = getPhoneticText(word);
 
   options = aFieldId ? generateOptionsByField(word, aFieldId, optionCount) : [];
 
@@ -126,7 +120,6 @@ function showCurrentQuestion() {
   const questionLabel = (getFieldLabel(qFieldId) || 'CÂU HỎI').toUpperCase();
   const answerLabel = `Chọn ${getFieldLabel(aFieldId)?.toLowerCase() || 'đáp án'} đúng:`;
   const questionMain = escapeHtml(questionText || '(Không có dữ liệu)');
-  const phonetic = getPhoneticText(word);
 
   const timeLimit = Number(quizSettings.timeLimit || 0);
 
@@ -150,7 +143,7 @@ function showCurrentQuestion() {
 
       <div class="quiz-options">
         ${options.map((opt, index) => `
-          <button class="quiz-option" type="button" data-index="${index}" onclick="window.selectQuizOption(${index})">
+          <button class="quiz-option" type="button" onclick="window.selectQuizOption(${index})">
             <span class="option-letter">${String.fromCharCode(65 + index)}</span>
             <span class="option-text">${escapeHtml(opt.text)}</span>
           </button>
@@ -169,37 +162,10 @@ function showCurrentQuestion() {
 
   updatePracticeHeaderProgress();
 
-  // autoSkip timer (timeLimit)
+  // autoSkip: start timer per question
   if (timeLimit > 0) startQuestionTimer(timeLimit);
 
   if (speakQuestion) speak(word.word);
-}
-
-/* ===== GENERATE OPTIONS ===== */
-function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
-  const allWords = getWordsByScope({ type: 'all' });
-
-  const correctText = getFieldText(correctWord, answerFieldId);
-  if (!correctText) return [];
-
-  const wrongPool = allWords
-    .filter(w => w && w.id !== correctWord.id)
-    .map(w => getFieldText(w, answerFieldId))
-    .filter(t => t && t !== correctText);
-
-  const wrongUnique = Array.from(new Set(wrongPool));
-
-  const needWrong = Math.max(0, optionCount - 1);
-  const pickedWrong = shuffleArray(wrongUnique).slice(0, needWrong);
-
-  const allOptions = [
-    { text: correctText, isCorrect: true },
-    ...pickedWrong.map(text => ({ text, isCorrect: false }))
-  ];
-
-  if (allOptions.length < 2) return [];
-
-  return shuffleArray(allOptions);
 }
 
 /* ===== SELECT OPTION ===== */
@@ -207,22 +173,20 @@ export function selectQuizOption(index) {
   if (answered) return;
 
   answered = true;
-  clearQuestionTimer(); // stop autoSkip once answered
-  selectedOption = index;
+  clearQuestionTimer();
 
+  selectedOption = index;
   const selected = options[index];
   const isCorrect = !!selected?.isCorrect;
 
+  // IMPORTANT: this advances practiceState.currentIndex inside practiceEngine
   submitAnswer(selected?.text ?? '', isCorrect);
 
   const optionBtns = document.querySelectorAll('.quiz-option');
   optionBtns.forEach((btn, i) => {
     btn.disabled = true;
-    if (options[i]?.isCorrect) {
-      btn.classList.add('correct');
-    } else if (i === index && !isCorrect) {
-      btn.classList.add('wrong');
-    }
+    if (options[i]?.isCorrect) btn.classList.add('correct');
+    else if (i === index && !isCorrect) btn.classList.add('wrong');
   });
 
   const feedback = document.getElementById('quiz-feedback');
@@ -237,27 +201,24 @@ export function selectQuizOption(index) {
 
   updatePracticeHeaderProgress();
 
-  // AutoNext: choose answer -> wait -> next
-  const autoNext = !!quizSettings.autoNext;
-  const autoNextSeconds = Math.max(1, Number(quizSettings.autoNextSeconds || 5));
-
-  if (autoNext) {
-    startAutoNextCountdown(autoNextSeconds);
+  // AutoNext: after answering -> wait -> next question
+  if (quizSettings.autoNext) {
+    startAutoNextCountdown(Math.max(1, Number(quizSettings.autoNextSeconds || 5)));
   }
 }
 
-/* ===== AUTO NEXT COUNTDOWN ===== */
+/* ===== AUTO NEXT ===== */
 function startAutoNextCountdown(seconds) {
   clearAutoNextTimer();
 
   let remaining = seconds;
-
   const nextBtn = document.getElementById('btn-next-quiz');
+
   if (nextBtn) {
     nextBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
   }
 
-  countdownInterval = setInterval(() => {
+  autoNextInterval = setInterval(() => {
     remaining--;
     if (nextBtn) {
       nextBtn.innerHTML = `Tiếp theo (${Math.max(0, remaining)}s) <i class="fas fa-arrow-right"></i>`;
@@ -280,9 +241,9 @@ function clearAutoNextTimer() {
     clearTimeout(autoNextTimer);
     autoNextTimer = null;
   }
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
+  if (autoNextInterval) {
+    clearInterval(autoNextInterval);
+    autoNextInterval = null;
   }
 }
 
@@ -298,27 +259,24 @@ function startQuestionTimer(seconds) {
   clearQuestionTimer();
 
   const timerEl = document.getElementById('quiz-timer');
-  questionRemaining = Math.max(0, Number(seconds) || 0);
+  let remaining = Math.max(0, Number(seconds) || 0);
 
-  if (timerEl) timerEl.textContent = `${questionRemaining}s`;
-  if (questionRemaining <= 0) return;
+  if (timerEl) timerEl.textContent = `${remaining}s`;
+  if (remaining <= 0) return;
 
   questionTimer = setInterval(() => {
-    questionRemaining--;
-    if (timerEl) timerEl.textContent = `${Math.max(0, questionRemaining)}s`;
+    remaining--;
+    if (timerEl) timerEl.textContent = `${Math.max(0, remaining)}s`;
 
-    if (questionRemaining <= 0) {
+    if (remaining <= 0) {
       clearQuestionTimer();
 
-      // If user already answered, do nothing
+      // If already answered, do nothing
       if (answered) return;
 
-      // time up => SKIP (Bỏ qua) then next question
+      // time up => SKIP (Bỏ qua) then next
       answered = true;
-
-      // make sure it counts as "skipped"
-      skipWord();
-
+      skipWord();          // increments skipped + currentIndex
       nextQuizQuestion();
     }
   }, 1000);
@@ -331,7 +289,7 @@ export function nextQuizQuestion() {
   showCurrentQuestion();
 }
 
-/* ===== UPDATE PRACTICE HEADER PROGRESS (VoLearn) ===== */
+/* ===== UPDATE HEADER PROGRESS ===== */
 function updatePracticeHeaderProgress() {
   const state = getPracticeState();
   const bar = document.getElementById('practice-progress-bar');
@@ -346,7 +304,7 @@ export function speakQuizWord() {
   if (word) speak(word.word);
 }
 
-/* ===== SHOW RESULTS ===== */
+/* ===== RESULTS ===== */
 function showQuizResults() {
   clearAutoNextTimer();
   clearQuestionTimer();
@@ -433,7 +391,7 @@ export function restartQuiz() {
   startQuiz(scope, settings);
 }
 
-/* ===== WORD DATA HELPERS (VoLearn schema) ===== */
+/* ===== WORD DATA HELPERS ===== */
 function getPrimaryMeaningObj(word) {
   return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
 }
@@ -443,7 +401,7 @@ function getPhoneticText(word) {
   return m.phoneticUS || m.phoneticUK || word?.phonetic || '';
 }
 
-/* ===== FIELD MAPPING (match quizSettings field IDs) ===== */
+/* ===== FIELD MAPPING ===== */
 function getFieldLabel(fieldId) {
   const map = {
     1: 'Từ vựng',
