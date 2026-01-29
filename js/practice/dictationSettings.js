@@ -2,7 +2,7 @@
    VoLearn - Dictation Settings (Test-style)
    - No inline onclick
    - Uses shared scope-selector-modal
-   - Starts dictation.js via startDictation(scope, settings)
+   - Starts dictation.js via startDictation(scope, runtimeSettings)
    ======================================== */
 
 import { appData } from '../core/state.js';
@@ -12,20 +12,6 @@ import { showPracticeArea } from './practiceEngine.js';
 import { startDictation } from './dictation.js';
 
 /* ===== FIELD DEFINITIONS ===== */
-const POS_MAPPING = {
-  noun: 'Danh từ',
-  verb: 'Động từ',
-  adjective: 'Tính từ',
-  adverb: 'Trạng từ',
-  preposition: 'Giới từ',
-  conjunction: 'Liên từ',
-  interjection: 'Thán từ',
-  pronoun: 'Đại từ',
-  article: 'Mạo từ',
-  'auxiliary verb': 'Trợ động từ',
-  'phrasal verb': 'Cụm động từ'
-};
-
 const DICTATION_FIELDS = [
   { id: 1, key: 'word', label: 'Từ vựng' },
   { id: 2, key: 'phonetic', label: 'Phát âm' },
@@ -38,9 +24,7 @@ const DICTATION_FIELDS = [
 ];
 
 /* ===== SETTINGS STATE =====
-   NOTE:
-   - UI edits update listenFields/hintFields (for template selectors).
-   - When starting, we ALWAYS map to listenFieldIds/hintFieldIds for dictation.js.
+   NOTE: listenFields/hintFields are the source of truth (UI checkboxes).
 */
 let dictationSettings = {
   limit: 0,
@@ -54,13 +38,8 @@ let dictationSettings = {
 
   sortBy: 'random',
 
-  // UI state (checkboxes bind here)
   listenFields: [1],
   hintFields: [5],
-
-  // runtime keys (kept in sync for safety)
-  listenFieldIds: [1],
-  hintFieldIds: [5],
 
   scoring: 'exact',     // exact | half | partial | lenient
   showAnswer: false,
@@ -71,11 +50,10 @@ let dictationSettings = {
   maxReplay: 0          // 0 = unlimited
 };
 
-/* ===== small helpers ===== */
+/* ===== helpers ===== */
 function escapeHtml(text) {
-  if (!text) return '';
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = String(text ?? '');
   return div.innerHTML;
 }
 
@@ -89,7 +67,7 @@ function uniqWordsById(words) {
   const out = [];
   for (const w of words || []) {
     if (!w) continue;
-    const key = w.id ?? w.word ?? JSON.stringify(w);
+    const key = w.id ?? w._id ?? w.wordId ?? w.word ?? JSON.stringify(w);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(w);
@@ -119,24 +97,12 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-function syncRuntimeFieldIds() {
-  // Ensure both naming conventions stay aligned
-  if (Array.isArray(dictationSettings.listenFields)) {
-    dictationSettings.listenFieldIds = [...dictationSettings.listenFields];
-  } else if (Array.isArray(dictationSettings.listenFieldIds)) {
-    dictationSettings.listenFields = [...dictationSettings.listenFieldIds];
-  } else {
+function ensureNonEmptyArrays() {
+  if (!Array.isArray(dictationSettings.listenFields) || dictationSettings.listenFields.length === 0) {
     dictationSettings.listenFields = [1];
-    dictationSettings.listenFieldIds = [1];
   }
-
-  if (Array.isArray(dictationSettings.hintFields)) {
-    dictationSettings.hintFieldIds = [...dictationSettings.hintFields];
-  } else if (Array.isArray(dictationSettings.hintFieldIds)) {
-    dictationSettings.hintFields = [...dictationSettings.hintFieldIds];
-  } else {
+  if (!Array.isArray(dictationSettings.hintFields) || dictationSettings.hintFields.length === 0) {
     dictationSettings.hintFields = [5];
-    dictationSettings.hintFieldIds = [5];
   }
 }
 
@@ -163,7 +129,7 @@ function updateDictationSettingsCounts() {
 
 /* ===== field selector rendering ===== */
 function renderDictationFieldSelectors() {
-  syncRuntimeFieldIds();
+  ensureNonEmptyArrays();
 
   const listenContainer = document.getElementById('dictation-listen-fields');
   const hintContainer = document.getElementById('dictation-hint-fields');
@@ -204,7 +170,6 @@ function adjustDictationLimit(delta) {
   if (!slider) return;
 
   const max = parseInt(slider.max || '0', 10) || 0;
-
   let newValue = parseInt(slider.value || '0', 10) + delta;
   newValue = Math.max(0, Math.min(max, newValue));
 
@@ -223,7 +188,6 @@ function adjustDictationReplay(delta) {
   if (!slider) return;
 
   const max = parseInt(slider.max || '10', 10) || 10;
-
   let newValue = parseInt(slider.value || '0', 10) + delta;
   newValue = Math.max(0, Math.min(max, newValue));
 
@@ -406,8 +370,6 @@ function updateDictationSetDisplay() {
 
 /* ===== read settings from form ===== */
 function getDictationSettingsFromForm() {
-  syncRuntimeFieldIds();
-
   dictationSettings.includeUnmarked = document.getElementById('dictation-include-unmarked')?.checked ?? true;
   dictationSettings.includeMastered = document.getElementById('dictation-include-mastered')?.checked ?? true;
   dictationSettings.includeLearning = document.getElementById('dictation-include-learning')?.checked ?? true;
@@ -424,17 +386,10 @@ function getDictationSettingsFromForm() {
   dictationSettings.autoNext = document.getElementById('dictation-auto-next')?.checked ?? true;
   dictationSettings.autoCorrect = document.getElementById('dictation-auto-correct')?.checked ?? false;
 
-  // limit/replay from sliders
   dictationSettings.limit = clampInt(document.getElementById('dictation-limit-slider')?.value ?? dictationSettings.limit, 0, 9999);
   dictationSettings.maxReplay = clampInt(document.getElementById('dictation-replay-slider')?.value ?? dictationSettings.maxReplay, 0, 10);
 
-  // final sync
-  syncRuntimeFieldIds();
-
-  // basic guard: at least 1 listen field
-  if (!dictationSettings.listenFieldIds.length) dictationSettings.listenFieldIds = [1];
-  if (!dictationSettings.hintFieldIds.length) dictationSettings.hintFieldIds = [5];
-
+  ensureNonEmptyArrays();
   return dictationSettings;
 }
 
@@ -514,15 +469,17 @@ function getFilteredWordsForDictation() {
 export function startDictationWithSettings() {
   getDictationSettingsFromForm();
 
-  // Validate listen fields
-  const listenIds = Array.isArray(dictationSettings.listenFieldIds) ? dictationSettings.listenFieldIds : [];
-  if (!listenIds.length) {
+  // IMPORTANT: runtime keys dictation.js consumes
+  const listenFieldIds = [...(dictationSettings.listenFields || [])].map(Number).filter(Boolean);
+  const hintFieldIds = [...(dictationSettings.hintFields || [])].map(Number).filter(Boolean);
+
+  if (!listenFieldIds.length) {
     showToast('Vui lòng chọn ít nhất 1 mục để nghe!', 'error');
     return;
   }
 
   const words = getFilteredWordsForDictation();
-  if (words.length === 0) {
+  if (!words.length) {
     showToast('Không có từ vựng nào phù hợp!', 'error');
     return;
   }
@@ -532,23 +489,21 @@ export function startDictationWithSettings() {
 
   const scope = { type: 'custom', words };
 
-  // IMPORTANT: keys dictation.js consumes
   const runtimeSettings = {
     shuffle: true,
     limit: dictationSettings.limit || 0,
 
-    listenFieldIds: [...(dictationSettings.listenFieldIds || [])],
-    hintFieldIds: [...(dictationSettings.hintFieldIds || [])],
+    listenFieldIds,
+    hintFieldIds,
 
     scoring: dictationSettings.scoring || 'exact',
     showAnswer: !!dictationSettings.showAnswer,
     strictMode: !!dictationSettings.strictMode,
     autoNext: !!dictationSettings.autoNext,
     autoCorrect: !!dictationSettings.autoCorrect,
-    maxReplay: Number(dictationSettings.maxReplay || 0) // 0=unlimited
+    maxReplay: Number(dictationSettings.maxReplay || 0)
   };
 
-  // Expose for restart compatibility
   window.dictationSettings = runtimeSettings;
   window.practiceScope = scope;
 
@@ -558,48 +513,29 @@ export function startDictationWithSettings() {
 /* ===== init + event delegation ===== */
 export function initDictationSettings() {
   document.addEventListener('click', (e) => {
-    // close modal
-    if (e.target.closest('[data-action="dictation-close"]')) {
-      closeDictationSettings();
-      return;
-    }
+    if (e.target.closest('[data-action="dictation-close"]')) { closeDictationSettings(); return; }
 
-    // tabs
     const tabBtn = e.target.closest('[data-dictation-tab]');
     if (tabBtn && tabBtn.closest('#dictation-settings-modal')) {
       switchDictationTab(tabBtn.getAttribute('data-dictation-tab'), tabBtn);
       return;
     }
 
-    // limit +/- and start
     if (e.target.closest('[data-action="dictation-limit-minus"]')) { adjustDictationLimit(-5); return; }
     if (e.target.closest('[data-action="dictation-limit-plus"]')) { adjustDictationLimit(5); return; }
     if (e.target.closest('[data-action="dictation-start"]')) { startDictationWithSettings(); return; }
 
-    // replay +/- (other tab)
     if (e.target.closest('[data-action="dictation-replay-minus"]')) { adjustDictationReplay(-1); return; }
     if (e.target.closest('[data-action="dictation-replay-plus"]')) { adjustDictationReplay(1); return; }
 
-    // scope open/refresh
     const scopeOpen = e.target.closest('[data-action="dictation-scope-open"]');
-    if (scopeOpen) {
-      openDictationScopeSelector(scopeOpen.getAttribute('data-scope-type'));
-      return;
-    }
+    if (scopeOpen) { openDictationScopeSelector(scopeOpen.getAttribute('data-scope-type')); return; }
+
     if (e.target.closest('[data-action="dictation-scope-refresh"]')) { refreshDictationScope(); return; }
 
-    // scope modal controls
-    if (e.target.closest('[data-dictation-scope-close]')) {
-      closeDictationScopeSelector();
-      return;
-    }
-    if (e.target.closest('[data-dictation-scope-confirm]')) {
-      updateDictationSetDisplay();
-      closeDictationScopeSelector();
-      return;
-    }
+    if (e.target.closest('[data-dictation-scope-close]')) { closeDictationScopeSelector(); return; }
+    if (e.target.closest('[data-dictation-scope-confirm]')) { updateDictationSetDisplay(); closeDictationScopeSelector(); return; }
 
-    // date pick
     const datePick = e.target.closest('[data-dictation-date]');
     if (datePick) {
       dictationSettings.selectedDateRange = datePick.getAttribute('data-dictation-date') || 'all';
@@ -615,7 +551,6 @@ export function initDictationSettings() {
   });
 
   document.addEventListener('change', (e) => {
-    // listen fields (checkbox list)
     const lf = e.target.closest('input[data-dictation-listen]');
     if (lf) {
       const id = parseInt(lf.getAttribute('data-dictation-listen'), 10);
@@ -624,13 +559,13 @@ export function initDictationSettings() {
           if (!dictationSettings.listenFields.includes(id)) dictationSettings.listenFields.push(id);
         } else {
           dictationSettings.listenFields = dictationSettings.listenFields.filter(x => x !== id);
+          // guard: don't allow empty (would make dictation unusable)
+          if (dictationSettings.listenFields.length === 0) dictationSettings.listenFields = [1];
         }
-        syncRuntimeFieldIds();
       }
       return;
     }
 
-    // hint fields (checkbox list)
     const hf = e.target.closest('input[data-dictation-hint]');
     if (hf) {
       const id = parseInt(hf.getAttribute('data-dictation-hint'), 10);
@@ -639,13 +574,13 @@ export function initDictationSettings() {
           if (!dictationSettings.hintFields.includes(id)) dictationSettings.hintFields.push(id);
         } else {
           dictationSettings.hintFields = dictationSettings.hintFields.filter(x => x !== id);
+          // allow empty hints? keep at least one to avoid "trống"
+          if (dictationSettings.hintFields.length === 0) dictationSettings.hintFields = [5];
         }
-        syncRuntimeFieldIds();
       }
       return;
     }
 
-    // set toggles inside scope-selector-modal
     const scopeToggle = e.target.closest('input[data-dictation-scope-toggle]');
     if (scopeToggle) {
       toggleDictationSetScopeInternal(scopeToggle.getAttribute('data-dictation-scope-toggle'), scopeToggle.checked);
@@ -653,7 +588,7 @@ export function initDictationSettings() {
     }
   });
 
-  // expose (compat/debug)
+  // expose
   window.openDictationSettings = openDictationSettings;
   window.closeDictationSettings = closeDictationSettings;
   window.switchDictationTab = switchDictationTab;
