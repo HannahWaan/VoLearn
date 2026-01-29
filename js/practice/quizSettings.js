@@ -512,15 +512,20 @@ function startQuizWithSettings() {
   const scope = { type: 'custom', words };
 
   const settings = {
-    shuffle: true,
-    optionCount: quizSettings.optionCount || 4,
-    timeLimit: quizSettings.timeLimit || 0,
-
-    // Field-based quiz (from Settings)
+     shuffle: true,
+     optionCount: quizSettings.optionCount || 4,
+   
+     timeLimit: quizSettings.timeLimit || 0,
+   
+     autoNext: !!quizSettings.autoNext,
+     autoNextSeconds: 5, 
+     autoSkip: !!quizSettings.autoSkip,
+   
      questionFieldIds: [...(quizSettings.questionFields || [])],
      answerFieldIds: [...(quizSettings.answerFields || [])],
-     speakQuestion: false,
-  };
+   
+     speakQuestion: false
+   };
 
   startQuiz(scope, settings);
 }
