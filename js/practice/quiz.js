@@ -10,8 +10,9 @@ import {
   getWordsByScope,
   resetPractice,
   showPracticeArea,
-  hidePracticeArea
+  skipWord
 } from './practiceEngine.js';
+
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
 import { navigate } from '../core/router.js';
@@ -26,6 +27,8 @@ let quizSettings = {};
 let currentQA = { qFieldId: null, aFieldId: null, correctText: '' };
 let autoNextTimer = null;
 let countdownInterval = null;
+let questionTimer = null;
+let questionRemaining = 0;
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
@@ -111,6 +114,8 @@ function showCurrentQuestion() {
 
   container.innerHTML = `
     <div class="quiz-card">
+      ${(Number(state.settings?.timeLimit || 0) > 0) ? `<div class="quiz-timer" id="quiz-timer">${Number(state.settings.timeLimit)}s</div>` : ''}
+
       <div class="quiz-question-label">${questionLabel}</div>
 
       <div class="quiz-word">${questionMain}</div>
@@ -145,7 +150,8 @@ function showCurrentQuestion() {
   `;
 
   updatePracticeHeaderProgress();
-
+  const timeLimit = Number(state.settings?.timeLimit || 0);
+  if (timeLimit > 0) startQuestionTimer(timeLimit);
   if (speakQuestion) speak(word.word);
 }
 
@@ -182,6 +188,7 @@ export function selectQuizOption(index) {
   if (answered) return;
 
   answered = true;
+  clearQuestionTimer();
   selectedOption = index;
 
   const selected = options[index];
@@ -264,9 +271,49 @@ function clearAutoNextTimer() {
   }
 }
 
+function clearQuestionTimer() {
+  if (questionTimer) {
+    clearInterval(questionTimer);
+    questionTimer = null;
+  }
+}
+
+function startQuestionTimer(seconds) {
+  clearQuestionTimer();
+
+  const timerEl = document.getElementById('quiz-timer');
+  questionRemaining = Math.max(0, Number(seconds) || 0);
+
+  if (timerEl) timerEl.textContent = `${questionRemaining}s`;
+
+  if (questionRemaining <= 0) return;
+
+  questionTimer = setInterval(() => {
+    questionRemaining--;
+
+    if (timerEl) timerEl.textContent = `${questionRemaining}s`;
+
+    if (questionRemaining <= 0) {
+      clearQuestionTimer();
+
+      if (!answered) {
+        try {
+
+          window.skipWord ? window.skipWord();
+        } catch (e) {}
+
+        answered = true;
+
+        nextQuizQuestion();
+      }
+    }
+  }, 1000);
+}
+
 /* ===== NEXT QUESTION ===== */
 export function nextQuizQuestion() {
   clearAutoNextTimer();
+  clearQuestionTimer();
   showCurrentQuestion();
 }
 
@@ -361,6 +408,7 @@ export function exitQuiz() {
   clearAutoNextTimer();
   resetPractice();
   hidePracticeArea();
+  clearQuestionTimer();
 }
 
 export function restartQuiz() {
