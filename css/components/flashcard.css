@@ -14,35 +14,17 @@
     margin: 0 auto;
 }
 
-/* ===== FLASHCARD ===== */
+/* ===== FLASHCARD (Container trong suốt) ===== */
 #practice-section.in-session .flashcard,
 #practice-section.in-session .fc-card {
     width: 100%;
     max-width: 650px;
     height: 320px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #e91e8c, #c71585);
+    background: transparent;
     cursor: pointer;
-    overflow: hidden;
-    box-shadow: 0 15px 50px rgba(233, 30, 140, 0.35);
     perspective: 1200px;
     position: relative;
     margin: 0 auto 24px;
-}
-
-#practice-section.in-session .flashcard::before,
-#practice-section.in-session .fc-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 1;
 }
 
 /* ===== FLASHCARD INNER (FLIP) ===== */
@@ -60,10 +42,45 @@
     transform: rotateY(180deg);
 }
 
-/* ===== FRONT & BACK ===== */
+/* ===== FRONT - Gradient hồng ===== */
 #practice-section.in-session .flashcard-front,
+#practice-section.in-session .fc-card-front {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #e91e8c, #c71585);
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 15px 50px rgba(233, 30, 140, 0.35);
+}
+
+/* Pattern overlay cho front */
+#practice-section.in-session .flashcard-front::before,
+#practice-section.in-session .fc-card-front::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 16px;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* ===== BACK - Nền sáng ===== */
 #practice-section.in-session .flashcard-back,
-#practice-section.in-session .fc-card-front,
 #practice-section.in-session .fc-card-back {
     position: absolute;
     width: 100%;
@@ -77,26 +94,19 @@
     padding: 32px;
     text-align: center;
     box-sizing: border-box;
-}
-
-#practice-section.in-session .flashcard-front,
-#practice-section.in-session .fc-card-front {
-    color: white;
-    z-index: 2;
-}
-
-#practice-section.in-session .flashcard-back,
-#practice-section.in-session .fc-card-back {
     background: var(--bg-secondary);
     border: 2px solid var(--primary-color);
     border-radius: 16px;
     transform: rotateY(180deg);
     color: var(--text-primary);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== CARD CONTENT ===== */
 #practice-section.in-session .card-line {
     margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
 }
 
 #practice-section.in-session .flashcard-word,
@@ -158,6 +168,7 @@
     bottom: 15px;
     font-size: 12px;
     opacity: 0.7;
+    z-index: 1;
 }
 
 /* ===== SPEAK BUTTON ON CARD ===== */
@@ -176,6 +187,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    z-index: 2;
 }
 
 #practice-section.in-session .flashcard-back .btn-speak-card,
