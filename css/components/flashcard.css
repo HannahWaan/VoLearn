@@ -10,21 +10,30 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 950px;
+    max-width: 1717px;
+    min-height: 690px;
     margin: 0 auto;
+    padding: 40px;
+    background: rgba(18, 12, 30, 0.6);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
+
 
 /* ===== FLASHCARD (Container trong suốt) ===== */
 #practice-section.in-session .flashcard,
 #practice-section.in-session .fc-card {
     width: 100%;
-    max-width: 650px;
-    height: 320px;
+    max-width: 700px;
+    height: 380px;
     background: transparent;
     cursor: pointer;
     perspective: 1200px;
     position: relative;
-    margin: 0 auto 24px;
+    margin: 0 auto 32px;
 }
 
 /* ===== FLASHCARD INNER (FLIP) ===== */
