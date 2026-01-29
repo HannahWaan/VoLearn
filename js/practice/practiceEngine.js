@@ -8,15 +8,15 @@ import { showToast } from '../ui/toast.js';
 
 /* ===== STATE ===== */
 let practiceState = {
-    mode: null,           // 'flashcard' | 'quiz' | 'dictation' | 'typing'
-    words: [],            // Words to practice
+    mode: null, 
+    words: [],
     currentIndex: 0,
     score: 0,
     wrong: 0,
     skipped: 0,
     startTime: null,
-    answers: [],          // Track all answers
-    settings: {}          // Mode-specific settings
+    answers: [],
+    settings: {}
 };
 
 /* ===== INIT PRACTICE ===== */
