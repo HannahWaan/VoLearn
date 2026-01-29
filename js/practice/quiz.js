@@ -168,6 +168,33 @@ function showCurrentQuestion() {
   if (speakQuestion) speak(word.word);
 }
 
+/* ===== GENERATE OPTIONS ===== */
+function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
+  const allWords = getWordsByScope({ type: 'all' });
+
+  const correctText = getFieldText(correctWord, answerFieldId);
+  if (!correctText) return [];
+
+  const wrongPool = allWords
+    .filter(w => w && w.id !== correctWord.id)
+    .map(w => getFieldText(w, answerFieldId))
+    .filter(t => t && t !== correctText);
+
+  const wrongUnique = Array.from(new Set(wrongPool));
+
+  const needWrong = Math.max(0, optionCount - 1);
+  const pickedWrong = shuffleArray(wrongUnique).slice(0, needWrong);
+
+  const allOptions = [
+    { text: correctText, isCorrect: true },
+    ...pickedWrong.map(text => ({ text, isCorrect: false }))
+  ];
+
+  if (allOptions.length < 2) return [];
+
+  return shuffleArray(allOptions);
+}
+    
 /* ===== SELECT OPTION ===== */
 export function selectQuizOption(index) {
   if (answered) return;
