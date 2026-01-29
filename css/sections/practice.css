@@ -288,3 +288,229 @@
 #practice-section:not(.in-session) .practice-area {
     display: none !important;
 }
+
+/* ==========================================================================
+   PRACTICE SUMMARY & RESULTS - Dùng chung cho tất cả mode
+   ========================================================================== */
+
+/* ===== PRACTICE SUMMARY (Tạm dừng) ===== */
+.practice-summary {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.practice-summary .summary-icon {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.practice-summary h2 {
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+}
+
+.summary-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 32px;
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.summary-stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+
+.summary-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.summary-actions .btn-secondary,
+.summary-actions .btn-primary {
+    min-width: 140px;
+}
+
+/* ===== PRACTICE RESULTS (Hoàn thành) ===== */
+.practice-results {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.results-header {
+    margin-bottom: 30px;
+}
+
+.results-header i {
+    font-size: 4rem;
+    color: #fbbf24;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.results-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+}
+
+.results-stats {
+    margin-bottom: 32px;
+}
+
+.stat-circle {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 24px;
+    position: relative;
+}
+
+.stat-circle svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.stat-circle .stat-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 3;
+}
+
+.stat-circle .stat-fill {
+    fill: none;
+    stroke: var(--primary-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+}
+
+.stat-circle .stat-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.stat-item {
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+}
+
+.stat-item .value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-item .label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.stat-item.correct .value {
+    color: #10b981;
+}
+
+.stat-item.wrong .value {
+    color: #ef4444;
+}
+
+.results-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ===== PRACTICE COMPLETE ===== */
+.practice-complete {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.practice-complete i {
+    font-size: 5rem;
+    color: var(--warning-color);
+    margin-bottom: 24px;
+    display: block;
+}
+
+.practice-complete h2 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.practice-complete p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+/* ===== RESPONSIVE cho Summary/Results ===== */
+@media (max-width: 768px) {
+    .summary-stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .summary-actions,
+    .results-actions {
+        flex-direction: column;
+    }
+    
+    .summary-actions .btn-secondary,
+    .summary-actions .btn-primary,
+    .results-actions button {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
