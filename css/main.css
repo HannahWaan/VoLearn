@@ -25,6 +25,8 @@
 @import './components/cambridge.css';
 @import './components/practice-settings.css';
 @import './components/confirm-modal.css';
+@import 'components/quiz.css';
+@import 'components/flashcard.css';
 
 /* ===== SECTIONS ===== */
 @import './sections/home.css';
@@ -38,5 +40,3 @@
 /* ===== UTILITIES ===== */
 @import './utilities/responsive.css';
 
-/* ===== LEGACY / TEST OVERRIDES ===== */
-@import './legacy/test-quiz-card.css';
