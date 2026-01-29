@@ -308,6 +308,11 @@ function showResults() {
     stopAutoPlay();
     
     const result = finishPractice();
+    const state = getPracticeState();
+    
+    // Lấy danh sách từ sai (Quên + Khó)
+    const wrongWords = state.answers?.filter(a => !a.isCorrect) || [];
+    const hasWrongWords = wrongWords.length > 0;
     
     const container = document.getElementById('practice-content');
     if (!container) return;
@@ -350,14 +355,16 @@ function showResults() {
             </div>
             
             <div class="results-actions">
+                ${hasWrongWords ? `
                 <button class="btn-secondary" onclick="window.reviewWrongFlashcards()">
-                    <i class="fas fa-redo"></i> Ôn lại từ sai
+                    <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
                 </button>
+                ` : ''}
                 <button class="btn-primary" onclick="window.restartFlashcard()">
                     <i class="fas fa-play"></i> Làm lại
                 </button>
                 <button class="btn-secondary" onclick="window.exitFlashcard()">
-                    <i class="fas fa-home"></i> Trang chủ
+                    <i class="fas fa-arrow-left"></i> Quay lại luyện tập
                 </button>
             </div>
         </div>
@@ -437,6 +444,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
