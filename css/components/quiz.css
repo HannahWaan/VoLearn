@@ -3,11 +3,21 @@
    Chỉ chứa CSS cho Quiz mode
    ============================================= */
 
+/* ===== PRACTICE CONTENT CENTERING (fix lệch align) ===== */
+#practice-section.in-session #practice-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* quan trọng: tránh lệch khi card có width cố định */
+    justify-content: flex-start;
+    width: 100%;
+}
+
 /* ===== QUIZ CARD ===== */
 #practice-section.in-session #practice-content .quiz-card {
-    width: 1100px; 
+    width: 1100px;
     max-width: 1100px;
-    min-height: 550px;  
+    min-height: 550px;
+
     margin: 0 auto;
     padding: 40px;
     border-radius: 20px;
@@ -19,15 +29,13 @@
     color: rgba(255, 255, 255, 0.92);
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 #practice-section.in-session #practice-content .quiz-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     border: 2px solid transparent;
     border-radius: 20px;
     background: linear-gradient(135deg, rgba(255,107,157,0.3), rgba(180,100,255,0.3)) border-box;
@@ -36,15 +44,6 @@
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-}
-
-/* ===== PRACTICE CONTENT CENTERING ===== */
-#practice-section.in-session #practice-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
 }
 
 /* ===== QUIZ QUESTION ===== */
@@ -128,7 +127,10 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
-    margin-bottom: 28px;
+
+    width: 100%;
+    max-width: 800px;      /* gọn rõ theo yêu cầu */
+    margin: 0 auto 28px;   /* căn giữa cụm options */
 }
 
 #practice-section.in-session .quiz-card .quiz-option {
@@ -143,6 +145,7 @@
     transition: all 0.3s ease;
     width: 100%;
     text-align: left;
+    box-sizing: border-box;
 }
 
 #practice-section.in-session .quiz-card .quiz-option:hover:not(.correct):not(.wrong):not(:disabled) {
@@ -170,6 +173,9 @@
     font-size: 1.05rem;
     color: rgba(255, 255, 255, 0.9);
     line-height: 1.5;
+    /* nếu bạn muốn text “gọn” hơn nữa, bật dòng dưới:
+       max-width: 320px;
+    */
 }
 
 /* ===== OPTION STATES ===== */
@@ -226,22 +232,30 @@
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+    #practice-section.in-session #practice-content .quiz-card {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     #practice-section.in-session #practice-content .quiz-card {
         padding: 28px;
-        max-width: 100%;
         margin: 0 16px;
+        min-height: 0; /* tránh cảm giác “trống” trên mobile */
     }
-    
+
     #practice-section.in-session .quiz-card .quiz-word {
         font-size: 1.8rem;
     }
-    
+
     #practice-section.in-session .quiz-card .quiz-options {
         grid-template-columns: 1fr;
         gap: 12px;
+        max-width: 100%;
     }
-    
+
     #practice-section.in-session .quiz-card .quiz-option {
         padding: 16px 20px;
     }
@@ -252,22 +266,22 @@
         padding: 20px;
         margin: 0 8px;
     }
-    
+
     #practice-section.in-session .quiz-card .quiz-word {
         font-size: 1.5rem;
     }
-    
+
     #practice-section.in-session .quiz-card .quiz-option {
         padding: 14px 16px;
     }
-    
+
     #practice-section.in-session .quiz-card .option-letter {
         width: 36px;
         height: 36px;
         min-width: 36px;
         font-size: 15px;
     }
-    
+
     #practice-section.in-session .quiz-card .option-text {
         font-size: 1rem;
     }
