@@ -26,6 +26,7 @@
 @import './components/confirm-modal.css';
 @import './components/quiz.css';
 @import './components/flashcard.css';
+@import './components/dictation.css';
 
 /* ===== SECTIONS ===== */
 @import './sections/home.css';
@@ -38,6 +39,7 @@
 
 /* ===== UTILITIES ===== */
 @import './utilities/responsive.css';
+
 
 
 
