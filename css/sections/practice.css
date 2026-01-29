@@ -296,8 +296,8 @@
 /* ===== PRACTICE SUMMARY (Tạm dừng) ===== */
 #practice-section .practice-summary {
     text-align: center;
-    padding: 40px 20px;
-    max-width: 500px;
+    padding: 48px 32px;
+    max-width: 650px;
     margin: 0 auto;
     background: var(--bg-secondary);
     border-radius: var(--border-radius-lg);
@@ -357,8 +357,8 @@
 /* ===== PRACTICE RESULTS (Hoàn thành) ===== */
 #practice-section .practice-results {
     text-align: center;
-    padding: 40px 20px;
-    max-width: 500px;
+    padding: 48px 32px;
+    max-width: 650px;
     margin: 0 auto;
     background: var(--bg-secondary);
     border-radius: var(--border-radius-lg);
@@ -425,8 +425,8 @@
 #practice-section .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    max-width: 300px;
+    gap: 20px;
+    max-width: 400px;
     margin: 0 auto;
 }
 
@@ -461,6 +461,22 @@
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+#practice-section .results-actions .btn-primary,
+#practice-section .results-actions .btn-secondary {
+    padding: 14px 28px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-width: 160px;
+}
+
+#practice-section .summary-actions .btn-primary,
+#practice-section .summary-actions .btn-secondary {
+    padding: 14px 28px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-width: 160px;
 }
 
 /* ===== PRACTICE COMPLETE ===== */
@@ -514,5 +530,6 @@
         grid-template-columns: 1fr;
     }
 }
+
 
 
