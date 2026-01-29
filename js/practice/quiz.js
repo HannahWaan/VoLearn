@@ -22,6 +22,8 @@ let answered = false;
 
 // track current question/answer mapping (debug + future use)
 let currentQA = { qFieldId: null, aFieldId: null, correctText: '' };
+let autoNextTimer = null;
+let countdownInterval = null;
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
@@ -205,10 +207,63 @@ export function selectQuizOption(index) {
   if (nextBtn) nextBtn.style.display = 'block';
 
   updatePracticeHeaderProgress();
+
+  // Kiểm tra setting autoNext
+  const state = getPracticeState();
+  const autoNext = state.settings?.autoNext || false;
+  
+  if (autoNext) {
+    startAutoNextCountdown(5); 
+  }
+}
+
+/* ===== AUTO NEXT COUNTDOWN ===== */
+function startAutoNextCountdown(seconds) {
+  // Clear any existing timers
+  clearAutoNextTimer();
+  
+  let remaining = seconds;
+  
+  // Hiển thị countdown trên nút
+  const nextBtn = document.getElementById('btn-next-quiz');
+  if (nextBtn) {
+    nextBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
+  }
+  
+  // Countdown interval
+  countdownInterval = setInterval(() => {
+    remaining--;
+    if (nextBtn) {
+      nextBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
+    }
+    
+    if (remaining <= 0) {
+      clearAutoNextTimer();
+      nextQuizQuestion();
+    }
+  }, 1000);
+  
+  // Backup timer
+  autoNextTimer = setTimeout(() => {
+    clearAutoNextTimer();
+    nextQuizQuestion();
+  }, seconds * 1000 + 100);
+}
+
+function clearAutoNextTimer() {
+  if (autoNextTimer) {
+    clearTimeout(autoNextTimer);
+    autoNextTimer = null;
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
 }
 
 /* ===== NEXT QUESTION ===== */
 export function nextQuizQuestion() {
+  clearAutoNextTimer();
   showCurrentQuestion();
 }
 
@@ -300,6 +355,7 @@ function showQuizResults() {
 
 /* ===== NAVIGATION ===== */
 export function exitQuiz() {
+  clearAutoNextTimer();
   resetPractice();
   navigate('practice');
 }
