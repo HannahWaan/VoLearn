@@ -309,7 +309,12 @@ function showResults() {
     
     const result = finishPractice();
     const state = getPracticeState();
-    
+  
+    const bar = document.getElementById('practice-progress-bar');
+    const text = document.getElementById('practice-progress-text');
+    if (bar?.style) bar.style.width = '100%';
+    if (text) text.textContent = `${result.total}/${result.total}`;
+  
     // Lấy danh sách từ sai (Quên + Khó)
     const wrongWords = state.answers?.filter(a => !a.isCorrect) || [];
     const hasWrongWords = wrongWords.length > 0;
@@ -444,6 +449,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
