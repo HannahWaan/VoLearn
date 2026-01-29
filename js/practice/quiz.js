@@ -229,61 +229,73 @@ export function speakQuizWord() {
 
 /* ===== SHOW RESULTS ===== */
 function showQuizResults() {
-  const result = finishPractice();
+    const result = finishPractice();
+    const state = getPracticeState();
+    
+    // Lấy danh sách từ sai
+    const wrongWords = state.answers?.filter(a => !a.isCorrect) || [];
+    const hasWrongWords = wrongWords.length > 0;
 
-  const container = document.getElementById('practice-content');
-  if (!container) return;
+    const container = document.getElementById('practice-content');
+    if (!container) return;
 
-  const emoji = result.accuracy >= 80 ? '🎉' : result.accuracy >= 50 ? '👍' : '💪';
-
-  container.innerHTML = `
-    <div class="practice-results quiz-results">
-      <div class="results-header">
-        <span class="result-emoji">${emoji}</span>
-        <h2>Kết quả Quiz</h2>
-      </div>
-
-      <div class="results-stats">
-        <div class="stat-circle ${result.accuracy >= 70 ? 'good' : result.accuracy >= 50 ? 'medium' : 'low'}">
-          <svg viewBox="0 0 36 36">
-            <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          </svg>
-          <span class="stat-value">${result.accuracy}%</span>
+    container.innerHTML = `
+        <div class="practice-results">
+            <div class="results-header">
+                <i class="fas fa-trophy"></i>
+                <h2>Hoàn thành!</h2>
+            </div>
+            
+            <div class="results-stats">
+                <div class="stat-circle">
+                    <svg viewBox="0 0 36 36">
+                        <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100" 
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span class="stat-value">${result.accuracy}%</span>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="value">${result.total}</span>
+                        <span class="label">Tổng số</span>
+                    </div>
+                    <div class="stat-item correct">
+                        <span class="value">${result.score}</span>
+                        <span class="label">Đúng</span>
+                    </div>
+                    <div class="stat-item wrong">
+                        <span class="value">${result.wrong}</span>
+                        <span class="label">Sai</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="value">${formatDuration(result.duration)}</span>
+                        <span class="label">Thời gian</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-actions">
+                ${hasWrongWords ? `
+                <button class="btn-secondary" onclick="window.reviewWrongQuiz()">
+                    <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
+                </button>
+                ` : ''}
+                <button class="btn-primary" onclick="window.restartQuiz()">
+                    <i class="fas fa-play"></i> Làm lại
+                </button>
+                <button class="btn-secondary" onclick="window.exitQuiz()">
+                    <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+                </button>
+            </div>
         </div>
+    `;
 
-        <div class="stats-detail">
-          <div class="stat-row">
-            <span class="label"><i class="fas fa-check text-success"></i> Đúng</span>
-            <span class="value">${result.score}</span>
-          </div>
-          <div class="stat-row">
-            <span class="label"><i class="fas fa-times text-danger"></i> Sai</span>
-            <span class="value">${result.wrong}</span>
-          </div>
-          <div class="stat-row">
-            <span class="label"><i class="fas fa-clock"></i> Thời gian</span>
-            <span class="value">${formatDuration(result.duration)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="results-actions">
-        <button class="btn-primary" onclick="window.restartQuiz()">
-          <i class="fas fa-redo"></i> Làm lại
-        </button>
-        <button class="btn-secondary" onclick="window.handlePracticeBack()">
-          <i class="fas fa-home"></i> Quay lại
-        </button>
-      </div>
-    </div>
-  `;
-
-  const bar = document.getElementById('practice-progress-bar');
-  const text = document.getElementById('practice-progress-text');
-  if (bar?.style) bar.style.width = `100%`;
-  if (text) text.textContent = `${result.total}/${result.total}`;
+    const bar = document.getElementById('practice-progress-bar');
+    const text = document.getElementById('practice-progress-text');
+    if (bar?.style) bar.style.width = `100%`;
+    if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
 /* ===== NAVIGATION ===== */
@@ -398,6 +410,27 @@ export function renderQuiz() {
   showCurrentQuestion();
 }
 
+export function reviewWrongQuiz() {
+    const state = getPracticeState();
+    const wrongAnswers = state.answers?.filter(a => !a.isCorrect) || [];
+    
+    if (wrongAnswers.length === 0) {
+        showToast('Không có từ sai!', 'success');
+        return;
+    }
+
+    // Lấy lại các từ sai từ words gốc
+    const allWords = getWordsByScope({ type: 'all' });
+    const wrongWordIds = wrongAnswers.map(a => a.wordId).filter(Boolean);
+    const wrongWords = allWords.filter(w => wrongWordIds.includes(w.id));
+
+    if (wrongWords.length > 0) {
+        startQuiz({ type: 'custom', words: wrongWords }, window.quizSettings);
+    } else {
+        showToast('Không tìm thấy từ sai!', 'warning');
+    }
+}
+
 /* ===== EXPORTS ===== */
 window.startQuiz = startQuiz;
 window.selectQuizOption = selectQuizOption;
@@ -405,3 +438,4 @@ window.nextQuizQuestion = nextQuizQuestion;
 window.speakQuizWord = speakQuizWord;
 window.exitQuiz = exitQuiz;
 window.restartQuiz = restartQuiz;
+window.reviewWrongQuiz = reviewWrongQuiz;
