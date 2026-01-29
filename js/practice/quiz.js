@@ -10,21 +10,25 @@ import {
   getWordsByScope,
   resetPractice,
   showPracticeArea,
+  hidePracticeArea,
   skipWord
 } from './practiceEngine.js';
 
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
-import { navigate } from '../core/router.js';
 
 /* ===== STATE ===== */
 let options = [];
 let selectedOption = null;
 let answered = false;
+
+// settings snapshot for current run (do NOT rely on getPracticeState().settings)
 let quizSettings = {};
 
 // track current question/answer mapping (debug + future use)
 let currentQA = { qFieldId: null, aFieldId: null, correctText: '' };
+
+// timers
 let autoNextTimer = null;
 let countdownInterval = null;
 let questionTimer = null;
@@ -32,6 +36,10 @@ let questionRemaining = 0;
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
+  // stop any old timers if restarting quickly
+  clearAutoNextTimer();
+  clearQuestionTimer();
+
   const words = getWordsByScope(scope);
 
   if (!words.length) {
@@ -47,7 +55,9 @@ export function startQuiz(scope, settings = {}) {
   const defaultSettings = {
     shuffle: true,
     optionCount: 4,
-    timeLimit: 0,
+    timeLimit: 0,        // autoSkip when > 0
+    autoNext: false,     // autoNext after answering
+    autoNextSeconds: 5,  // seconds
     showHint: false,
     speakQuestion: false,
 
@@ -58,15 +68,19 @@ export function startQuiz(scope, settings = {}) {
 
   const mergedSettings = { ...defaultSettings, ...settings };
   quizSettings = mergedSettings;
-  
+
   if (!initPractice('quiz', words, mergedSettings)) return;
-  
+
   showPracticeArea();
   showCurrentQuestion();
 }
 
 /* ===== SHOW CURRENT QUESTION ===== */
 function showCurrentQuestion() {
+  // new question => kill timers from previous question
+  clearAutoNextTimer();
+  clearQuestionTimer();
+
   const word = getCurrentWord();
 
   if (!word) {
@@ -77,15 +91,17 @@ function showCurrentQuestion() {
   answered = false;
   selectedOption = null;
 
-  const state = getPracticeState();
+  // IMPORTANT: do not rely on state.settings for config
+  const qIds = Array.isArray(quizSettings.questionFieldIds) && quizSettings.questionFieldIds.length
+    ? quizSettings.questionFieldIds
+    : [1, 5];
 
-  // NOTE: practiceEngine.getPracticeState() hiện không trả settings,
-  // nhưng initPractice() giữ settings nội bộ và quiz.js vẫn dùng state.settings trong repo cũ.
-  // Để an toàn: đọc settings từ practiceEngine qua "hack" không có, nên fallback default.
-  const qIds = Array.isArray(state.settings?.questionFieldIds) ? state.settings.questionFieldIds : [1, 5];
-  const aIds = Array.isArray(state.settings?.answerFieldIds) ? state.settings.answerFieldIds : [5];
-  const optionCount = state.settings?.optionCount || 4;
-  const speakQuestion = !!state.settings?.speakQuestion;
+  const aIds = Array.isArray(quizSettings.answerFieldIds) && quizSettings.answerFieldIds.length
+    ? quizSettings.answerFieldIds
+    : [5];
+
+  const optionCount = Number(quizSettings.optionCount || 4);
+  const speakQuestion = !!quizSettings.speakQuestion;
 
   const qFieldId = pickRandom(qIds) ?? qIds[0];
 
@@ -112,9 +128,11 @@ function showCurrentQuestion() {
   const questionMain = escapeHtml(questionText || '(Không có dữ liệu)');
   const phonetic = getPhoneticText(word);
 
+  const timeLimit = Number(quizSettings.timeLimit || 0);
+
   container.innerHTML = `
     <div class="quiz-card">
-      ${(Number(state.settings?.timeLimit || 0) > 0) ? `<div class="quiz-timer" id="quiz-timer">${Number(state.settings.timeLimit)}s</div>` : ''}
+      ${timeLimit > 0 ? `<div class="quiz-timer" id="quiz-timer">${timeLimit}s</div>` : ''}
 
       <div class="quiz-question-label">${questionLabel}</div>
 
@@ -150,8 +168,10 @@ function showCurrentQuestion() {
   `;
 
   updatePracticeHeaderProgress();
-  const timeLimit = Number(state.settings?.timeLimit || 0);
+
+  // autoSkip timer (timeLimit)
   if (timeLimit > 0) startQuestionTimer(timeLimit);
+
   if (speakQuestion) speak(word.word);
 }
 
@@ -177,7 +197,6 @@ function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
     ...pickedWrong.map(text => ({ text, isCorrect: false }))
   ];
 
-  // nếu thiếu dữ liệu quá (không đủ >= 2 options) thì fail để fallback/report
   if (allOptions.length < 2) return [];
 
   return shuffleArray(allOptions);
@@ -188,7 +207,7 @@ export function selectQuizOption(index) {
   if (answered) return;
 
   answered = true;
-  clearQuestionTimer();
+  clearQuestionTimer(); // stop autoSkip once answered
   selectedOption = index;
 
   const selected = options[index];
@@ -218,10 +237,10 @@ export function selectQuizOption(index) {
 
   updatePracticeHeaderProgress();
 
-  // Kiểm tra setting autoNext
+  // AutoNext: choose answer -> wait -> next
   const autoNext = !!quizSettings.autoNext;
-  const autoNextSeconds = Number(quizSettings.autoNextSeconds || 5);
-  
+  const autoNextSeconds = Math.max(1, Number(quizSettings.autoNextSeconds || 5));
+
   if (autoNext) {
     startAutoNextCountdown(autoNextSeconds);
   }
@@ -229,35 +248,31 @@ export function selectQuizOption(index) {
 
 /* ===== AUTO NEXT COUNTDOWN ===== */
 function startAutoNextCountdown(seconds) {
-  // Clear any existing timers
   clearAutoNextTimer();
-  
+
   let remaining = seconds;
-  
-  // Hiển thị countdown trên nút
+
   const nextBtn = document.getElementById('btn-next-quiz');
   if (nextBtn) {
     nextBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
   }
-  
-  // Countdown interval
+
   countdownInterval = setInterval(() => {
     remaining--;
     if (nextBtn) {
-      nextBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
+      nextBtn.innerHTML = `Tiếp theo (${Math.max(0, remaining)}s) <i class="fas fa-arrow-right"></i>`;
     }
-    
+
     if (remaining <= 0) {
       clearAutoNextTimer();
       nextQuizQuestion();
     }
   }, 1000);
-  
-  // Backup timer
+
   autoNextTimer = setTimeout(() => {
     clearAutoNextTimer();
     nextQuizQuestion();
-  }, seconds * 1000 + 100);
+  }, seconds * 1000 + 120);
 }
 
 function clearAutoNextTimer() {
@@ -271,6 +286,7 @@ function clearAutoNextTimer() {
   }
 }
 
+/* ===== AUTO SKIP (TIME LIMIT) ===== */
 function clearQuestionTimer() {
   if (questionTimer) {
     clearInterval(questionTimer);
@@ -285,27 +301,25 @@ function startQuestionTimer(seconds) {
   questionRemaining = Math.max(0, Number(seconds) || 0);
 
   if (timerEl) timerEl.textContent = `${questionRemaining}s`;
-
   if (questionRemaining <= 0) return;
 
   questionTimer = setInterval(() => {
     questionRemaining--;
-
-    if (timerEl) timerEl.textContent = `${questionRemaining}s`;
+    if (timerEl) timerEl.textContent = `${Math.max(0, questionRemaining)}s`;
 
     if (questionRemaining <= 0) {
       clearQuestionTimer();
 
-      if (!answered) {
-        try {
+      // If user already answered, do nothing
+      if (answered) return;
 
-          window.skipWord ? window.skipWord();
-        } catch (e) {}
+      // time up => SKIP (Bỏ qua) then next question
+      answered = true;
 
-        answered = true;
+      // make sure it counts as "skipped"
+      skipWord();
 
-        nextQuizQuestion();
-      }
+      nextQuizQuestion();
     }
   }, 1000);
 }
@@ -334,81 +348,83 @@ export function speakQuizWord() {
 
 /* ===== SHOW RESULTS ===== */
 function showQuizResults() {
-    const result = finishPractice();
-    const state = getPracticeState();
-    
-    // Lấy danh sách từ sai
-    const wrongWords = state.answers?.filter(a => !a.isCorrect) || [];
-    const hasWrongWords = wrongWords.length > 0;
+  clearAutoNextTimer();
+  clearQuestionTimer();
 
-    const container = document.getElementById('practice-content');
-    if (!container) return;
+  const result = finishPractice();
+  const state = getPracticeState();
 
-    container.innerHTML = `
-        <div class="practice-results">
-            <div class="results-header">
-                <i class="fas fa-trophy"></i>
-                <h2>Hoàn thành!</h2>
-            </div>
-            
-            <div class="results-stats">
-                <div class="stat-circle">
-                    <svg viewBox="0 0 36 36">
-                        <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                        <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100" 
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    </svg>
-                    <span class="stat-value">${result.accuracy}%</span>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="value">${result.total}</span>
-                        <span class="label">Tổng số</span>
-                    </div>
-                    <div class="stat-item correct">
-                        <span class="value">${result.score}</span>
-                        <span class="label">Đúng</span>
-                    </div>
-                    <div class="stat-item wrong">
-                        <span class="value">${result.wrong}</span>
-                        <span class="label">Sai</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="value">${formatDuration(result.duration)}</span>
-                        <span class="label">Thời gian</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="results-actions">
-                ${hasWrongWords ? `
-                <button class="btn-secondary" onclick="window.reviewWrongQuiz()">
-                    <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
-                </button>
-                ` : ''}
-                <button class="btn-primary" onclick="window.restartQuiz()">
-                    <i class="fas fa-play"></i> Làm lại
-                </button>
-                <button class="btn-secondary" onclick="window.exitQuiz()">
-                    <i class="fas fa-arrow-left"></i> Quay lại luyện tập
-                </button>
-            </div>
+  const wrongWords = state.answers?.filter(a => !a.isCorrect) || [];
+  const hasWrongWords = wrongWords.length > 0;
+
+  const container = document.getElementById('practice-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="practice-results">
+      <div class="results-header">
+        <i class="fas fa-trophy"></i>
+        <h2>Hoàn thành!</h2>
+      </div>
+
+      <div class="results-stats">
+        <div class="stat-circle">
+          <svg viewBox="0 0 36 36">
+            <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          </svg>
+          <span class="stat-value">${result.accuracy}%</span>
         </div>
-    `;
 
-    const bar = document.getElementById('practice-progress-bar');
-    const text = document.getElementById('practice-progress-text');
-    if (bar?.style) bar.style.width = `100%`;
-    if (text) text.textContent = `${result.total}/${result.total}`;
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="value">${result.total}</span>
+            <span class="label">Tổng số</span>
+          </div>
+          <div class="stat-item correct">
+            <span class="value">${result.score}</span>
+            <span class="label">Đúng</span>
+          </div>
+          <div class="stat-item wrong">
+            <span class="value">${result.wrong}</span>
+            <span class="label">Sai</span>
+          </div>
+          <div class="stat-item">
+            <span class="value">${formatDuration(result.duration)}</span>
+            <span class="label">Thời gian</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        ${hasWrongWords ? `
+          <button class="btn-secondary" onclick="window.reviewWrongQuiz()">
+            <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
+          </button>
+        ` : ''}
+        <button class="btn-primary" onclick="window.restartQuiz()">
+          <i class="fas fa-play"></i> Làm lại
+        </button>
+        <button class="btn-secondary" onclick="window.exitQuiz()">
+          <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+        </button>
+      </div>
+    </div>
+  `;
+
+  const bar = document.getElementById('practice-progress-bar');
+  const text = document.getElementById('practice-progress-text');
+  if (bar?.style) bar.style.width = `100%`;
+  if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
 /* ===== NAVIGATION ===== */
 export function exitQuiz() {
   clearAutoNextTimer();
-  resetPractice();
-  hidePracticeArea();
   clearQuestionTimer();
+  resetPractice();
+  hidePracticeArea(); // back to practice modes screen
 }
 
 export function restartQuiz() {
@@ -518,24 +534,23 @@ export function renderQuiz() {
 }
 
 export function reviewWrongQuiz() {
-    const state = getPracticeState();
-    const wrongAnswers = state.answers?.filter(a => !a.isCorrect) || [];
-    
-    if (wrongAnswers.length === 0) {
-        showToast('Không có từ sai!', 'success');
-        return;
-    }
+  const state = getPracticeState();
+  const wrongAnswers = state.answers?.filter(a => !a.isCorrect) || [];
 
-    // Lấy lại các từ sai từ words gốc
-    const allWords = getWordsByScope({ type: 'all' });
-    const wrongWordIds = wrongAnswers.map(a => a.wordId).filter(Boolean);
-    const wrongWords = allWords.filter(w => wrongWordIds.includes(w.id));
+  if (wrongAnswers.length === 0) {
+    showToast('Không có từ sai!', 'success');
+    return;
+  }
 
-    if (wrongWords.length > 0) {
-        startQuiz({ type: 'custom', words: wrongWords }, window.quizSettings);
-    } else {
-        showToast('Không tìm thấy từ sai!', 'warning');
-    }
+  const allWords = getWordsByScope({ type: 'all' });
+  const wrongWordIds = wrongAnswers.map(a => a.wordId).filter(Boolean);
+  const wrongWords = allWords.filter(w => wrongWordIds.includes(w.id));
+
+  if (wrongWords.length > 0) {
+    startQuiz({ type: 'custom', words: wrongWords }, window.quizSettings);
+  } else {
+    showToast('Không tìm thấy từ sai!', 'warning');
+  }
 }
 
 /* ===== EXPORTS ===== */
