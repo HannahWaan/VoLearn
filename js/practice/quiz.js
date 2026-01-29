@@ -9,7 +9,8 @@ import {
   getPracticeState,
   getWordsByScope,
   resetPractice,
-  showPracticeArea
+  showPracticeArea,
+  hidePracticeArea
 } from './practiceEngine.js';
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
@@ -19,6 +20,7 @@ import { navigate } from '../core/router.js';
 let options = [];
 let selectedOption = null;
 let answered = false;
+let quizSettings = {};
 
 // track current question/answer mapping (debug + future use)
 let currentQA = { qFieldId: null, aFieldId: null, correctText: '' };
@@ -52,7 +54,8 @@ export function startQuiz(scope, settings = {}) {
   };
 
   const mergedSettings = { ...defaultSettings, ...settings };
-
+  quizSettings = mergedSettings;
+  
   if (!initPractice('quiz', words, mergedSettings)) return;
   
   showPracticeArea();
@@ -209,11 +212,11 @@ export function selectQuizOption(index) {
   updatePracticeHeaderProgress();
 
   // Kiểm tra setting autoNext
-  const state = getPracticeState();
-  const autoNext = state.settings?.autoNext || false;
+  const autoNext = !!quizSettings.autoNext;
+  const autoNextSeconds = Number(quizSettings.autoNextSeconds || 5);
   
   if (autoNext) {
-    startAutoNextCountdown(5); 
+    startAutoNextCountdown(autoNextSeconds);
   }
 }
 
@@ -357,7 +360,7 @@ function showQuizResults() {
 export function exitQuiz() {
   clearAutoNextTimer();
   resetPractice();
-  navigate('practice');
+  hidePracticeArea();
 }
 
 export function restartQuiz() {
