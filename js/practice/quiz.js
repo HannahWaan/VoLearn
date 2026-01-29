@@ -132,7 +132,7 @@ function showCurrentQuestion() {
       <div class="quiz-word">${questionMain}</div>
 
       <div class="quiz-sub">
-        ${phonetic ? `<div class="question-phonetic">${escapeHtml(phonetic)}</div>` : ''}
+        ${(quizSettings.showPhonetic && phonetic) ? `<div class="question-phonetic">${escapeHtml(phonetic)}</div>` : ''}
 
         <button class="btn-speak" type="button" onclick="window.speakQuizWord()" title="Nghe phát âm">
           <i class="fas fa-volume-up"></i>
