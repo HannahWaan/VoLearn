@@ -480,8 +480,29 @@ export function startDictationWithSettings() {
     limit: dictationSettings.limit || 0,
 
     // Test-style settings for dictation.js (we will implement in dictation.js next patch)
-    listenFieldIds: [...(dictationSettings.listenFields || [])],
-    hintFieldIds: [...(dictationSettings.hintFields || [])],
+    const listenIds = Array.isArray(dictationSettings.listenFieldIds) ? dictationSettings.listenFieldIds
+                  : Array.isArray(dictationSettings.listenFields) ? dictationSettings.listenFields
+                  : [1];
+   
+   const hintIds   = Array.isArray(dictationSettings.hintFieldIds) ? dictationSettings.hintFieldIds
+                  : Array.isArray(dictationSettings.hintFields) ? dictationSettings.hintFields
+                  : [5];
+   
+   const settings = {
+     shuffle: true,
+     limit: dictationSettings.limit || 0,
+   
+     listenFieldIds: [...listenIds],
+     hintFieldIds: [...hintIds],
+   
+     scoring: dictationSettings.scoring || 'exact',
+     showAnswer: !!dictationSettings.showAnswer,
+     strictMode: !!dictationSettings.strictMode,
+     autoNext: !!dictationSettings.autoNext,
+     autoCorrect: !!dictationSettings.autoCorrect,
+     maxReplay: Number(dictationSettings.maxReplay || 0)
+   };
+
 
     scoring: dictationSettings.scoring || 'exact',
     showAnswer: !!dictationSettings.showAnswer,
