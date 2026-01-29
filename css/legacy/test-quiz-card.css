@@ -1,230 +1,521 @@
 /* ==========================================================================
-   Quiz (Style B) - Stable
+   Quiz & Flashcard UI - VoLearn
    Scoped to practice session only
    ========================================================================== */
 
-#practice-section.in-session #practice-content .quiz-card{
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 22px;
-  border-radius: 16px;
-
-  background: rgba(18, 12, 30, 0.55);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 18px 60px rgba(0,0,0,0.38);
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  color: rgba(255,255,255,0.92);
-  position: relative;
-  overflow: hidden;
+/* ---------- QUIZ CARD ---------- */
+#practice-section.in-session #practice-content .quiz-card {
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 22px;
+    border-radius: 16px;
+    background: rgba(18, 12, 30, 0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.38);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(255,255,255,0.92);
+    position: relative;
+    overflow: hidden;
 }
 
-/* inner glow/border so it looks like a “frame” */
-#practice-section.in-session #practice-content .quiz-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: 16px;
-  pointer-events:none;
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.05),
-    inset 0 0 30px rgba(255,255,255,0.03);
+#practice-section.in-session #practice-content .quiz-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    pointer-events: none;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.05),
+        inset 0 0 30px rgba(255,255,255,0.03);
 }
 
-/* ---------- Question area centered ---------- */
-#practice-section.in-session #practice-content .quiz-question{
-  position: relative;
-  padding: 18px 18px 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
+/* ---------- Question area ---------- */
+#practice-section.in-session #practice-content .quiz-question {
+    position: relative;
+    padding: 18px 18px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
 }
 
-#practice-section.in-session #practice-content .quiz-question-label{
-  font-size: 11px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.55);
-  margin: 0;
+#practice-section.in-session #practice-content .quiz-question-label {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin: 0;
 }
 
-#practice-section.in-session #practice-content .quiz-word{
-  font-size: clamp(34px, 4.8vw, 56px);
-  font-weight: 900;
-  line-height: 1.05;
-  margin: 0;
-  color: rgba(255,255,255,0.96);
+#practice-section.in-session #practice-content .quiz-word {
+    font-size: clamp(34px, 4.8vw, 56px);
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0;
+    color: rgba(255,255,255,0.96);
 }
 
-#practice-section.in-session #practice-content .question-phonetic{
-  margin: 0;
-  font-size: 14px;
-  color: rgba(255,255,255,0.62);
+#practice-section.in-session #practice-content .question-phonetic {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(255,255,255,0.62);
 }
 
-/* speak button centered and visible */
-#practice-section.in-session #practice-content .btn-speak{
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  border: 0;
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #fff;
-  background: linear-gradient(135deg, #ff4fb3, #ff2d8f);
-  box-shadow: 0 12px 26px rgba(255,45,143,0.30);
-  transition: transform .12s ease, filter .12s ease;
-}
-#practice-section.in-session #practice-content .btn-speak:hover{
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-}
-#practice-section.in-session #practice-content .btn-speak:active{
-  transform: translateY(0) scale(0.98);
+/* speak button */
+#practice-section.in-session #practice-content .btn-speak {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: linear-gradient(135deg, #ff4fb3, #ff2d8f);
+    box-shadow: 0 12px 26px rgba(255,45,143,0.30);
+    transition: transform .12s ease, filter .12s ease;
 }
 
-/* timer top-right */
-#practice-section.in-session #practice-content .quiz-timer{
-  position:absolute;
-  top: 14px;
-  right: 14px;
-
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-
-  color: rgba(255,255,255,0.86);
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.10);
+#practice-section.in-session #practice-content .btn-speak:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
 }
 
-/* ---------- Answer label ---------- */
-#practice-section.in-session #practice-content .quiz-answer-label{
-  margin: 14px 0 10px;
-  text-align: center;
-  font-size: 11px;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.55);
+/* timer */
+#practice-section.in-session #practice-content .quiz-timer {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.86);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.10);
 }
 
-/* ---------- Options (one column) ---------- */
-#practice-section.in-session #practice-content .quiz-options{
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ---------- Answer area ---------- */
+#practice-section.in-session #practice-content .quiz-answer-label {
+    margin: 14px 0 10px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
 }
 
-#practice-section.in-session #practice-content .quiz-option{
-  width: 100%;
-  display:flex;
-  align-items:flex-start;
-  gap: 12px;
-
-  padding: 14px 16px;
-  border-radius: 12px;
-
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.92);
-
-  cursor:pointer;
-  text-align:left;
-  transition: transform .10s ease, background .12s ease, border-color .12s ease;
-}
-#practice-section.in-session #practice-content .quiz-option:hover:not(:disabled){
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.16);
-  transform: translateY(-1px);
-}
-#practice-section.in-session #practice-content .quiz-option:disabled{
-  cursor: default;
-  opacity: 0.92;
+/* Options - 2 columns */
+#practice-section.in-session #practice-content .quiz-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
 }
 
-#practice-section.in-session #practice-content .option-letter{
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-
-  font-weight: 900;
-  font-size: 13px;
-
-  color: rgba(255,255,255,0.92);
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  flex: 0 0 auto;
-  margin-top: 2px;
+#practice-section.in-session #practice-content .quiz-option {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.92);
+    cursor: pointer;
+    text-align: left;
+    transition: transform .10s ease, background .12s ease, border-color .12s ease;
 }
 
-#practice-section.in-session #practice-content .option-text{
-  flex: 1 1 auto;
-  font-size: 13px;
-  line-height: 1.35;
-  color: rgba(255,255,255,0.90);
-  word-break: break-word;
+#practice-section.in-session #practice-content .quiz-option:hover:not(:disabled) {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.16);
+    transform: translateY(-1px);
+}
+
+#practice-section.in-session #practice-content .quiz-option:disabled {
+    cursor: default;
+    opacity: 0.92;
+}
+
+#practice-section.in-session #practice-content .option-letter {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    color: rgba(255,255,255,0.92);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+#practice-section.in-session #practice-content .option-text {
+    flex: 1 1 auto;
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(255,255,255,0.90);
+    word-break: break-word;
 }
 
 /* ---------- Correct/Wrong ---------- */
-#practice-section.in-session #practice-content .quiz-option.correct{
-  border-color: rgba(46, 213, 115, 0.70);
-  background: rgba(46, 213, 115, 0.10);
-}
-#practice-section.in-session #practice-content .quiz-option.correct .option-letter{
-  background: rgba(46, 213, 115, 0.30);
-  border-color: rgba(46, 213, 115, 0.55);
+#practice-section.in-session #practice-content .quiz-option.correct {
+    border-color: rgba(46, 213, 115, 0.70);
+    background: rgba(46, 213, 115, 0.10);
 }
 
-#practice-section.in-session #practice-content .quiz-option.wrong{
-  border-color: rgba(255, 71, 87, 0.70);
-  background: rgba(255, 71, 87, 0.10);
+#practice-section.in-session #practice-content .quiz-option.correct .option-letter {
+    background: rgba(46, 213, 115, 0.30);
+    border-color: rgba(46, 213, 115, 0.55);
 }
-#practice-section.in-session #practice-content .quiz-option.wrong .option-letter{
-  background: rgba(255, 71, 87, 0.30);
-  border-color: rgba(255, 71, 87, 0.55);
+
+#practice-section.in-session #practice-content .quiz-option.wrong {
+    border-color: rgba(255, 71, 87, 0.70);
+    background: rgba(255, 71, 87, 0.10);
+}
+
+#practice-section.in-session #practice-content .quiz-option.wrong .option-letter {
+    background: rgba(255, 71, 87, 0.30);
+    border-color: rgba(255, 71, 87, 0.55);
 }
 
 /* ---------- Feedback & actions ---------- */
-#practice-section.in-session #practice-content .quiz-feedback{
-  min-height: 26px;
-  margin-top: 12px;
-  font-weight: 900;
-  text-align: center;
-}
-#practice-section.in-session #practice-content .feedback-correct{ color: rgba(46, 213, 115, 0.95); }
-#practice-section.in-session #practice-content .feedback-wrong{ color: rgba(255, 71, 87, 0.95); }
-
-#practice-section.in-session #practice-content .quiz-actions{
-  display:flex;
-  justify-content:center;
-  gap: 12px;
-  margin-top: 14px;
-  flex-wrap: wrap;
+#practice-section.in-session #practice-content .quiz-feedback {
+    min-height: 26px;
+    margin-top: 12px;
+    font-weight: 900;
+    text-align: center;
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 1100px){
-  #practice-section.in-session #practice-content .quiz-card{ max-width: 100%; }
+#practice-section.in-session #practice-content .feedback-correct {
+    color: rgba(46, 213, 115, 0.95);
 }
-@media (max-width: 520px){
-  #practice-section.in-session #practice-content .quiz-card{ padding: 16px; }
-  #practice-section.in-session #practice-content .quiz-question{ padding: 14px 10px 4px; }
+
+#practice-section.in-session #practice-content .feedback-wrong {
+    color: rgba(255, 71, 87, 0.95);
+}
+
+#practice-section.in-session #practice-content .quiz-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   FLASHCARD UI
+   ========================================================================== */
+
+/* Flashcard container */
+#practice-section.in-session #practice-content .flashcard-main,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+}
+
+/* Flashcard */
+#practice-section.in-session #practice-content .fc-card,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card,
+#practice-section.in-session .flashcard {
+    width: 100%;
+    max-width: 650px;
+    height: 320px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e91e8c, #c71585);
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(233, 30, 140, 0.35);
+    perspective: 1200px;
+    position: relative;
+    margin: 0 auto 24px;
+}
+
+#practice-section.in-session #practice-content .fc-card::before,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+#practice-section.in-session #practice-content .fc-card-inner,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-inner,
+#practice-section.in-session .flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#practice-section.in-session #practice-content .fc-card.flipped .fc-card-inner,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card.flipped .fc-card-inner,
+#practice-section.in-session .flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+
+#practice-section.in-session #practice-content .fc-card-front,
+#practice-section.in-session #practice-content .fc-card-back,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-front,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-back,
+#practice-section.in-session .flashcard-front,
+#practice-section.in-session .flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+#practice-section.in-session #practice-content .fc-card-front,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-front,
+#practice-section.in-session .flashcard-front {
+    color: white;
+    z-index: 2;
+}
+
+#practice-section.in-session #practice-content .fc-card-back,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-back,
+#practice-section.in-session .flashcard-back {
+    background: var(--bg-secondary);
+    border: 2px solid var(--primary-color);
+    border-radius: 16px;
+    transform: rotateY(180deg);
+    color: var(--text-primary);
+}
+
+/* Card content */
+#practice-section.in-session #practice-content .card-line,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-line {
+    margin-bottom: 8px;
+}
+
+#practice-section.in-session #practice-content .card-word,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-word,
+#practice-section.in-session .flashcard-word {
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+#practice-section.in-session #practice-content .card-phonetic,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-phonetic,
+#practice-section.in-session .flashcard-phonetic {
+    font-size: 1.1rem;
+    opacity: 0.85;
+}
+
+#practice-section.in-session #practice-content .card-pos,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-pos,
+#practice-section.in-session .flashcard-pos {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+#practice-section.in-session #practice-content .fc-card-back .card-pos,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card-back .card-pos,
+#practice-section.in-session .flashcard-back .flashcard-pos {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+#practice-section.in-session #practice-content .card-meaning,
+#practice-section.in-session #practice-content .card-defVi,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-meaning,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defVi,
+#practice-section.in-session .flashcard-meaning {
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 600;
+    max-height: 100px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+#practice-section.in-session #practice-content .card-defEn,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-defEn {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+#practice-section.in-session #practice-content .card-example,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .card-example,
+#practice-section.in-session .flashcard-example {
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    max-height: 60px;
+    overflow-y: auto;
+}
+
+/* Flip hint */
+#practice-section.in-session .flip-hint {
+    position: absolute;
+    bottom: 15px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Speak button on card */
+#practice-section.in-session .btn-speak-card {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+#practice-section.in-session .flashcard-back .btn-speak-card,
+#practice-section.in-session .fc-card-back .btn-speak-card {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Flashcard controls */
+#practice-section.in-session #practice-content .flashcard-controls.srs-buttons,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-controls.srs-buttons,
+#practice-section.in-session .srs-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+#practice-section.in-session #practice-content .flashcard-nav,
+#practice-section.in-session #practice-content [data-render="flashcard-ui"] .flashcard-nav {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+/* SRS Buttons */
+#practice-section.in-session .btn-srs {
+    flex: 1;
+    min-width: 100px;
+    padding: 14px 16px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: white;
+    transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
+}
+
+#practice-section.in-session .btn-srs:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#practice-section.in-session .btn-srs i { font-size: 1.3rem; }
+#practice-section.in-session .btn-srs span { font-size: 0.9rem; }
+#practice-section.in-session .btn-srs small { font-size: 0.75rem; opacity: 0.8; }
+
+#practice-section.in-session .btn-again { background: linear-gradient(135deg, #ef4444, #dc2626); }
+#practice-section.in-session .btn-hard { background: linear-gradient(135deg, #f59e0b, #d97706); }
+#practice-section.in-session .btn-good { background: linear-gradient(135deg, #10b981, #059669); }
+#practice-section.in-session .btn-easy { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 950px) {
+    #practice-section.in-session #practice-content .quiz-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    #practice-section.in-session #practice-content .quiz-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    #practice-section.in-session #practice-content .fc-card,
+    #practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card,
+    #practice-section.in-session .flashcard {
+        height: 280px;
+        max-width: 100%;
+    }
+    
+    #practice-section.in-session .srs-buttons {
+        flex-direction: column;
+    }
+    
+    #practice-section.in-session .btn-srs {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 520px) {
+    #practice-section.in-session #practice-content .quiz-card {
+        padding: 16px;
+    }
+    
+    #practice-section.in-session #practice-content .quiz-question {
+        padding: 14px 10px 4px;
+    }
+    
+    #practice-section.in-session #practice-content .quiz-options {
+        grid-template-columns: 1fr;
+    }
+    
+    #practice-section.in-session #practice-content .fc-card,
+    #practice-section.in-session #practice-content [data-render="flashcard-ui"] .fc-card,
+    #practice-section.in-session .flashcard {
+        height: 260px;
+    }
 }
