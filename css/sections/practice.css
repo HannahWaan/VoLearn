@@ -222,12 +222,25 @@
     min-width: 50px;
 }
 
+/* ===== PRACTICE CONTENT ===== */
 .practice-content {
+    min-height: 400px;
+}
+
+/* Style mặc định khi chưa vào session */
+#practice-section:not(.in-session) .practice-content {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
     padding: 32px;
-    min-height: 400px;
+}
+
+/* Khi trong session - container trong suốt để quiz/flashcard tự style */
+#practice-section.in-session .practice-content {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -256,7 +269,7 @@
     }
 }
 
-/* ===== FIX: Đảm bảo practice-modes hiển thị đúng sau khi thoát ===== */
+/* ===== FIX: Đảm bảo practice-modes hiển thị đúng ===== */
 
 /* Khi đang trong session - ẩn modes, hiện area */
 #practice-section.in-session .practice-modes {
@@ -275,5 +288,3 @@
 #practice-section:not(.in-session) .practice-area {
     display: none !important;
 }
-
-
