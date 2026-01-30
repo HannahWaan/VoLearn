@@ -29,6 +29,7 @@ import { startFlashcard } from './practice/flashcard.js';
 import { startQuiz } from './practice/quiz.js';
 import { startDictation } from './practice/dictation.js';
 import { startTyping } from './practice/typing.js';
+import { initTypingSettings } from './practice/typingSettings.js';
 
 // ===== SYNC IMPORTS =====
 import { initDrive, loginGoogle } from './sync/gdriveAuth.js';
@@ -98,6 +99,7 @@ async function initApp() {
         initFlashcardSettings();
         initQuizSettings();
         initDictationSettings();
+        initTypingSettings();
         
         // Step 6.5: Initialize Cambridge Widget
         console.log('📚 Step 6.5: Initializing Cambridge Widget...');
@@ -247,7 +249,7 @@ function setupGlobalFunctions() {
         import('./practice/dictationSettings.js').then(m => m.openDictationSettings && m.openDictationSettings());
     };
     window.openTypingSettings = () => {
-        import('./practice/typing.js').then(m => m.openTypingSettings && m.openTypingSettings());
+      import('./practice/typingSettings.js').then(m => m.openTypingSettings && m.openTypingSettings());
     };
     
     // Practice handlers
