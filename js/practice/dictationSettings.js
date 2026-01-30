@@ -9,7 +9,6 @@ import { appData } from '../core/state.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { showPracticeArea } from './practiceEngine.js';
-import { startDictation } from './dictation.js';
 
 /* ===== FIELD DEFINITIONS ===== */
 const DICTATION_FIELDS = [
@@ -507,7 +506,9 @@ export function startDictationWithSettings() {
   window.dictationSettings = runtimeSettings;
   window.practiceScope = scope;
 
-  startDictation(scope, runtimeSettings);
+  import('./dictation.js').then(m => {
+     m.startDictation(scope, runtimeSettings);
+   });
 }
 
 /* ===== init + event delegation ===== */
