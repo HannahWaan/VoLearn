@@ -360,17 +360,17 @@ function showResults() {
             </div>
             
             <div class="results-actions">
-                ${hasWrongWords ? `
-                <button class="btn-secondary" onclick="window.reviewWrongFlashcards()">
-                    <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
+              ${hasWrongWords ? `
+                <button class="btn-secondary" type="button" data-practice-action="flashcard-review-wrong">
+                  <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
                 </button>
-                ` : ''}
-                <button class="btn-primary" onclick="window.restartFlashcard()">
-                    <i class="fas fa-play"></i> Làm lại
-                </button>
-                <button class="btn-secondary" onclick="window.exitFlashcard()">
-                    <i class="fas fa-arrow-left"></i> Quay lại luyện tập
-                </button>
+              ` : ''}
+              <button class="btn-primary" type="button" data-practice-action="flashcard-restart">
+                <i class="fas fa-play"></i> Làm lại
+              </button>
+              <button class="btn-secondary" type="button" data-practice-action="practice-exit">
+                <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+              </button>
             </div>
         </div>
     `;
@@ -397,10 +397,25 @@ export function reviewWrongFlashcards() {
         return;
     }
 
-    const wrongWords = wrongAnswers.map(a => {
-        
-        return getCurrentWord(); 
-    }).filter(Boolean);
+    export function reviewWrongFlashcards() {
+      const state = getPracticeState();
+      const wrongAnswers = state.answers?.filter(a => !a.isCorrect && !a.skipped) || [];
+    
+      if (wrongAnswers.length === 0) {
+        showToast('Không có từ sai!', 'success');
+        return;
+      }
+    
+      const allWords = getWordsByScope({ type: 'all' });
+      const wrongIds = new Set(wrongAnswers.map(a => a.wordId).filter(Boolean));
+      const wrongWords = allWords.filter(w => wrongIds.has(w.id));
+    
+      if (wrongWords.length > 0) {
+        startFlashcard({ type: 'custom', words: wrongWords }, window.flashcardSettings);
+      } else {
+        showToast('Không tìm thấy từ sai!', 'warning');
+      }
+    }
 
     if (wrongWords.length > 0) {
         startFlashcard({ type: 'custom', words: wrongWords }, window.flashcardSettings);
@@ -449,6 +464,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
