@@ -153,7 +153,7 @@ export function skipWord() {
   };
 }
 
-function getCorrectAnswer(word) {
+export function getCorrectAnswer(word) {
   const mode = practiceState.mode;
 
   switch (mode) {
@@ -462,6 +462,37 @@ function shuffleArray(array) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+/* ===== ANSWER CHECKER (needed by typing.js) ===== */
+function normalizeText(s) {
+  return String(s ?? '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * checkAnswer(input, word)
+ * - typing/dictation: so với word.word
+ * - quiz/flashcard: so với word.meaning (fallback)
+ * - tôn trọng settings.caseSensitive (typing)
+ */
+export function checkAnswer(input, word) {
+  const mode = practiceState?.mode;
+  const settings = practiceState?.settings || {};
+
+  const a = normalizeText(input);
+
+  // typing/dictation: nhập lại đúng "word" (case-insensitive mặc định)
+  if (mode === 'typing' || mode === 'dictation') {
+    const b = normalizeText(word?.word);
+    const caseSensitive = !!settings.caseSensitive;
+    return caseSensitive ? a === b : a.toLowerCase() === b.toLowerCase();
+  }
+
+  // quiz/flashcard: compare meaning (giữ behavior cũ kiểu đơn giản)
+  const b = normalizeText(word?.meaning);
+  return a.toLowerCase() === b.toLowerCase();
 }
 
 /* ===== EXPORTS ===== */
