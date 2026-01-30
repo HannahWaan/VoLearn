@@ -316,6 +316,18 @@ export function initPracticeEngine() {
       continuePractice();
       return;
     }
+    if (action === 'flashcard-restart') {
+      import('./flashcard.js').then(m => m.restartFlashcard && m.restartFlashcard());
+      return;
+    }
+    if (action === 'flashcard-review-wrong') {
+      import('./flashcard.js').then(m => m.reviewWrongFlashcards && m.reviewWrongFlashcards());
+      return;
+    }
+    if (action === 'srs-done') {
+      hidePracticeArea();
+      return;
+    }
   });
 }
 
