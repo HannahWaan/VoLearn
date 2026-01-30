@@ -365,7 +365,7 @@ function showTypingResults() {
     stopTypingTimer();
     const result = finishPractice();
     
-    const container = document.getElementById('practice-area');
+    const container = document.getElementById('practice-content');
     if (!container) return;
 
     const wpm = result.duration > 0 
@@ -403,6 +403,14 @@ function showTypingResults() {
                         <span class="label">Sai</span>
                     </div>
                     <div class="stat-item">
+                        <span class="value">${result.skipped || 0}</span>
+                        <span class="label">Bỏ qua</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="value">${wpm}</span>
+                        <span class="label">WPM (ước tính)</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="value">${formatDuration(result.duration)}</span>
                         <span class="label">Thời gian</span>
                     </div>
@@ -410,15 +418,21 @@ function showTypingResults() {
             </div>
             
             <div class="results-actions">
-                <button class="btn-primary" onclick="window.restartTyping()">
+                <button class="btn-primary" type="button" data-practice-action="typing-restart">
                     <i class="fas fa-redo"></i> Làm lại
                 </button>
-                <button class="btn-secondary" onclick="window.exitTyping()">
+                <button class="btn-secondary" type="button" data-practice-action="practice-exit">
                     <i class="fas fa-home"></i> Quay lại
                 </button>
             </div>
         </div>
     `;
+
+    // Sync progress header chung
+    const bar = document.getElementById('practice-progress-bar');
+    const text = document.getElementById('practice-progress-text');
+    if (bar?.style) bar.style.width = '100%';
+    if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
 /* ===== NAVIGATION ===== */
