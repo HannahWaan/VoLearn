@@ -382,21 +382,21 @@ function showQuizResults() {
         </div>
       </div>
 
-            <div class="results-actions">
-              ${hasWrongWords ? `
-                <button class="btn-secondary" type="button" data-practice-action="quiz-review-wrong">
-                  <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
-                </button>
-              ` : ''}
-      
-              <button class="btn-primary" type="button" data-practice-action="quiz-restart">
-                <i class="fas fa-play"></i> Làm lại
-              </button>
-      
-              <button class="btn-secondary" type="button" data-practice-action="practice-exit">
-                <i class="fas fa-arrow-left"></i> Quay lại luyện tập
-              </button>
-            </div>
+                  <div class="results-actions">
+                    ${hasWrongWords ? `
+                      <button class="btn-secondary" type="button" data-practice-action="quiz-review-wrong">
+                        <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
+                      </button>
+                    ` : ''}
+            
+                    <button class="btn-primary" type="button" data-practice-action="quiz-restart">
+                      <i class="fas fa-play"></i> Làm lại
+                    </button>
+            
+                    <button class="btn-secondary" type="button" data-practice-action="practice-exit">
+                      <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+                    </button>
+                  </div>
     </div>
   `;
 
