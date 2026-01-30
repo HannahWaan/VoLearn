@@ -1,4 +1,4 @@
-/* ===== DICTATION MODE (Settings-driven) ===== */
+/* ===== DICTATION MODE (Settings-driven, schema-aware) ===== */
 /* VoLearn - Nghe - Viết (render into #practice-content) */
 
 import {
@@ -46,7 +46,7 @@ let lastCorrectText = '';
 let autoNextTimer = null;
 let uiBound = false;
 
-/* ===== FIELD RESOLUTION ===== */
+/* ===== FIELD DEFINITIONS ===== */
 const FIELD_MAP = new Map([
   [1, { key: 'word', label: 'Từ vựng' }],
   [2, { key: 'phonetic', label: 'Phát âm' }],
@@ -58,12 +58,100 @@ const FIELD_MAP = new Map([
   [8, { key: 'antonyms', label: 'Từ trái nghĩa' }]
 ]);
 
-function getFieldText(word, fieldId) {
-  const f = FIELD_MAP.get(Number(fieldId));
-  if (!f) return '';
-  const v = word?.[f.key];
+/* ===== Schema-aware value helpers ===== */
+function pickFirstMeaning(word) {
+  const m = Array.isArray(word?.meanings) ? word.meanings : [];
+  return m[0] || null;
+}
+
+function joinMaybeArray(v) {
   if (Array.isArray(v)) return v.filter(Boolean).join(', ');
   return String(v ?? '').trim();
+}
+
+function getMeaningField(meaningObj, keys) {
+  if (!meaningObj) return '';
+  for (const k of keys) {
+    const v = meaningObj?.[k];
+    const text = joinMaybeArray(v);
+    if (text) return text;
+  }
+  return '';
+}
+
+/**
+ * getFieldText resolves content from BOTH:
+ * - new schema: word.meanings[] (primary)
+ * - legacy schema: word.defVi/defEn/example/synonyms/antonyms (fallback)
+ */
+function getFieldText(word, fieldId) {
+  const id = Number(fieldId);
+
+  // Direct basic fields
+  if (id === 1) return String(word?.word ?? '').trim();
+  if (id === 2) return String(word?.phonetic ?? '').trim();
+
+  // Part of speech: might exist on word or in meaning
+  if (id === 3) {
+    const posDirect = String(word?.pos ?? word?.partOfSpeech ?? '').trim();
+    if (posDirect) return posDirect;
+
+    const m = pickFirstMeaning(word);
+    const posFromMeaning = String(m?.pos ?? m?.type ?? m?.partOfSpeech ?? '').trim();
+    return posFromMeaning;
+  }
+
+  const m = pickFirstMeaning(word);
+
+  // EN definition
+  if (id === 4) {
+    // prefer structured meaning
+    const fromMeaning = getMeaningField(m, ['defEn', 'definition', 'meaningEn', 'en', 'glossEn', 'gloss']);
+    if (fromMeaning) return fromMeaning;
+
+    // fallback legacy on root word
+    return String(word?.defEn ?? word?.definition ?? '').trim();
+  }
+
+  // VI meaning / translation
+  if (id === 5) {
+    const fromMeaning = getMeaningField(m, ['defVi', 'meaningVi', 'translation', 'vi', 'meaning', 'glossVi']);
+    if (fromMeaning) return fromMeaning;
+
+    return String(word?.defVi ?? word?.meaning ?? '').trim();
+  }
+
+  // Example
+  if (id === 6) {
+    // meaning.example could be string; meaning.examples could be array
+    const ex1 = getMeaningField(m, ['example', 'sentence', 'sample']);
+    if (ex1) return ex1;
+
+    const exArr = m?.examples;
+    if (Array.isArray(exArr) && exArr.length) {
+      const first = joinMaybeArray(exArr[0]);
+      if (first) return first;
+    }
+
+    // fallback
+    return String(word?.example ?? '').trim();
+  }
+
+  // Synonyms
+  if (id === 7) {
+    const fromMeaning = getMeaningField(m, ['synonyms', 'syns', 'similar']);
+    if (fromMeaning) return fromMeaning;
+    return joinMaybeArray(word?.synonyms);
+  }
+
+  // Antonyms
+  if (id === 8) {
+    const fromMeaning = getMeaningField(m, ['antonyms', 'ants', 'opposites']);
+    if (fromMeaning) return fromMeaning;
+    return joinMaybeArray(word?.antonyms);
+  }
+
+  return '';
 }
 
 function normalizeFieldIds(arr, fallback) {
@@ -79,7 +167,10 @@ function pickListenFieldId() {
 }
 
 function getSpeakLangForListenField(fieldId) {
+  // Nghĩa (VI) -> Vietnamese
   if (Number(fieldId) === 5) return 'vi-VN';
+
+  // Others -> English voice setting if available
   const voice = appData?.settings?.voice;
   if (typeof voice === 'string' && voice.trim()) return voice.trim();
   return 'en-US';
@@ -175,7 +266,7 @@ export function startDictation(scope, incomingSettings = {}) {
     ...incomingSettings
   };
 
-  // Hard-normalize ids to numbers 1..8 (critical)
+  // Hard-normalize ids
   settings.listenFieldIds = normalizeFieldIds(settings.listenFieldIds, [1]);
   settings.hintFieldIds = normalizeFieldIds(settings.hintFieldIds, [5]);
 
@@ -301,11 +392,10 @@ function showCurrentDictation() {
   playCount = 0;
   hintIndex = 0;
 
-  // choose listen field and derive correct text
   currentListenFieldId = pickListenFieldId();
   lastCorrectText = getFieldText(word, currentListenFieldId);
 
-  // If chosen field empty, try other chosen fields before falling back to word
+  // If chosen field is empty, try other chosen fields before falling back to word
   if (!lastCorrectText) {
     for (const fid of settings.listenFieldIds) {
       const t = getFieldText(word, fid);
@@ -388,7 +478,6 @@ function updatePlayCount() {
 
   const remaining = Math.max(0, limit - playCount);
   if (playCountEl) playCountEl.textContent = remaining > 0 ? `Còn ${remaining} lượt nghe` : 'Hết lượt nghe';
-
   if (playBtn) {
     playBtn.disabled = remaining <= 0;
     playBtn.classList.toggle('disabled', remaining <= 0);
