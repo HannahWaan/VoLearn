@@ -23,7 +23,6 @@ const DEFAULT_SETTINGS = {
   shuffle: true,
   speed: 1,
 
-  // from dictationSettings
   listenFieldIds: [1],
   hintFieldIds: [5],
   scoring: 'exact',        // exact | half | partial | lenient
@@ -67,20 +66,20 @@ function getFieldText(word, fieldId) {
   return String(v ?? '').trim();
 }
 
+function normalizeFieldIds(arr, fallback) {
+  const out = Array.isArray(arr)
+    ? arr.map(n => Number(n)).filter(n => Number.isFinite(n) && n >= 1 && n <= 8)
+    : [];
+  return out.length ? out : [...fallback];
+}
+
 function pickListenFieldId() {
-  const ids = Array.isArray(settings?.listenFieldIds) ? settings.listenFieldIds : [];
-  const pool = ids.map(Number).filter(n => Number.isFinite(n) && n >= 1 && n <= 8);
-
-  if (!pool.length) return 1;
-
+  const pool = normalizeFieldIds(settings?.listenFieldIds, [1]);
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function getSpeakLangForListenField(fieldId) {
-  // Nghĩa (VI) -> Vietnamese
   if (Number(fieldId) === 5) return 'vi-VN';
-
-  // Others -> English voice setting if available
   const voice = appData?.settings?.voice;
   if (typeof voice === 'string' && voice.trim()) return voice.trim();
   return 'en-US';
@@ -170,16 +169,15 @@ export function startDictation(scope, incomingSettings = {}) {
     return;
   }
 
-  // merge settings
   settings = {
     ...DEFAULT_SETTINGS,
     speed: appData?.settings?.speed || 1,
     ...incomingSettings
   };
 
-  // normalize arrays (critical)
-  if (!Array.isArray(settings.listenFieldIds) || settings.listenFieldIds.length === 0) settings.listenFieldIds = [1];
-  if (!Array.isArray(settings.hintFieldIds) || settings.hintFieldIds.length === 0) settings.hintFieldIds = [5];
+  // Hard-normalize ids to numbers 1..8 (critical)
+  settings.listenFieldIds = normalizeFieldIds(settings.listenFieldIds, [1]);
+  settings.hintFieldIds = normalizeFieldIds(settings.hintFieldIds, [5]);
 
   if (!initPractice('dictation', words, settings)) return;
 
@@ -303,30 +301,23 @@ function showCurrentDictation() {
   playCount = 0;
   hintIndex = 0;
 
-  // Critical: choose listen field from settings and derive correct text from that field
-currentListenFieldId = pickListenFieldId();
-lastCorrectText = getFieldText(word, currentListenFieldId);
+  // choose listen field and derive correct text
+  currentListenFieldId = pickListenFieldId();
+  lastCorrectText = getFieldText(word, currentListenFieldId);
 
-// fallback only if the chosen field is empty
-if (!lastCorrectText) {
-  // try another field from the pool before falling back to word
-  const pool = (settings.listenFieldIds || []).map(Number).filter(Boolean);
-  for (const fid of pool) {
-    const t = getFieldText(word, fid);
-    if (t) {
-      currentListenFieldId = fid;
-      lastCorrectText = t;
-      break;
+  // If chosen field empty, try other chosen fields before falling back to word
+  if (!lastCorrectText) {
+    for (const fid of settings.listenFieldIds) {
+      const t = getFieldText(word, fid);
+      if (t) {
+        currentListenFieldId = fid;
+        lastCorrectText = t;
+        break;
+      }
     }
   }
-}
 
-if (!lastCorrectText) {
-  currentListenFieldId = 1;
-  lastCorrectText = String(word?.word ?? '').trim();
-}
-
-  // If field empty, fallback to word
+  // final fallback
   if (!lastCorrectText) {
     currentListenFieldId = 1;
     lastCorrectText = String(word?.word ?? '').trim();
@@ -373,14 +364,12 @@ export function playDictationAudio() {
 
   const rate = Number(settings.speed || appData?.settings?.speed || 1);
   const text = String(lastCorrectText || '').trim();
-
   if (!text) {
     showToast('Không có nội dung để đọc', 'warning');
     return;
   }
 
   const lang = getSpeakLangForListenField(currentListenFieldId);
-  console.log('[DICTATION TTS]', { currentListenFieldId, text, lang, listenFieldIds: settings.listenFieldIds, hintFieldIds: settings.hintFieldIds });
   speak(text, { lang, rate });
 }
 
@@ -414,12 +403,7 @@ export function showDictationHint() {
   const hintEl = document.getElementById('dictation-hint');
   if (!hintEl) return;
 
-  const hintIds = Array.isArray(settings.hintFieldIds) ? settings.hintFieldIds.map(Number).filter(Boolean) : [];
-  if (!hintIds.length) {
-    showToast('Bạn chưa chọn mục gợi ý.', 'warning');
-    return;
-  }
-
+  const hintIds = normalizeFieldIds(settings.hintFieldIds, [5]);
   const fieldId = hintIds[hintIndex % hintIds.length];
   hintIndex++;
 
@@ -451,7 +435,6 @@ export function checkDictationAnswer() {
   }
 
   const { isCorrect, ratio } = evaluateAnswer(userAnswer, lastCorrectText);
-
   submitAnswer(userAnswer, isCorrect);
 
   answered = true;
@@ -495,8 +478,7 @@ export function checkDictationAnswer() {
   if (skipBtn) skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
 
   updateDictationProgress();
-
-  if (settings.autoNext) startAutoNext(2); // nếu muốn 5s: đổi thành 5
+  if (settings.autoNext) startAutoNext(2);
 }
 
 /* ===== SKIP ===== */
@@ -510,7 +492,6 @@ function skipDictationAction() {
   }
 
   skipWord();
-
   answered = true;
 
   const input = document.getElementById('dictation-answer');
@@ -542,20 +523,13 @@ function skipDictationAction() {
 /* ===== PROGRESS ===== */
 function updateDictationProgress() {
   const state = getPracticeState();
-
   const progressText = document.getElementById('dictation-progress-text');
   const progressBar = document.getElementById('dictation-progress-bar');
   const scoreEl = document.getElementById('dictation-score');
 
-  if (progressText) {
-    progressText.textContent = `${Math.min(state.currentIndex + 1, state.total)} / ${state.total}`;
-  }
-  if (progressBar) {
-    progressBar.style.width = `${state.progress}%`;
-  }
-  if (scoreEl) {
-    scoreEl.textContent = String(state.score ?? 0);
-  }
+  if (progressText) progressText.textContent = `${Math.min(state.currentIndex + 1, state.total)} / ${state.total}`;
+  if (progressBar) progressBar.style.width = `${state.progress}%`;
+  if (scoreEl) scoreEl.textContent = String(state.score ?? 0);
 }
 
 /* ===== AUTO NEXT ===== */
