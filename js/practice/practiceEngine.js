@@ -192,4 +192,284 @@ function updateWordStats(wordId, correct) {
   }
 }
 
-/* ===== FINISH PRA
+/* ===== FINISH PRACTICE ===== */
+export function finishPractice() {
+  const endTime = Date.now();
+  const duration = Math.round((endTime - practiceState.startTime) / 1000);
+
+  const result = {
+    mode: practiceState.mode,
+    total: practiceState.words.length,
+    score: practiceState.score,
+    wrong: practiceState.wrong,
+    skipped: practiceState.skipped,
+    accuracy: practiceState.words.length > 0
+      ? Math.round((practiceState.score / practiceState.words.length) * 100)
+      : 0,
+    duration,
+    answers: practiceState.answers,
+    timestamp: new Date().toISOString()
+  };
+
+  savePracticeHistory(result);
+  updateStreak();
+  saveData(appData);
+
+  return result;
+}
+
+function savePracticeHistory(result) {
+  if (!appData.history) appData.history = [];
+
+  appData.history.push({
+    type: 'practice',
+    mode: result.mode,
+    date: new Date().toISOString().split('T')[0],
+    wordsCount: result.total,
+    correct: result.score,
+    wrong: result.wrong,
+    accuracy: result.accuracy,
+    duration: result.duration
+  });
+
+  if (appData.history.length > 100) {
+    appData.history = appData.history.slice(-100);
+  }
+}
+
+function updateStreak() {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+  if (appData.lastPracticeDate === today) return;
+
+  if (appData.lastPracticeDate === yesterday) {
+    appData.streak = (appData.streak || 0) + 1;
+  } else {
+    appData.streak = 1;
+  }
+
+  appData.lastPracticeDate = today;
+}
+
+/* ===== GETTERS ===== */
+export function getPracticeState() {
+  return {
+    mode: practiceState.mode,
+    settings: practiceState.settings,
+    currentIndex: practiceState.currentIndex,
+    total: practiceState.words.length,
+    score: practiceState.score,
+    wrong: practiceState.wrong,
+    skipped: practiceState.skipped,
+    progress: practiceState.words.length > 0
+      ? Math.round((practiceState.currentIndex / practiceState.words.length) * 100)
+      : 0
+  };
+}
+
+export function getWrongAnswers() {
+  return practiceState.answers.filter(a => !a.isCorrect && !a.skipped);
+}
+
+export function resetPractice() {
+  practiceState = {
+    mode: null,
+    words: [],
+    currentIndex: 0,
+    score: 0,
+    wrong: 0,
+    skipped: 0,
+    startTime: null,
+    answers: [],
+    settings: {}
+  };
+}
+
+/* ===== PRACTICE SHELL (COMMON PROGRESS/BACK) ===== */
+function updateCommonPracticeHeader() {
+  const state = getPracticeState();
+  const text = document.getElementById('practice-progress-text');
+  const bar = document.getElementById('practice-progress-bar');
+
+  if (text) text.textContent = `${Math.min(state.currentIndex + 1, state.total)} / ${state.total}`;
+  if (bar) bar.style.width = `${state.progress}%`;
+}
+
+/* ===== SRS COUNT ===== */
+export function initPracticeEngine() {
+  updateSRSCount();
+  window.addEventListener('volearn:dataChanged', updateSRSCount);
+  window.addEventListener('volearn:dataSaved', updateSRSCount);
+
+  // Centralize click handling for pause summary actions (no inline onclick)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-practice-action]');
+    if (!btn) return;
+
+    const action = btn.getAttribute('data-practice-action');
+    if (action === 'practice-exit') {
+      hidePracticeArea();
+      return;
+    }
+    if (action === 'practice-resume') {
+      continuePractice();
+      return;
+    }
+  });
+}
+
+export function updateSRSCount() {
+  const now = new Date();
+  const dueWords = (appData.vocabulary || []).filter(w => {
+    if (!w.nextReview) return true;
+    return new Date(w.nextReview) <= now;
+  });
+
+  const countEl = document.getElementById('srs-count');
+  if (countEl) countEl.textContent = dueWords.length;
+
+  const btnStart = document.getElementById('btn-start-srs');
+  if (btnStart) {
+    btnStart.disabled = dueWords.length === 0;
+  }
+}
+
+/* ===== BACK HANDLER ===== */
+export function handlePracticeBack() {
+  const reviewed = practiceState.answers?.length || 0;
+  if (reviewed === 0) {
+    hidePracticeArea();
+    return;
+  }
+  showPracticeSummary();
+}
+
+/* ===== PAUSE SUMMARY (NO INLINE ONCLICK) ===== */
+export function showPracticeSummary() {
+  const total = practiceState.words.length;
+  const reviewed = practiceState.currentIndex;
+  const remaining = total - reviewed;
+
+  const container = document.getElementById('practice-content');
+  if (!container) return;
+
+  // Keep the common header accurate even while paused
+  updateCommonPracticeHeader();
+
+  container.innerHTML = `
+    <div class="practice-summary" data-render="practice-summary">
+      <i class="fas fa-pause-circle summary-icon"></i>
+      <h2>Tạm dừng luyện tập</h2>
+
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-stat-value">${reviewed}</span>
+          <span class="summary-stat-label">Đã làm</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-value">${remaining}</span>
+          <span class="summary-stat-label">Còn lại</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-value">${total}</span>
+          <span class="summary-stat-label">Tổng</span>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <!-- NOTE: No "back riêng" nữa, back chung ở header (handlePracticeBack/hidePracticeArea) -->
+        <button class="btn-secondary" type="button" data-practice-action="practice-exit">
+          <i class="fas fa-home"></i> Quay lại luyện tập
+        </button>
+        <button class="btn-primary" type="button" data-practice-action="practice-resume">
+          <i class="fas fa-play"></i> Tiếp tục
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+/* ===== SHOW/HIDE PRACTICE AREA ===== */
+export function hidePracticeArea() {
+  const practiceArea = document.getElementById('practice-area');
+  const practiceModes = document.getElementById('practice-modes');
+  const practiceSection = document.getElementById('practice-section');
+  const practiceContent = document.getElementById('practice-content');
+
+  if (practiceArea) practiceArea.style.display = 'none';
+
+  if (practiceModes) {
+    practiceModes.style.display = '';
+    practiceModes.style.visibility = 'visible';
+    practiceModes.style.opacity = '1';
+  }
+
+  if (practiceContent) practiceContent.innerHTML = '';
+
+  if (practiceSection) practiceSection.classList.remove('in-session');
+
+  resetPractice();
+  updateSRSCount();
+
+  import('../core/router.js').then(router => {
+    router.navigate('practice');
+  });
+
+  console.log('✅ Practice area hidden, back to practice modes');
+}
+
+export function showPracticeArea() {
+  const practiceArea = document.getElementById('practice-area');
+  const practiceModes = document.getElementById('practice-modes');
+
+  if (practiceArea) practiceArea.style.display = 'block';
+  if (practiceModes) practiceModes.style.display = 'none';
+
+  document.getElementById('practice-section')?.classList.add('in-session');
+
+  // ensure common header starts fresh
+  updateCommonPracticeHeader();
+}
+
+/* ===== CONTINUE PRACTICE ===== */
+export function continuePractice() {
+  updateCommonPracticeHeader();
+
+  const mode = practiceState.mode;
+  switch (mode) {
+    case 'flashcard':
+      import('./flashcard.js').then(m => m.renderFlashcard && m.renderFlashcard());
+      break;
+    case 'quiz':
+      import('./quiz.js').then(m => m.renderQuiz && m.renderQuiz());
+      break;
+    case 'dictation':
+      // dictation module uses internal render via start flow; safest is to just re-render current UI if present
+      import('./dictation.js').then(m => m.startDictation && m.startDictation(window.practiceScope, window.dictationSettings));
+      break;
+    case 'typing':
+      import('./typing.js').then(m => m.renderTyping && m.renderTyping());
+      break;
+  }
+}
+
+/* ===== UTILITIES ===== */
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/* ===== EXPORTS ===== */
+export { practiceState };
+
+// Globals
+window.handlePracticeBack = handlePracticeBack;
+window.hidePracticeArea = hidePracticeArea;
+window.showPracticeArea = showPracticeArea;
+window.continuePractice = continuePractice;
+window.updateSRSCount = updateSRSCount;
