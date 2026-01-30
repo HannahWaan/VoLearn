@@ -95,23 +95,13 @@ export function startTyping(scope, settings = {}) {
 
 /* ===== RENDER UI (keep VoLearn UI) ===== */
 function renderTypingUI() {
-  const container = document.getElementById('practice-area');
+  const container = document.getElementById('practice-content');
   if (!container) return;
 
   container.innerHTML = `
-    <div class="typing-container">
-      <div class="typing-header">
-        <button class="btn-icon btn-back" onclick="window.exitTyping()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-
-        <div class="typing-progress">
-          <span id="typing-progress-text">1 / 10</span>
-          <div class="progress-bar">
-            <div id="typing-progress-bar" class="progress-fill"></div>
-          </div>
-        </div>
-
+    <div class="typing-container" data-render="typing-ui">
+      <!-- typing-header bỏ nút back riêng; progress dùng header chung -->
+      <div class="typing-header" style="justify-content:flex-end;">
         <div class="typing-stats">
           <span id="typing-score" class="stat-correct">0</span>
           <span>/</span>
@@ -121,9 +111,7 @@ function renderTypingUI() {
 
       <div class="typing-main">
         <div class="typing-word-display">
-          <!-- We will render hints here instead of old meaning/phonetic -->
           <div class="word-meaning" id="typing-meaning"></div>
-
           <div class="word-preview" id="word-preview"></div>
         </div>
 
@@ -145,21 +133,38 @@ function renderTypingUI() {
       </div>
 
       <div class="typing-controls">
-        <button class="btn-icon btn-speak" onclick="window.speakTypingWord()" title="Nghe phát âm">
+        <button class="btn-icon btn-speak" type="button" data-action="typing-speak" title="Nghe phát âm">
           <i class="fas fa-volume-up"></i>
         </button>
-        <button class="btn-secondary" onclick="window.skipTyping()">
+        <button class="btn-secondary" type="button" data-action="typing-skip">
           Bỏ qua <i class="fas fa-forward"></i>
         </button>
       </div>
     </div>
   `;
 
+  // Input listeners
   const input = document.getElementById('typing-input');
   if (input) {
     input.addEventListener('input', handleTypingInput);
     input.addEventListener('keydown', handleTypingKeydown);
   }
+
+  // Control buttons (no inline onclick)
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+
+    const act = btn.getAttribute('data-action');
+    if (act === 'typing-speak') {
+      speakTypingWord();
+      return;
+    }
+    if (act === 'typing-skip') {
+      skipTyping();
+      return;
+    }
+  }, { once: true }); // rebind each renderTypingUI
 }
 
 /* ===== SHOW CURRENT ===== */
@@ -541,17 +546,12 @@ export function toggleTypingShowAnswer() {
 function updateTypingProgress() {
   const state = getPracticeState();
 
-  const progressText = document.getElementById('typing-progress-text');
-  const progressBar = document.getElementById('typing-progress-bar');
   const scoreEl = document.getElementById('typing-score');
   const wrongEl = document.getElementById('typing-wrong');
-
-  if (progressText) progressText.textContent = `${Math.min(state.currentIndex + 1, state.total)} / ${state.total}`;
-  if (progressBar) progressBar.style.width = `${state.progress}%`;
   if (scoreEl) scoreEl.textContent = state.score;
   if (wrongEl) wrongEl.textContent = state.wrong;
 
-  // also sync common header if present
+  // sync common header
   const bar2 = document.getElementById('practice-progress-bar');
   const text2 = document.getElementById('practice-progress-text');
   if (bar2?.style) bar2.style.width = `${state.progress}%`;
