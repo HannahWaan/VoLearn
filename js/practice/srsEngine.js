@@ -210,28 +210,57 @@ function updateReviewHistory(wordId) {
 
 /* ===== END SRS REVIEW ===== */
 function endSRSReview() {
-    const container = document.getElementById('practice-content');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="practice-complete">
-            <i class="fas fa-trophy"></i>
-            <h2>Hoàn thành!</h2>
-            <p>Bạn đã ôn tập ${srsState.wordsReviewed} từ</p>
-            <button class="btn-primary" onclick="window.hidePracticeArea()">
-                <i class="fas fa-check"></i> Xong
-            </button>
+  const container = document.getElementById('practice-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="practice-results">
+      <div class="results-header">
+        <i class="fas fa-check-circle"></i>
+        <h2>Hoàn thành SRS!</h2>
+      </div>
+
+      <div class="results-stats">
+        <div class="stat-circle">
+          <svg viewBox="0 0 36 36">
+            <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="stat-fill" stroke-dasharray="100, 100"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          </svg>
+          <span class="stat-value">100%</span>
         </div>
-    `;
-    
-    // Update streak
-    updateStreak();
-    
-    // Update counts
-    updateSRSCount();
-    
-    // Save
-    saveData(appData);
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="value">${srsState.wordsReviewed}</span>
+            <span class="label">Đã ôn</span>
+          </div>
+          <div class="stat-item">
+            <span class="value">${srsState.words.length}</span>
+            <span class="label">Tổng</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn-primary" type="button" data-practice-action="srs-done">
+          <i class="fas fa-check"></i> Xong
+        </button>
+        <button class="btn-secondary" type="button" data-practice-action="practice-exit">
+          <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Update streak
+  updateStreak();
+
+  // Update counts
+  updateSRSCount();
+
+  // Save
+  saveData(appData);
 }
 
 /* ===== UPDATE STREAK ===== */
