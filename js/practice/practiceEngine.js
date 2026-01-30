@@ -336,6 +336,10 @@ export function initPracticeEngine() {
        import('./quiz.js').then(m => m.reviewWrongQuiz && m.reviewWrongQuiz());
        return;
      }
+      if (action === 'typing-restart') {
+        import('./typing.js').then(m => m.restartTyping && m.restartTyping());
+        return;
+      }
   });
 }
 
