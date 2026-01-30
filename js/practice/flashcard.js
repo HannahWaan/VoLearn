@@ -390,36 +390,23 @@ export function restartFlashcard() {
 }
 
 export function reviewWrongFlashcards() {
-    const wrongAnswers = getPracticeState().answers?.filter(a => !a.isCorrect) || [];
-    
-    if (wrongAnswers.length === 0) {
-        showToast('Không có từ sai!', 'success');
-        return;
-    }
+  const state = getPracticeState();
+  const wrongAnswers = state.answers?.filter(a => !a.isCorrect && !a.skipped) || [];
 
-    export function reviewWrongFlashcards() {
-      const state = getPracticeState();
-      const wrongAnswers = state.answers?.filter(a => !a.isCorrect && !a.skipped) || [];
-    
-      if (wrongAnswers.length === 0) {
-        showToast('Không có từ sai!', 'success');
-        return;
-      }
-    
-      const allWords = getWordsByScope({ type: 'all' });
-      const wrongIds = new Set(wrongAnswers.map(a => a.wordId).filter(Boolean));
-      const wrongWords = allWords.filter(w => wrongIds.has(w.id));
-    
-      if (wrongWords.length > 0) {
-        startFlashcard({ type: 'custom', words: wrongWords }, window.flashcardSettings);
-      } else {
-        showToast('Không tìm thấy từ sai!', 'warning');
-      }
-    }
+  if (wrongAnswers.length === 0) {
+    showToast('Không có từ sai!', 'success');
+    return;
+  }
 
-    if (wrongWords.length > 0) {
-        startFlashcard({ type: 'custom', words: wrongWords }, window.flashcardSettings);
-    }
+  const allWords = getWordsByScope({ type: 'all' });
+  const wrongIds = new Set(wrongAnswers.map(a => a.wordId).filter(Boolean));
+  const wrongWords = allWords.filter(w => wrongIds.has(w.id));
+
+  if (wrongWords.length > 0) {
+    startFlashcard({ type: 'custom', words: wrongWords }, window.flashcardSettings);
+  } else {
+    showToast('Không tìm thấy từ sai!', 'warning');
+  }
 }
 
 /* ===== UTILITIES ===== */
@@ -464,6 +451,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
