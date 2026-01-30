@@ -473,7 +473,7 @@ export function continuePractice() {
       import('./dictation.js').then(m => m.startDictation && m.startDictation(window.practiceScope, window.dictationSettings));
       break;
     case 'typing':
-      import('./typing.js').then(m => m.renderTyping && m.renderTyping());
+      import('./typing.js').then(m => m.startTyping && m.startTyping(window.practiceScope, window.typingSettings));
       break;
   }
 }
