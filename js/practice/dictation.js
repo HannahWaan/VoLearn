@@ -68,9 +68,11 @@ function getFieldText(word, fieldId) {
 }
 
 function pickListenFieldId() {
-  const ids = Array.isArray(settings.listenFieldIds) ? settings.listenFieldIds : [1];
-  const pool = ids.map(Number).filter(Boolean);
+  const ids = Array.isArray(settings?.listenFieldIds) ? settings.listenFieldIds : [];
+  const pool = ids.map(Number).filter(n => Number.isFinite(n) && n >= 1 && n <= 8);
+
   if (!pool.length) return 1;
+
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -302,8 +304,27 @@ function showCurrentDictation() {
   hintIndex = 0;
 
   // Critical: choose listen field from settings and derive correct text from that field
-  currentListenFieldId = pickListenFieldId();
-  lastCorrectText = getFieldText(word, currentListenFieldId);
+currentListenFieldId = pickListenFieldId();
+lastCorrectText = getFieldText(word, currentListenFieldId);
+
+// fallback only if the chosen field is empty
+if (!lastCorrectText) {
+  // try another field from the pool before falling back to word
+  const pool = (settings.listenFieldIds || []).map(Number).filter(Boolean);
+  for (const fid of pool) {
+    const t = getFieldText(word, fid);
+    if (t) {
+      currentListenFieldId = fid;
+      lastCorrectText = t;
+      break;
+    }
+  }
+}
+
+if (!lastCorrectText) {
+  currentListenFieldId = 1;
+  lastCorrectText = String(word?.word ?? '').trim();
+}
 
   // If field empty, fallback to word
   if (!lastCorrectText) {
