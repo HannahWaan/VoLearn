@@ -328,6 +328,14 @@ export function initPracticeEngine() {
       hidePracticeArea();
       return;
     }
+     if (action === 'quiz-restart') {
+       import('./quiz.js').then(m => m.restartQuiz && m.restartQuiz());
+       return;
+     }
+     if (action === 'quiz-review-wrong') {
+       import('./quiz.js').then(m => m.reviewWrongQuiz && m.reviewWrongQuiz());
+       return;
+     }
   });
 }
 
