@@ -359,6 +359,7 @@ export function playDictationAudio() {
   }
 
   const lang = getSpeakLangForListenField(currentListenFieldId);
+  console.log('[DICTATION TTS]', { currentListenFieldId, text, lang, listenFieldIds: settings.listenFieldIds, hintFieldIds: settings.hintFieldIds });
   speak(text, { lang, rate });
 }
 
