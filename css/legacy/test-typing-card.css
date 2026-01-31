@@ -1,0 +1,168 @@
+/* =============================================
+   TYPING UI - Test Dark card (scoped)
+   ============================================= */
+
+#practice-section.in-session #practice-content .typing-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-main {
+  width: 100%;
+  min-height: 480px;
+  margin: 0 auto;
+  padding: 34px;
+  border-radius: 20px;
+
+  background: rgba(18, 12, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: rgba(255, 255, 255, 0.92);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-main::before{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.25), rgba(180,100,255,0.25)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-title{
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-meaning{
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+
+  text-align: left;
+  line-height: 1.5;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-hint-line{
+  margin: 6px 0;
+  color: rgba(255,255,255,0.88);
+}
+#practice-section.in-session #practice-content .typing-container .typing-hint-line strong{
+  color: rgba(255,255,255,0.65);
+  font-weight: 700;
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-reveal{
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+
+  background: rgba(255, 107, 157, 0.10);
+  border: 1px solid rgba(255, 107, 157, 0.22);
+  color: rgba(255,255,255,0.92);
+  text-align: left;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-timer{
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-input{
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-input{
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 14px;
+  box-sizing: border-box;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.92);
+
+  outline: none;
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-input:focus{
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-input.correct{
+  border-color: rgba(46, 213, 115, 0.85);
+}
+#practice-section.in-session #practice-content .typing-container #typing-input.wrong{
+  border-color: rgba(255, 71, 87, 0.85);
+}
+
+#practice-section.in-session #practice-content .typing-container #typing-feedback{
+  max-width: 860px;
+  margin: 14px auto 0;
+  text-align: center;
+  font-weight: 800;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-actions{
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+
+  max-width: 860px;
+  margin: 18px auto 0;
+}
+
+#practice-section.in-session #practice-content .typing-container .typing-actions .btn-primary{
+  padding: 14px 32px;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px){
+  #practice-section.in-session #practice-content .typing-container .typing-main{
+    padding: 22px;
+    min-height: 0;
+  }
+
+  #practice-section.in-session #practice-content .typing-container #typing-meaning,
+  #practice-section.in-session #practice-content .typing-container #typing-reveal,
+  #practice-section.in-session #practice-content .typing-container .typing-input,
+  #practice-section.in-session #practice-content .typing-container #typing-feedback,
+  #practice-section.in-session #practice-content .typing-container .typing-actions{
+    max-width: 100%;
+  }
+}
