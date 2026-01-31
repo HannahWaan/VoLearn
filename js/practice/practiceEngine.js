@@ -378,15 +378,51 @@ export function finishPractice() {
 function savePracticeHistory(result) {
   if (!appData.history) appData.history = [];
 
+  const answers = Array.isArray(result.answers) ? result.answers : [];
+  const wrongWordIds = [];
+  const skippedWordIds = [];
+
+  for (const a of answers) {
+    if (!a || !a.wordId) continue;
+    if (a.skipped) skippedWordIds.push(a.wordId);
+    else if (a.isCorrect === false) wrongWordIds.push(a.wordId);
+  }
+
+  // Lưu tối đa để tránh nặng localStorage
+  const trimIds = (arr, max = 80) => arr.slice(0, max);
+  const trimAnswers = (arr, max = 120) => arr.slice(0, max);
+
   appData.history.push({
     type: 'practice',
     mode: result.mode,
+
+    // giữ tương thích cũ
     date: new Date().toISOString().split('T')[0],
+
+    // thêm timestamp để lọc theo ngày chính xác hơn
+    timestamp: result.timestamp || new Date().toISOString(),
+
     wordsCount: result.total,
     correct: result.score,
     wrong: result.wrong,
+    skipped: result.skipped || 0,
     accuracy: result.accuracy,
-    duration: result.duration
+    duration: result.duration,
+
+    // NEW: phục vụ Mistake Review (Hybrid)
+    wrongWordIds: trimIds(wrongWordIds, 120),
+    skippedWordIds: trimIds(skippedWordIds, 120),
+
+    // NEW: lưu answers rút gọn (đủ để lấy wordId/isCorrect/skipped)
+    answers: trimAnswers(
+      answers.map(a => ({
+        wordId: a.wordId,
+        isCorrect: a.isCorrect,
+        skipped: !!a.skipped,
+        timestamp: a.timestamp
+      })),
+      160
+    )
   });
 
   if (appData.history.length > 100) {
