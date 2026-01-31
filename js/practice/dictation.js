@@ -499,6 +499,7 @@ function skipDictationAction() {
   }
 
   updateCommonHeaderProgress();
+  if (settings.autoNext) startAutoNext(5);
   setTimeout(showCurrentDictation, 700);
 }
 
