@@ -209,16 +209,63 @@ function getWeakWordsHybrid(limit = 30) {
   return out;
 }
 
-async function startWeakWordsDrill() {
-  const words = getWeakWordsHybrid(30);
+function getWeakReviewSettings() {
+  const s = appData?.settings?.weakReviewSettings || {};
+  return {
+    days: Number(s.days || 14),
+    limit: Number(s.limit || 30),
+    runMode: String(s.runMode || 'typing'),
+    typingScoring: String(s.typingScoring || 'lenient'),
+    showAnswer: s.showAnswer !== false,
+    autoCorrect: s.autoCorrect !== false,
+    autoNext: s.autoNext !== false
+  };
+}
+
+async function startWeakWordsDrill(customSettings) {
+  const cfg = { ...getWeakReviewSettings(), ...(customSettings || {}) };
+
+  const days = [7, 14, 30].includes(cfg.days) ? cfg.days : 14;
+  const limit = Number.isFinite(cfg.limit) ? Math.max(4, Math.min(100, cfg.limit)) : 30;
+  const runMode = (cfg.runMode === 'quiz') ? 'quiz' : 'typing';
+
+  // compute words & wrong recent count
+  const recentWrongIds = getWeakWordIdsFromHistory(days, 9999);
+  const words = getWeakWordsHybrid(limit);
+
+  const recentWrongCount = recentWrongIds.size;
 
   if (!words.length || words.length < 4) {
     showToast('Chưa đủ từ yếu để ôn. Hãy luyện tập thêm!', 'warning');
     return;
   }
 
+  showToast(`Ôn từ yếu: ${words.length} từ (${recentWrongCount} từ sai gần đây)`, 'success');
+
   const scope = { type: 'custom', words };
 
+  if (runMode === 'quiz') {
+    // OPTION (để sau bạn tinh chỉnh thêm UI preset quiz): dùng quiz defaults
+    const quizMod = await import('./quiz.js');
+    const quizSettings = {
+      shuffle: true,
+      optionCount: 4,
+      timeLimit: 0,
+      autoNext: true,
+      autoNextSeconds: 5,
+      autoSkip: false,
+      questionFieldIds: [1, 5],
+      answerFieldIds: [1],
+      showPhonetic: false,
+      speakQuestion: false
+    };
+    window.practiceScope = scope;
+    window.quizSettings = quizSettings;
+    quizMod?.startQuiz?.(scope, quizSettings);
+    return;
+  }
+
+  // typing preset (B1)
   const preset = {
     shuffle: true,
     limit: 0,
@@ -226,12 +273,12 @@ async function startWeakWordsDrill() {
     answerFieldIds: [1],
     hintFieldIds: [5, 3, 6],
 
-    scoring: 'lenient',
-    showAnswer: true,
+    scoring: cfg.typingScoring || 'lenient',
+    showAnswer: !!cfg.showAnswer,
     strictMode: false,
 
-    autoNext: true,
-    autoCorrect: true,
+    autoNext: !!cfg.autoNext,
+    autoCorrect: !!cfg.autoCorrect,
 
     showFirstLetter: true,
     showLength: true,
@@ -243,11 +290,7 @@ async function startWeakWordsDrill() {
   window.typingSettings = preset;
 
   const mod = await import('./typing.js');
-  if (mod?.startTyping) {
-    mod.startTyping(scope, preset);
-  } else {
-    showToast('Không thể khởi chạy Typing!', 'error');
-  }
+  mod?.startTyping?.(scope, preset);
 }
 
 /* ===== PRACTICE FLOW ===== */
@@ -498,7 +541,7 @@ export function initPracticeEngine() {
   document.addEventListener('click', (e) => {
     const btnWeak = e.target.closest('#btn-start-srs');
     if (btnWeak) {
-      startWeakWordsDrill();
+      swindow.openWeakReviewSettings?.();
     }
   });
   // Centralize click handling for summary/results actions (no inline onclick)
@@ -700,3 +743,4 @@ window.hidePracticeArea = hidePracticeArea;
 window.showPracticeArea = showPracticeArea;
 window.continuePractice = continuePractice;
 window.updateSRSCount = updateSRSCount;
+window.startWeakReviewWithSettings = (s) => startWeakWordsDrill(s);
