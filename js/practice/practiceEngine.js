@@ -60,9 +60,24 @@ export function getWordsByScope(scope) {
 }
 
 function getAllWords() {
-  const words = [...(appData.vocabulary || [])];
-  appData.sets?.forEach(set => { if (set.words) words.push(...set.words); });
-  return words;
+  const words = [];
+  if (Array.isArray(appData.vocabulary)) words.push(...appData.vocabulary);
+  if (Array.isArray(appData.sets)) {
+    appData.sets.forEach(set => {
+      if (Array.isArray(set?.words)) words.push(...set.words);
+    });
+  }
+
+  const seen = new Set();
+  const out = [];
+  for (const w of words) {
+    const id = w?.id;
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(w);
+  }
+  return out;
 }
 
 function getWordsFromSet(setId) {
@@ -91,6 +106,148 @@ function getWeakWords() {
     const accuracy = w.correctCount / w.reviewCount;
     return accuracy < 0.7;
   });
+}
+
+function toDayKey(d) {
+  const dt = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+}
+
+function getWeakWordIdsFromHistory(days = 14, maxIds = 200) {
+  const ids = new Set();
+  const hist = Array.isArray(appData.history) ? appData.history : [];
+  if (hist.length === 0) return ids;
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - Math.max(1, Number(days || 14)));
+
+  for (let i = hist.length - 1; i >= 0; i--) {
+    const h = hist[i];
+    const dateKey = toDayKey(h?.timestamp || h?.date);
+    if (!dateKey) continue;
+
+    const d = new Date(dateKey);
+    if (d < cutoff) break;
+
+    const answers = Array.isArray(h?.answers) ? h.answers : null;
+    if (!answers) continue;
+
+    for (const a of answers) {
+      if (!a) continue;
+      if (a.skipped) continue;
+      if (a.isCorrect === false && a.wordId) ids.add(a.wordId);
+      if (ids.size >= maxIds) return ids;
+    }
+  }
+  return ids;
+}
+
+function getWeakWordsHybrid(limit = 30) {
+  const all = getAllWords();
+
+  const byId = new Map();
+  for (const w of all) {
+    if (w?.id) byId.set(w.id, w);
+  }
+
+  const historyWrongIds = getWeakWordIdsFromHistory(14, 300);
+
+  const weakByStats = [];
+  for (const w of all) {
+    const review = Number(w.reviewCount || 0);
+    const correct = Number(w.correctCount || 0);
+    const acc = review > 0 ? (correct / review) : 0;
+
+    const isWeak =
+      review === 0 ||
+      correct === 0 ||
+      acc < 0.7 ||
+      Number(w.streak || 0) === 0;
+
+    if (isWeak) weakByStats.push(w);
+  }
+
+  const scored = [];
+  for (const w of weakByStats) {
+    const review = Number(w.reviewCount || 0);
+    const correct = Number(w.correctCount || 0);
+    const acc = review > 0 ? (correct / review) : 0;
+
+    const historyBoost = historyWrongIds.has(w.id) ? 1000 : 0;
+    const neverReviewedBoost = review === 0 ? 200 : 0;
+    const lowAccBoost = Math.round((1 - acc) * 100);
+    const streakPenalty = Number(w.streak || 0) > 0 ? 10 : 0;
+
+    let recencyBoost = 0;
+    if (w.lastReviewed) {
+      const t = new Date(w.lastReviewed).getTime();
+      if (!Number.isNaN(t)) {
+        const hours = (Date.now() - t) / 3600000;
+        recencyBoost = Math.max(0, 48 - Math.min(48, hours)); // ưu tiên sai gần đây nhẹ
+      }
+    }
+
+    const score = historyBoost + neverReviewedBoost + lowAccBoost + recencyBoost - streakPenalty;
+
+    scored.push({ w, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const out = [];
+  const seen = new Set();
+  for (const item of scored) {
+    const w = item.w;
+    if (!w?.id) continue;
+    if (seen.has(w.id)) continue;
+    seen.add(w.id);
+    out.push(w);
+    if (out.length >= Math.max(4, Number(limit || 30))) break;
+  }
+
+  return out;
+}
+
+async function startWeakWordsDrill() {
+  const words = getWeakWordsHybrid(30);
+
+  if (!words.length || words.length < 4) {
+    showToast('Chưa đủ từ yếu để ôn. Hãy luyện tập thêm!', 'warning');
+    return;
+  }
+
+  const scope = { type: 'custom', words };
+
+  const preset = {
+    shuffle: true,
+    limit: 0,
+
+    answerFieldIds: [1],
+    hintFieldIds: [5, 3, 6],
+
+    scoring: 'lenient',
+    showAnswer: true,
+    strictMode: false,
+
+    autoNext: true,
+    autoCorrect: true,
+
+    showFirstLetter: true,
+    showLength: true,
+
+    timeLimit: 0
+  };
+
+  window.practiceScope = scope;
+  window.typingSettings = preset;
+
+  const mod = await import('./typing.js');
+  if (mod?.startTyping) {
+    mod.startTyping(scope, preset);
+  } else {
+    showToast('Không thể khởi chạy Typing!', 'error');
+  }
 }
 
 /* ===== PRACTICE FLOW ===== */
@@ -302,7 +459,12 @@ export function initPracticeEngine() {
   updateSRSCount();
   window.addEventListener('volearn:dataChanged', updateSRSCount);
   window.addEventListener('volearn:dataSaved', updateSRSCount);
-
+  document.addEventListener('click', (e) => {
+    const btnWeak = e.target.closest('#btn-start-srs');
+    if (btnWeak) {
+      startWeakWordsDrill();
+    }
+  });
   // Centralize click handling for summary/results actions (no inline onclick)
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-practice-action]');
@@ -337,17 +499,13 @@ export function initPracticeEngine() {
 }
 
 export function updateSRSCount() {
-  const now = new Date();
-  const dueWords = (appData.vocabulary || []).filter(w => {
-    if (!w.nextReview) return true;
-    return new Date(w.nextReview) <= now;
-  });
+  const weakWords = getWeakWordsHybrid(9999);
 
   const countEl = document.getElementById('srs-count');
-  if (countEl) countEl.textContent = dueWords.length;
+  if (countEl) countEl.textContent = weakWords.length;
 
   const btnStart = document.getElementById('btn-start-srs');
-  if (btnStart) btnStart.disabled = dueWords.length === 0;
+  if (btnStart) btnStart.disabled = weakWords.length < 4;
 }
 
 /* ===== BACK HANDLER ===== */
