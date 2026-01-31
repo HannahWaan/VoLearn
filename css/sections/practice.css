@@ -517,30 +517,26 @@
         flex-direction: column;
         gap: 20px;
     }
-    
-@media (max-width: 520px) {
-    #practice-section .stats-grid {
-        grid-template-columns: 1fr;
-    }
-}
-    
+
     #practice-section .summary-actions,
     #practice-section .results-actions {
         flex-direction: column;
     }
-    
+
     #practice-section .summary-actions .btn-secondary,
     #practice-section .summary-actions .btn-primary,
     #practice-section .results-actions button {
         width: 100%;
     }
-    
+
     #practice-section .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         max-width: 100%;
     }
 }
 
-
-
-
+@media (max-width: 520px) {
+    #practice-section .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
