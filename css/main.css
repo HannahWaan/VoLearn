@@ -40,6 +40,9 @@
 /* ===== UTILITIES ===== */
 @import './utilities/responsive.css';
 
+/* ===== LEGACY ===== */
+@import url("./legacy/test-typing-card.css");
+
 
 
 
