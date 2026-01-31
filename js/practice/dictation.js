@@ -469,7 +469,7 @@ export function checkDictationAnswer() {
   if (skipBtn) skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
 
   updateCommonHeaderProgress();
-  if (settings.autoNext) startAutoNext(2);
+  if (settings.autoNext) startAutoNext(5);
 }
 
 /* ===== SKIP ===== */
