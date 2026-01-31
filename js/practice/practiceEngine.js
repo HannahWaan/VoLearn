@@ -264,7 +264,8 @@ export function getPracticeState() {
     skipped: practiceState.skipped,
     progress: practiceState.words.length > 0
       ? Math.round((practiceState.currentIndex / practiceState.words.length) * 100)
-      : 0
+      : 0,
+    answers: practiceState.answers
   };
 }
 
@@ -302,44 +303,36 @@ export function initPracticeEngine() {
   window.addEventListener('volearn:dataChanged', updateSRSCount);
   window.addEventListener('volearn:dataSaved', updateSRSCount);
 
-  // Centralize click handling for pause summary actions (no inline onclick)
+  // Centralize click handling for summary/results actions (no inline onclick)
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-practice-action]');
     if (!btn) return;
 
     const action = btn.getAttribute('data-practice-action');
-    if (action === 'practice-exit') {
-      hidePracticeArea();
+
+    // Common
+    if (action === 'practice-exit') { hidePracticeArea(); return; }
+    if (action === 'practice-resume') { continuePractice(); return; }
+
+    // Flashcard
+    if (action === 'flashcard-restart') { import('./flashcard.js').then(m => m.restartFlashcard?.()); return; }
+    if (action === 'flashcard-review-wrong') { import('./flashcard.js').then(m => m.reviewWrongFlashcards?.()); return; }
+
+    // SRS
+    if (action === 'srs-done') { hidePracticeArea(); return; }
+
+    // Quiz
+    if (action === 'quiz-restart') { import('./quiz.js').then(m => m.restartQuiz?.()); return; }
+    if (action === 'quiz-review-wrong') { import('./quiz.js').then(m => m.reviewWrongQuiz?.()); return; }
+
+    // Typing
+    if (action === 'typing-restart') { import('./typing.js').then(m => m.restartTyping?.()); return; }
+
+    // Dictation
+    if (action === 'dictation-restart') {
+      import('./dictation.js').then(m => m.restartDictation?.());
       return;
     }
-    if (action === 'practice-resume') {
-      continuePractice();
-      return;
-    }
-    if (action === 'flashcard-restart') {
-      import('./flashcard.js').then(m => m.restartFlashcard && m.restartFlashcard());
-      return;
-    }
-    if (action === 'flashcard-review-wrong') {
-      import('./flashcard.js').then(m => m.reviewWrongFlashcards && m.reviewWrongFlashcards());
-      return;
-    }
-    if (action === 'srs-done') {
-      hidePracticeArea();
-      return;
-    }
-     if (action === 'quiz-restart') {
-       import('./quiz.js').then(m => m.restartQuiz && m.restartQuiz());
-       return;
-     }
-     if (action === 'quiz-review-wrong') {
-       import('./quiz.js').then(m => m.reviewWrongQuiz && m.reviewWrongQuiz());
-       return;
-     }
-      if (action === 'typing-restart') {
-        import('./typing.js').then(m => m.restartTyping && m.restartTyping());
-        return;
-      }
   });
 }
 
@@ -354,9 +347,7 @@ export function updateSRSCount() {
   if (countEl) countEl.textContent = dueWords.length;
 
   const btnStart = document.getElementById('btn-start-srs');
-  if (btnStart) {
-    btnStart.disabled = dueWords.length === 0;
-  }
+  if (btnStart) btnStart.disabled = dueWords.length === 0;
 }
 
 /* ===== BACK HANDLER ===== */
@@ -378,7 +369,6 @@ export function showPracticeSummary() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
-  // Keep the common header accurate even while paused
   updateCommonPracticeHeader();
 
   container.innerHTML = `
@@ -402,7 +392,6 @@ export function showPracticeSummary() {
       </div>
 
       <div class="summary-actions">
-        <!-- NOTE: No "back riêng" nữa, back chung ở header (handlePracticeBack/hidePracticeArea) -->
         <button class="btn-secondary" type="button" data-practice-action="practice-exit">
           <i class="fas fa-home"></i> Quay lại luyện tập
         </button>
@@ -430,16 +419,12 @@ export function hidePracticeArea() {
   }
 
   if (practiceContent) practiceContent.innerHTML = '';
-
   if (practiceSection) practiceSection.classList.remove('in-session');
 
   resetPractice();
   updateSRSCount();
 
-  import('../core/router.js').then(router => {
-    router.navigate('practice');
-  });
-
+  import('../core/router.js').then(router => router.navigate('practice'));
   console.log('✅ Practice area hidden, back to practice modes');
 }
 
@@ -451,8 +436,6 @@ export function showPracticeArea() {
   if (practiceModes) practiceModes.style.display = 'none';
 
   document.getElementById('practice-section')?.classList.add('in-session');
-
-  // ensure common header starts fresh
   updateCommonPracticeHeader();
 }
 
@@ -463,17 +446,23 @@ export function continuePractice() {
   const mode = practiceState.mode;
   switch (mode) {
     case 'flashcard':
-      import('./flashcard.js').then(m => m.renderFlashcard && m.renderFlashcard());
+      import('./flashcard.js').then(m => m.renderFlashcard?.());
       break;
+
     case 'quiz':
-      import('./quiz.js').then(m => m.renderQuiz && m.renderQuiz());
+      import('./quiz.js').then(m => m.renderQuiz?.());
       break;
+
     case 'dictation':
-      // dictation module uses internal render via start flow; safest is to just re-render current UI if present
-      import('./dictation.js').then(m => m.startDictation && m.startDictation(window.practiceScope, window.dictationSettings));
+      import('./dictation.js').then(m => m.startDictation?.(window.practiceScope, window.dictationSettings));
       break;
+
     case 'typing':
-      import('./typing.js').then(m => m.startTyping && m.startTyping(window.practiceScope, window.typingSettings));
+      // IMPORTANT: typing.js has no renderTyping export. Restart from stored scope/settings.
+      import('./typing.js').then(m => m.startTyping?.(window.practiceScope, window.typingSettings));
+      break;
+
+    default:
       break;
   }
 }
@@ -488,33 +477,23 @@ function shuffleArray(array) {
   return shuffled;
 }
 
-/* ===== ANSWER CHECKER (needed by typing.js) ===== */
+/* ===== ANSWER CHECKER (legacy; typing now self-checks) ===== */
 function normalizeText(s) {
-  return String(s ?? '')
-    .trim()
-    .replace(/\s+/g, ' ');
+  return String(s ?? '').trim().replace(/\s+/g, ' ');
 }
 
-/**
- * checkAnswer(input, word)
- * - typing/dictation: so với word.word
- * - quiz/flashcard: so với word.meaning (fallback)
- * - tôn trọng settings.caseSensitive (typing)
- */
 export function checkAnswer(input, word) {
   const mode = practiceState?.mode;
   const settings = practiceState?.settings || {};
 
   const a = normalizeText(input);
 
-  // typing/dictation: nhập lại đúng "word" (case-insensitive mặc định)
   if (mode === 'typing' || mode === 'dictation') {
     const b = normalizeText(word?.word);
     const caseSensitive = !!settings.caseSensitive;
     return caseSensitive ? a === b : a.toLowerCase() === b.toLowerCase();
   }
 
-  // quiz/flashcard: compare meaning (giữ behavior cũ kiểu đơn giản)
   const b = normalizeText(word?.meaning);
   return a.toLowerCase() === b.toLowerCase();
 }
