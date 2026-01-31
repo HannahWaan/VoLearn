@@ -30,6 +30,7 @@ import { startQuiz } from './practice/quiz.js';
 import { startDictation } from './practice/dictation.js';
 import { startTyping } from './practice/typing.js';
 import { initTypingSettings } from './practice/typingSettings.js';
+import { initWeakReviewSettings } from './practice/weakReviewSettings.js';
 
 // ===== SYNC IMPORTS =====
 import { initDrive, loginGoogle } from './sync/gdriveAuth.js';
@@ -100,6 +101,7 @@ async function initApp() {
         initQuizSettings();
         initDictationSettings();
         initTypingSettings();
+        initWeakReviewSettings();
         
         // Step 6.5: Initialize Cambridge Widget
         console.log('📚 Step 6.5: Initializing Cambridge Widget...');
