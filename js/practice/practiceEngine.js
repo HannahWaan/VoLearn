@@ -541,7 +541,7 @@ export function initPracticeEngine() {
   document.addEventListener('click', (e) => {
     const btnWeak = e.target.closest('#btn-start-srs');
     if (btnWeak) {
-      swindow.openWeakReviewSettings?.();
+      window.openWeakReviewSettings?.();
     }
   });
   // Centralize click handling for summary/results actions (no inline onclick)
