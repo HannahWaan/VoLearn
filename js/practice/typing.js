@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS = {
   shuffle: true,
   limit: 0,
 
-  // NEW (aligned with typingSettings / dictation field ids)
+  // aligned with typingSettings / dictation field ids
   answerFieldIds: [1], // required: at least 1
   hintFieldIds: [5],   // required: at least 1
 
@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS = {
   showLength: true,
 
   timeLimit: 0,        // seconds (0 = off)
-  caseSensitive: false // legacy compat (we map to strictMode)
+  caseSensitive: false // legacy compat (map to strictMode)
 };
 
 let settings = { ...DEFAULT_SETTINGS };
@@ -52,6 +52,7 @@ let answered = false;
 
 let typingTimer = null;
 let timeLeft = 0;
+
 let autoNextTimer = null;
 
 /* ===== FIELDS (1..8 like Dictation/Quiz) ===== */
@@ -130,7 +131,7 @@ function levenshtein(a, b) {
   if (m === 0) return n;
   if (n === 0) return m;
 
-  const dp = Array.from({ length: n + 1 }, (_, i) => Array(m + 1).fill(0));
+  const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
   for (let i = 0; i <= n; i++) dp[i][0] = i;
   for (let j = 0; j <= m; j++) dp[0][j] = j;
 
@@ -180,13 +181,9 @@ export function startTyping(scope, incomingSettings = {}) {
     return;
   }
 
-  // merge settings
-  settings = {
-    ...DEFAULT_SETTINGS,
-    ...incomingSettings
-  };
+  settings = { ...DEFAULT_SETTINGS, ...incomingSettings };
 
-  // compat: if someone still passes caseSensitive, map to strictMode
+  // compat: caseSensitive -> strictMode
   if (typeof settings.strictMode !== 'boolean' && typeof settings.caseSensitive === 'boolean') {
     settings.strictMode = settings.caseSensitive;
   }
@@ -194,21 +191,21 @@ export function startTyping(scope, incomingSettings = {}) {
   settings.answerFieldIds = normalizeFieldIds(settings.answerFieldIds, [1]);
   settings.hintFieldIds = normalizeFieldIds(settings.hintFieldIds, [5]);
 
-  // store for resume/restart
   window.practiceScope = scope;
   window.typingSettings = settings;
+
+  clearAutoNextTimer();
 
   if (!initPractice('typing', words, settings)) return;
 
   renderTypingUI();
   bindTypingUIEvents();
   showCurrentTyping();
-  clearAutoNextTimer();
 
   showToast(`Bắt đầu luyện gõ ${getPracticeState().total} từ`, 'success');
 }
 
-/* ===== UI (NO typing header riêng) ===== */
+/* ===== UI ===== */
 function renderTypingUI() {
   const container = document.getElementById('practice-content');
   if (!container) return;
@@ -288,6 +285,7 @@ function bindTypingUIEvents() {
 /* ===== QUESTION RENDER ===== */
 function showCurrentTyping() {
   stopTypingTimer();
+  clearAutoNextTimer();
 
   const state = getPracticeState();
   const s = state?.settings || {};
@@ -326,7 +324,6 @@ function showCurrentTyping() {
   // Hint fields exclude current answer field
   currentHintFieldIds = hintFieldIds.filter(id => id !== currentAnswerFieldId);
   if (currentHintFieldIds.length === 0) {
-    // minimal fallback hint
     currentHintFieldIds = [1].filter(id => id !== currentAnswerFieldId);
   }
 
@@ -339,7 +336,6 @@ function showCurrentTyping() {
   if (hintEl) {
     const parts = [];
 
-    // Optional meta hints based on correctAnswer
     const correctTrim = String(currentCorrectAnswer || '').trim();
     if (s.showFirstLetter) {
       const first = correctTrim.slice(0, 1);
@@ -425,7 +421,6 @@ function stopTypingTimer() {
 function onTypingTimeout() {
   if (answered) return;
 
-  // mark as skipped on timeout
   skipWord();
   answered = true;
 
@@ -450,9 +445,7 @@ function onTypingTimeout() {
 
   updateHeaderProgress();
 
-  // auto next if enabled
   if (s.autoNext) startTypingAutoNext(5);
-  else setTimeout(() => showCurrentTyping(), 700);
 }
 
 /* ===== ACTIONS ===== */
@@ -518,8 +511,8 @@ export function skipTyping() {
   const s = state?.settings || {};
 
   stopTypingTimer();
+  clearAutoNextTimer();
 
-  // if already answered, "skip" acts like next
   if (answered) {
     showCurrentTyping();
     return;
@@ -549,14 +542,12 @@ export function skipTyping() {
   updateHeaderProgress();
 
   if (s.autoNext) startTypingAutoNext(5);
-  else setTimeout(() => showCurrentTyping(), 650);
 }
 
 export function speakTypingWord() {
   const word = getCurrentWord();
   if (!word) return;
 
-  // Speak English word only (field 1)
   const text = norm(word?.word);
   if (!text) return;
 
@@ -584,7 +575,6 @@ function showTypingResults() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
-  // crude WPM estimate (keep consistent with your previous Results UI)
   const wpm = result.duration > 0
     ? Math.round((result.total * 5) / (result.duration / 60))
     : 0;
@@ -678,19 +668,22 @@ function formatDuration(seconds) {
   return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
+/* ===== RESUME SUPPORT ===== */
 export function renderTyping() {
-  // Resume: render lại UI theo practiceState hiện tại, KHÔNG initPractice
   renderTypingUI();
   bindTypingUIEvents();
   showCurrentTyping();
 }
 window.renderTyping = renderTyping;
 
+/* ===== AUTO NEXT (5s pause) ===== */
 function clearAutoNextTimer() {
   if (autoNextTimer) {
     clearInterval(autoNextTimer);
     autoNextTimer = null;
   }
+  const el = document.getElementById('typing-autonext');
+  if (el) el.remove();
 }
 
 function startTypingAutoNext(seconds) {
@@ -700,13 +693,16 @@ function startTypingAutoNext(seconds) {
 
   const feedbackEl = document.getElementById('typing-feedback');
   if (feedbackEl) {
-    feedbackEl.innerHTML += `<div class="feedback-meta"><small>Tự động chuyển sau ${remaining}s</small></div>`;
+    feedbackEl.insertAdjacentHTML(
+      'beforeend',
+      `<div class="feedback-meta" id="typing-autonext"><small>Tự động chuyển sau ${remaining}s</small></div>`
+    );
   }
 
   autoNextTimer = setInterval(() => {
     remaining--;
 
-    const meta = document.querySelector('#typing-feedback .feedback-meta small');
+    const meta = document.querySelector('#typing-autonext small');
     if (meta) meta.textContent = `Tự động chuyển sau ${Math.max(0, remaining)}s`;
 
     if (remaining <= 0) {
@@ -723,5 +719,4 @@ window.speakTypingWord = speakTypingWord;
 window.exitTyping = exitTyping;
 window.restartTyping = restartTyping;
 
-// compat alias
 export { startTyping as run };
