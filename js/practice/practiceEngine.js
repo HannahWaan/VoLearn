@@ -454,12 +454,11 @@ export function continuePractice() {
       break;
 
     case 'dictation':
-      import('./dictation.js').then(m => m.startDictation?.(window.practiceScope, window.dictationSettings));
+      import('./dictation.js').then(m => m.renderDictation?.());
       break;
 
     case 'typing':
-      // IMPORTANT: typing.js has no renderTyping export. Restart from stored scope/settings.
-      import('./typing.js').then(m => m.startTyping?.(window.practiceScope, window.typingSettings));
+      import('./typing.js').then(m => m.renderTyping?.());
       break;
 
     default:
