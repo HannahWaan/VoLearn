@@ -1,4 +1,4 @@
-/* ===== DICTATION MODE (Settings-driven, schema-aware, common header) ===== */
+/* ===== TYPING MODE (Settings-driven, schema-aware, common header) ===== */
 
 import {
   initPractice,
@@ -16,46 +16,55 @@ import { speak, stopSpeaking } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
 import { appData } from '../core/state.js';
 
-/* ===== SETTINGS / STATE ===== */
+/* ===== SETTINGS ===== */
 const DEFAULT_SETTINGS = {
   shuffle: true,
-  speed: 1,
+  limit: 0,
 
-  listenFieldIds: [1],
-  hintFieldIds: [5],
+  // NEW (aligned with typingSettings / dictation field ids)
+  answerFieldIds: [1], // required: at least 1
+  hintFieldIds: [5],   // required: at least 1
 
-  scoring: 'exact',        // exact | half | partial | lenient
+  scoring: 'exact',    // exact | half | partial | lenient
   showAnswer: false,
   strictMode: false,
+
   autoNext: true,
   autoCorrect: false,
-  maxReplay: 0             // 0=unlimited
+
+  showFirstLetter: true,
+  showLength: true,
+
+  timeLimit: 0,        // seconds (0 = off)
+  caseSensitive: false // legacy compat (we map to strictMode)
 };
 
 let settings = { ...DEFAULT_SETTINGS };
 
-// per-question
-let playCount = 0;
-let hintIndex = 0;
-let answered = false;
-
-let currentListenFieldId = 1;
-let lastCorrectText = '';
-
-let autoNextTimer = null;
+/* ===== PER-QUESTION STATE ===== */
 let uiBound = false;
 
-/* ===== FIELD LABELS ===== */
-const FIELD_LABEL = {
-  1: 'Từ vựng',
-  2: 'Phát âm',
-  3: 'Loại từ',
-  4: 'Định nghĩa (EN)',
-  5: 'Nghĩa (VI)',
-  6: 'Ví dụ',
-  7: 'Từ đồng nghĩa',
-  8: 'Từ trái nghĩa'
-};
+let currentAnswerFieldId = 1;
+let currentCorrectAnswer = '';
+let currentHintFieldIds = [];
+
+let answered = false;
+
+let typingTimer = null;
+let timeLeft = 0;
+
+/* ===== FIELDS (1..8 like Dictation/Quiz) ===== */
+const TYPING_FIELDS = [
+  { id: 1, label: 'Từ vựng' },
+  { id: 2, label: 'Phát âm' },
+  { id: 3, label: 'Loại từ' },
+  { id: 4, label: 'Định nghĩa (EN)' },
+  { id: 5, label: 'Nghĩa (VI)' },
+  { id: 6, label: 'Ví dụ' },
+  { id: 7, label: 'Từ đồng nghĩa' },
+  { id: 8, label: 'Từ trái nghĩa' }
+];
+const FIELD_LABEL = Object.fromEntries(TYPING_FIELDS.map(f => [f.id, f.label]));
 
 const POS_MAPPING = {
   noun: 'Danh từ',
@@ -71,20 +80,16 @@ const POS_MAPPING = {
   'phrasal verb': 'Cụm động từ'
 };
 
-/* ===== SCHEMA HELPERS ===== */
 function primaryMeaning(word) {
   return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
 }
-
 function norm(v) {
   if (v == null) return '';
   if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
   return String(v).trim();
 }
-
-function getFieldText(word, fieldId) {
+function getTypingFieldValue(word, fieldId) {
   const m = primaryMeaning(word);
-
   switch (Number(fieldId)) {
     case 1: return norm(word?.word);
     case 2: return norm(m.phoneticUS || m.phoneticUK || word?.phonetic);
@@ -105,16 +110,9 @@ function normalizeFieldIds(arr, fallback) {
   return out.length ? out : [...fallback];
 }
 
-function pickListenFieldId() {
-  const pool = normalizeFieldIds(settings.listenFieldIds, [1]);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function getSpeakLangForListenField(fieldId) {
-  if (Number(fieldId) === 5) return 'vi-VN';
-  const voice = appData?.settings?.voice;
-  if (typeof voice === 'string' && voice.trim()) return voice.trim();
-  return 'en-US';
+function pickRandomFrom(arr) {
+  const a = Array.isArray(arr) ? arr : [];
+  return a[Math.floor(Math.random() * a.length)];
 }
 
 /* ===== SCORING ===== */
@@ -131,8 +129,9 @@ function levenshtein(a, b) {
   if (m === 0) return n;
   if (n === 0) return m;
 
-  const dp = Array.from({ length: n + 1 }, (_, i) => [i]);
-  for (let j = 1; j <= m; j++) dp[0][j] = j;
+  const dp = Array.from({ length: n + 1 }, (_, i) => Array(m + 1).fill(0));
+  for (let i = 0; i <= n; i++) dp[i][0] = i;
+  for (let j = 0; j <= m; j++) dp[0][j] = j;
 
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
@@ -148,42 +147,30 @@ function levenshtein(a, b) {
 }
 
 function similarityRatio(a, b) {
-  const longer = a.length >= b.length ? a : b;
-  const shorter = a.length >= b.length ? b : a;
+  const s1 = String(a ?? '');
+  const s2 = String(b ?? '');
+  const longer = s1.length >= s2.length ? s1 : s2;
+  const shorter = s1.length >= s2.length ? s2 : s1;
   if (!longer.length) return 1;
   const dist = levenshtein(longer, shorter);
   return (longer.length - dist) / longer.length;
 }
 
-function evaluateAnswer(userInput, correctText) {
-  const mode = settings.scoring || 'exact';
-  const strict = !!settings.strictMode;
-
-  const u = normalizeText(userInput, strict);
-  const c = normalizeText(correctText, strict);
+function evaluateTypingAnswer(userInput, correctText, scoring, strictMode) {
+  const u = normalizeText(userInput, strictMode);
+  const c = normalizeText(correctText, strictMode);
   if (!u) return { isCorrect: false, ratio: 0 };
 
-  if (mode === 'exact') return { isCorrect: u === c, ratio: u === c ? 1 : similarityRatio(u, c) };
+  if (scoring === 'exact') return { isCorrect: u === c, ratio: u === c ? 1 : similarityRatio(u, c) };
   const ratio = similarityRatio(u, c);
-  if (mode === 'half') return { isCorrect: ratio >= 0.5, ratio };
-  if (mode === 'partial') return { isCorrect: ratio > 0, ratio };
-  if (mode === 'lenient') return { isCorrect: levenshtein(u, c) <= 2, ratio };
+  if (scoring === 'half') return { isCorrect: ratio >= 0.5, ratio };
+  if (scoring === 'partial') return { isCorrect: ratio > 0, ratio };
+  if (scoring === 'lenient') return { isCorrect: levenshtein(u, c) <= 2, ratio };
   return { isCorrect: u === c, ratio };
 }
 
-function autoCorrectSuggestion(userInput, correctText) {
-  if (!settings.autoCorrect) return null;
-  const strict = !!settings.strictMode;
-  const u = normalizeText(userInput, strict);
-  const c = normalizeText(correctText, strict);
-  if (!u || !c) return null;
-  const r = similarityRatio(u, c);
-  if (r >= 0.6 && r < 1) return String(correctText || '').trim();
-  return null;
-}
-
 /* ===== START ===== */
-export function startDictation(scope, incomingSettings = {}) {
+export function startTyping(scope, incomingSettings = {}) {
   showPracticeArea?.();
 
   const words = getWordsByScope(scope);
@@ -192,136 +179,194 @@ export function startDictation(scope, incomingSettings = {}) {
     return;
   }
 
+  // merge settings
   settings = {
     ...DEFAULT_SETTINGS,
-    speed: appData?.settings?.speed || 1,
     ...incomingSettings
   };
 
-  settings.listenFieldIds = normalizeFieldIds(settings.listenFieldIds, [1]);
+  // compat: if someone still passes caseSensitive, map to strictMode
+  if (typeof settings.strictMode !== 'boolean' && typeof settings.caseSensitive === 'boolean') {
+    settings.strictMode = settings.caseSensitive;
+  }
+
+  settings.answerFieldIds = normalizeFieldIds(settings.answerFieldIds, [1]);
   settings.hintFieldIds = normalizeFieldIds(settings.hintFieldIds, [5]);
 
+  // store for resume/restart
   window.practiceScope = scope;
-  window.dictationSettings = settings;
+  window.typingSettings = settings;
 
-  if (!initPractice('dictation', words, settings)) return;
+  if (!initPractice('typing', words, settings)) return;
 
-  renderDictationUI();
-  bindDictationUIEvents();
-  showCurrentDictation();
+  renderTypingUI();
+  bindTypingUIEvents();
+  showCurrentTyping();
+
+  showToast(`Bắt đầu luyện gõ ${getPracticeState().total} từ`, 'success');
 }
 
-/* ===== UI (NO header riêng) ===== */
-function renderDictationUI() {
+/* ===== UI (NO typing header riêng) ===== */
+function renderTypingUI() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
   container.innerHTML = `
-    <div class="dictation-card" data-render="dictation-ui">
-      <div class="dictation-main">
-        <div class="dictation-prompt">
-          <p>Nghe và gõ lại nội dung</p>
+    <div class="typing-container" data-render="typing-ui">
+      <div class="typing-main">
+        <div class="typing-prompt">
+          <div class="typing-title" id="typing-answer-label"></div>
+          <div class="typing-meaning" id="typing-meaning"></div>
         </div>
 
-        <div class="dictation-player">
-          <button class="btn-play" id="btn-play-audio" type="button" data-action="dictation-play">
-            <i class="fas fa-volume-up"></i>
-          </button>
-          <span class="play-count" id="play-count"></span>
+        <div class="typing-reveal" id="typing-reveal" style="display:none;"></div>
+
+        <div class="typing-timer" id="typing-timer" style="display:none;">
+          <i class="fas fa-stopwatch"></i>
+          <span id="typing-timer-text"></span>
         </div>
 
-        <div class="dictation-hint" id="dictation-hint" style="display:none;"></div>
-
-        <div class="dictation-input">
+        <div class="typing-input">
           <input
+            id="typing-input"
             type="text"
-            id="dictation-answer"
-            placeholder="Nhập nội dung bạn nghe được..."
+            placeholder="Nhập câu trả lời..."
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
-          >
+          />
         </div>
 
-        <div class="dictation-feedback" id="dictation-feedback"></div>
-      </div>
+        <div class="typing-feedback" id="typing-feedback"></div>
 
-      <div class="dictation-controls">
-        <button class="btn-secondary" type="button" data-action="dictation-hint">
-          <i class="fas fa-lightbulb"></i> Gợi ý
-        </button>
+        <div class="typing-actions">
+          <button class="btn-secondary" type="button" data-action="typing-speak">
+            <i class="fas fa-volume-up"></i> Nghe
+          </button>
 
-        <button class="btn-primary" type="button" data-action="dictation-check">
-          <i class="fas fa-check"></i> Kiểm tra
-        </button>
+          <button class="btn-secondary" type="button" data-action="typing-skip">
+            Bỏ qua <i class="fas fa-forward"></i>
+          </button>
 
-        <button class="btn-secondary" id="btn-skip" type="button" data-action="dictation-skip">
-          Bỏ qua <i class="fas fa-forward"></i>
-        </button>
+          <button class="btn-primary" type="button" data-action="typing-check">
+            <i class="fas fa-check"></i> Kiểm tra
+          </button>
+        </div>
       </div>
     </div>
   `;
 }
 
-function bindDictationUIEvents() {
+function bindTypingUIEvents() {
   if (uiBound) return;
   uiBound = true;
 
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-render="dictation-ui"] [data-action]');
+    const btn = e.target.closest('[data-render="typing-ui"] [data-action]');
     if (!btn) return;
 
     const action = btn.getAttribute('data-action');
-    if (action === 'dictation-play') playDictationAudio();
-    if (action === 'dictation-hint') showDictationHint();
-    if (action === 'dictation-check') checkDictationAnswer();
-    if (action === 'dictation-skip') skipDictationAction();
+    if (action === 'typing-check') checkTypingAnswer();
+    if (action === 'typing-skip') skipTyping();
+    if (action === 'typing-speak') speakTypingWord();
   });
 
   document.addEventListener('keydown', (e) => {
-    const input = document.getElementById('dictation-answer');
+    const input = document.getElementById('typing-input');
     if (!input) return;
     if (document.activeElement !== input) return;
+
     if (e.key === 'Enter') {
       e.preventDefault();
-      checkDictationAnswer();
+      checkTypingAnswer();
     }
   });
 }
 
-/* ===== PER QUESTION ===== */
-function showCurrentDictation() {
-  clearAutoNextTimer();
+/* ===== QUESTION RENDER ===== */
+function showCurrentTyping() {
+  stopTypingTimer();
+
+  const state = getPracticeState();
+  const s = state?.settings || {};
 
   const word = getCurrentWord();
   if (!word) {
-    showDictationResults();
+    showTypingResults();
     return;
   }
 
   answered = false;
-  playCount = 0;
-  hintIndex = 0;
 
-  currentListenFieldId = pickListenFieldId();
-  lastCorrectText = getFieldText(word, currentListenFieldId);
+  const answerFieldIds = normalizeFieldIds(s.answerFieldIds, [1]);
+  const hintFieldIds = normalizeFieldIds(s.hintFieldIds, [5]);
 
-  if (!lastCorrectText) {
-    for (const fid of settings.listenFieldIds) {
-      const t = getFieldText(word, fid);
-      if (t) { currentListenFieldId = fid; lastCorrectText = t; break; }
+  // Random 1 answer field each question
+  currentAnswerFieldId = pickRandomFrom(answerFieldIds) ?? 1;
+  currentCorrectAnswer = getTypingFieldValue(word, currentAnswerFieldId);
+
+  // If chosen field empty, try other answer fields; finally fallback to word
+  if (!currentCorrectAnswer) {
+    for (const fid of answerFieldIds) {
+      const t = getTypingFieldValue(word, fid);
+      if (t) {
+        currentAnswerFieldId = fid;
+        currentCorrectAnswer = t;
+        break;
+      }
     }
   }
-  if (!lastCorrectText) {
-    currentListenFieldId = 1;
-    lastCorrectText = norm(word?.word);
+  if (!currentCorrectAnswer) {
+    currentAnswerFieldId = 1;
+    currentCorrectAnswer = norm(word?.word);
   }
 
-  const input = document.getElementById('dictation-answer');
-  const feedback = document.getElementById('dictation-feedback');
-  const hint = document.getElementById('dictation-hint');
-  const skipBtn = document.getElementById('btn-skip');
+  // Hint fields exclude current answer field
+  currentHintFieldIds = hintFieldIds.filter(id => id !== currentAnswerFieldId);
+  if (currentHintFieldIds.length === 0) {
+    // minimal fallback hint
+    currentHintFieldIds = [1].filter(id => id !== currentAnswerFieldId);
+  }
 
+  // Label
+  const labelEl = document.getElementById('typing-answer-label');
+  if (labelEl) labelEl.textContent = `Gõ: ${FIELD_LABEL[currentAnswerFieldId] || 'Câu trả lời'}`;
+
+  // Hints render at #typing-meaning
+  const hintEl = document.getElementById('typing-meaning');
+  if (hintEl) {
+    const parts = [];
+
+    // Optional meta hints based on correctAnswer
+    const correctTrim = String(currentCorrectAnswer || '').trim();
+    if (s.showFirstLetter) {
+      const first = correctTrim.slice(0, 1);
+      if (first) parts.push(`<div class="typing-hint-line"><strong>Chữ cái đầu:</strong> ${escapeHtml(first)}</div>`);
+    }
+    if (s.showLength) {
+      const len = correctTrim.length;
+      if (len) parts.push(`<div class="typing-hint-line"><strong>Độ dài:</strong> ${len}</div>`);
+    }
+
+    for (const hid of currentHintFieldIds) {
+      const txt = getTypingFieldValue(word, hid);
+      if (!txt) continue;
+      parts.push(`<div class="typing-hint-line"><strong>${escapeHtml(FIELD_LABEL[hid] || 'Gợi ý')}:</strong> ${escapeHtml(txt)}</div>`);
+    }
+
+    hintEl.innerHTML = parts.length ? parts.join('') : `<div class="typing-hint-line">Không có gợi ý.</div>`;
+  }
+
+  // Reveal
+  const revealEl = document.getElementById('typing-reveal');
+  if (revealEl) {
+    revealEl.style.display = 'none';
+    revealEl.innerHTML = '';
+  }
+
+  // Input + feedback
+  const input = document.getElementById('typing-input');
+  const feedback = document.getElementById('typing-feedback');
   if (input) {
     input.value = '';
     input.disabled = false;
@@ -329,227 +374,263 @@ function showCurrentDictation() {
     input.focus();
   }
   if (feedback) feedback.innerHTML = '';
-  if (hint) { hint.style.display = 'none'; hint.innerHTML = ''; }
-  if (skipBtn) skipBtn.innerHTML = `Bỏ qua <i class="fas fa-forward"></i>`;
 
-  updatePlayCount();
-  updateCommonHeaderProgress();
+  // Timer
+  const tl = Number(s.timeLimit || 0);
+  if (tl > 0) startTypingTimer(tl);
+  else renderTypingTimerOff();
 
-  setTimeout(() => playDictationAudio(), 250);
+  updateHeaderProgress();
 }
 
-/* ===== AUDIO ===== */
-export function playDictationAudio() {
-  const word = getCurrentWord();
-  if (!word) return;
+/* ===== TIMER ===== */
+function startTypingTimer(seconds) {
+  stopTypingTimer();
+  timeLeft = Math.max(1, Number(seconds || 1));
 
-  const limit = Number(settings.maxReplay || 0);
-  const unlimited = !limit || limit <= 0;
+  const timerEl = document.getElementById('typing-timer');
+  if (timerEl) timerEl.style.display = '';
 
-  if (!unlimited && playCount >= limit) {
-    showToast('Đã hết lượt nghe!', 'warning');
-    return;
+  renderTypingTimerText();
+
+  typingTimer = setInterval(() => {
+    timeLeft--;
+    renderTypingTimerText();
+    if (timeLeft <= 0) {
+      stopTypingTimer();
+      onTypingTimeout();
+    }
+  }, 1000);
+}
+
+function renderTypingTimerText() {
+  const text = document.getElementById('typing-timer-text');
+  if (text) text.textContent = `${timeLeft}s`;
+}
+
+function renderTypingTimerOff() {
+  const timerEl = document.getElementById('typing-timer');
+  if (timerEl) timerEl.style.display = 'none';
+}
+
+function stopTypingTimer() {
+  if (typingTimer) {
+    clearInterval(typingTimer);
+    typingTimer = null;
   }
-
-  playCount++;
-  updatePlayCount();
-
-  const rate = Number(settings.speed || appData?.settings?.speed || 1);
-  const text = String(lastCorrectText || '').trim();
-  if (!text) {
-    showToast('Không có nội dung để đọc', 'warning');
-    return;
-  }
-
-  const lang = getSpeakLangForListenField(currentListenFieldId);
-  speak(text, { lang, rate });
 }
 
-function updatePlayCount() {
-  const playCountEl = document.getElementById('play-count');
-  const playBtn = document.getElementById('btn-play-audio');
-
-  const limit = Number(settings.maxReplay || 0);
-  const unlimited = !limit || limit <= 0;
-
-  if (unlimited) {
-    if (playCountEl) playCountEl.textContent = 'Không giới hạn lượt nghe';
-    if (playBtn) playBtn.disabled = false;
-    return;
-  }
-
-  const remaining = Math.max(0, limit - playCount);
-  if (playCountEl) playCountEl.textContent = remaining > 0 ? `Còn ${remaining} lượt nghe` : 'Hết lượt nghe';
-  if (playBtn) playBtn.disabled = remaining <= 0;
-}
-
-/* ===== HINT ===== */
-export function showDictationHint() {
-  const word = getCurrentWord();
-  if (!word) return;
-
-  const hintEl = document.getElementById('dictation-hint');
-  if (!hintEl) return;
-
-  const hintIds = normalizeFieldIds(settings.hintFieldIds, [5]);
-  const fieldId = hintIds[hintIndex % hintIds.length];
-  hintIndex++;
-
-  const label = FIELD_LABEL[fieldId] || 'Gợi ý';
-  const text = getFieldText(word, fieldId);
-
-  hintEl.innerHTML = `<i class="fas fa-lightbulb"></i> <strong>${escapeHtml(label)}:</strong> ${escapeHtml(text || '(trống)')}`;
-  hintEl.style.display = 'block';
-}
-
-/* ===== CHECK ===== */
-export function checkDictationAnswer() {
-  const word = getCurrentWord();
-  if (!word) return;
-
-  const input = document.getElementById('dictation-answer');
-  const feedback = document.getElementById('dictation-feedback');
-  const skipBtn = document.getElementById('btn-skip');
-
-  if (!input || !feedback) return;
+function onTypingTimeout() {
   if (answered) return;
 
-  const userAnswer = input.value.trim();
-  if (!userAnswer) {
-    showToast('Vui lòng nhập câu trả lời!', 'warning');
-    input.focus();
-    return;
-  }
-
-  const { isCorrect, ratio } = evaluateAnswer(userAnswer, lastCorrectText);
-  submitAnswer(userAnswer, isCorrect);
-
-  answered = true;
-  input.disabled = true;
-
-  if (isCorrect) {
-    feedback.innerHTML = `<div class="feedback-correct"><i class="fas fa-check-circle"></i><span>Chính xác!</span></div>`;
-    input.classList.add('correct');
-  } else {
-    const suggestion = autoCorrectSuggestion(userAnswer, lastCorrectText);
-
-    const answerBlock = settings.showAnswer
-      ? `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`
-      : '';
-
-    const suggestBlock = suggestion
-      ? `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(suggestion)}</strong></small></div>`
-      : '';
-
-    feedback.innerHTML = `
-      <div class="feedback-wrong"><i class="fas fa-times-circle"></i><span>Sai rồi!</span></div>
-      ${answerBlock}
-      ${suggestBlock}
-      <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
-    `;
-    input.classList.add('wrong');
-  }
-
-  if (skipBtn) skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
-
-  updateCommonHeaderProgress();
-  if (settings.autoNext) startAutoNext(2);
-}
-
-/* ===== SKIP ===== */
-function skipDictationAction() {
-  if (answered) {
-    showCurrentDictation();
-    return;
-  }
-
+  // mark as skipped on timeout
   skipWord();
   answered = true;
 
-  const input = document.getElementById('dictation-answer');
-  const feedback = document.getElementById('dictation-feedback');
+  const s = getPracticeState()?.settings || {};
+  const feedback = document.getElementById('typing-feedback');
+  const revealEl = document.getElementById('typing-reveal');
+  const input = document.getElementById('typing-input');
 
   if (input) {
     input.disabled = true;
     input.classList.add('wrong');
   }
 
-  const answerLine = settings.showAnswer
-    ? `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`
-    : '';
+  if (feedback) {
+    feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Hết giờ.</span></div>`;
+  }
+
+  if (s.showAnswer && revealEl) {
+    revealEl.style.display = '';
+    revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
+  }
+
+  updateHeaderProgress();
+
+  // auto next if enabled
+  if (s.autoNext) setTimeout(() => showCurrentTyping(), 700);
+}
+
+/* ===== ACTIONS ===== */
+function checkTypingAnswer() {
+  const state = getPracticeState();
+  const s = state?.settings || {};
+
+  const inputEl = document.getElementById('typing-input');
+  const feedbackEl = document.getElementById('typing-feedback');
+  const revealEl = document.getElementById('typing-reveal');
+
+  if (!inputEl || !feedbackEl) return;
+  if (answered) return;
+
+  const userAnswer = inputEl.value.trim();
+  if (!userAnswer) {
+    showToast('Vui lòng nhập câu trả lời!', 'warning');
+    inputEl.focus();
+    return;
+  }
+
+  const strictMode = !!s.strictMode;
+  const scoring = String(s.scoring || 'exact');
+
+  const { isCorrect, ratio } = evaluateTypingAnswer(userAnswer, currentCorrectAnswer, scoring, strictMode);
+
+  submitAnswer(userAnswer, isCorrect);
+  answered = true;
+
+  stopTypingTimer();
+  inputEl.disabled = true;
+
+  if (isCorrect) {
+    feedbackEl.innerHTML = `<div class="feedback-correct"><i class="fas fa-check-circle"></i><span>Chính xác!</span></div>`;
+    inputEl.classList.add('correct');
+  } else {
+    inputEl.classList.add('wrong');
+
+    let suggestBlock = '';
+    if (s.autoCorrect && ratio >= 0.6 && ratio < 1) {
+      suggestBlock = `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small></div>`;
+    }
+
+    feedbackEl.innerHTML = `
+      <div class="feedback-wrong"><i class="fas fa-times-circle"></i><span>Sai rồi!</span></div>
+      ${suggestBlock}
+      <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
+    `;
+
+    if (s.showAnswer && revealEl) {
+      revealEl.style.display = '';
+      revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
+    }
+  }
+
+  updateHeaderProgress();
+
+  if (s.autoNext) setTimeout(() => showCurrentTyping(), 650);
+}
+
+export function skipTyping() {
+  const state = getPracticeState();
+  const s = state?.settings || {};
+
+  stopTypingTimer();
+
+  // if already answered, "skip" acts like next
+  if (answered) {
+    showCurrentTyping();
+    return;
+  }
+
+  skipWord();
+  answered = true;
+
+  const input = document.getElementById('typing-input');
+  const feedback = document.getElementById('typing-feedback');
+  const revealEl = document.getElementById('typing-reveal');
+
+  if (input) {
+    input.disabled = true;
+    input.classList.add('wrong');
+  }
 
   if (feedback) {
-    feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>${answerLine}`;
+    feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>`;
   }
 
-  updateCommonHeaderProgress();
-  setTimeout(showCurrentDictation, 700);
-}
-
-/* ===== AUTO NEXT ===== */
-function startAutoNext(seconds) {
-  clearAutoNextTimer();
-  const s = Math.max(1, Number(seconds || 2));
-  let remaining = s;
-
-  const skipBtn = document.getElementById('btn-skip');
-  if (skipBtn) skipBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
-
-  autoNextTimer = setInterval(() => {
-    remaining--;
-    if (skipBtn) skipBtn.innerHTML = `Tiếp theo (${Math.max(0, remaining)}s) <i class="fas fa-arrow-right"></i>`;
-    if (remaining <= 0) {
-      clearAutoNextTimer();
-      showCurrentDictation();
-    }
-  }, 1000);
-}
-
-function clearAutoNextTimer() {
-  if (autoNextTimer) {
-    clearInterval(autoNextTimer);
-    autoNextTimer = null;
+  if (s.showAnswer && revealEl) {
+    revealEl.style.display = '';
+    revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
   }
+
+  updateHeaderProgress();
+
+  setTimeout(() => showCurrentTyping(), 650);
 }
 
-/* ===== COMMON HEADER PROGRESS ===== */
-function updateCommonHeaderProgress() {
+export function speakTypingWord() {
+  const word = getCurrentWord();
+  if (!word) return;
+
+  // Speak English word only (field 1)
+  const text = norm(word?.word);
+  if (!text) return;
+
+  const rate = Number(appData?.settings?.speed || 1);
+  speak(text, { lang: appData?.settings?.voice || 'en-US', rate });
+}
+
+/* ===== HEADER PROGRESS ===== */
+function updateHeaderProgress() {
   const state = getPracticeState();
   const bar = document.getElementById('practice-progress-bar');
   const text = document.getElementById('practice-progress-text');
+
   if (bar?.style) bar.style.width = `${state.progress}%`;
   if (text) text.textContent = `${state.currentIndex}/${state.total}`;
 }
 
 /* ===== RESULTS ===== */
-function showDictationResults() {
+function showTypingResults() {
+  stopTypingTimer();
   stopSpeaking();
-  clearAutoNextTimer();
 
   const result = finishPractice();
   const container = document.getElementById('practice-content');
   if (!container) return;
 
+  // crude WPM estimate (keep consistent with your previous Results UI)
+  const wpm = result.duration > 0
+    ? Math.round((result.total * 5) / (result.duration / 60))
+    : 0;
+
   container.innerHTML = `
-    <div class="practice-results dictation-results">
+    <div class="practice-results typing-results">
       <div class="results-header">
-        <i class="fas fa-headphones"></i>
-        <h2>Kết quả nghe - viết</h2>
+        <i class="fas fa-keyboard"></i>
+        <h2>Kết quả luyện gõ</h2>
       </div>
 
       <div class="results-stats">
+        <div class="stat-circle ${result.accuracy >= 70 ? 'good' : result.accuracy >= 50 ? 'medium' : 'low'}">
+          <svg viewBox="0 0 36 36">
+            <path class="stat-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="stat-fill" stroke-dasharray="${result.accuracy}, 100"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          </svg>
+          <span class="stat-value">${result.accuracy}%</span>
+        </div>
+
         <div class="stats-grid">
-          <div class="stat-item"><span class="value">${result.total}</span><span class="label">Tổng số</span></div>
-          <div class="stat-item correct"><span class="value">${result.score}</span><span class="label">Đúng</span></div>
-          <div class="stat-item wrong"><span class="value">${result.wrong}</span><span class="label">Sai</span></div>
-          <div class="stat-item"><span class="value">${result.skipped ?? 0}</span><span class="label">Bỏ qua</span></div>
-          <div class="stat-item"><span class="value">${result.accuracy}%</span><span class="label">Chính xác</span></div>
-          <div class="stat-item"><span class="value">${formatDuration(result.duration)}</span><span class="label">Thời gian</span></div>
+          <div class="stat-item">
+            <span class="value">${result.total}</span>
+            <span class="label">Tổng số</span>
+          </div>
+          <div class="stat-item correct">
+            <span class="value">${result.score}</span>
+            <span class="label">Đúng</span>
+          </div>
+          <div class="stat-item wrong">
+            <span class="value">${result.wrong}</span>
+            <span class="label">Sai</span>
+          </div>
+          <div class="stat-item">
+            <span class="value">${result.skipped || 0}</span>
+            <span class="label">Bỏ qua</span>
+          </div>
+          <div class="stat-item">
+            <span class="value">${wpm}</span>
+            <span class="label">WPM (ước tính)</span>
+          </div>
+          <div class="stat-item">
+            <span class="value">${formatDuration(result.duration)}</span>
+            <span class="label">Thời gian</span>
+          </div>
         </div>
       </div>
 
       <div class="results-actions">
-        <button class="btn-primary" type="button" data-practice-action="dictation-restart">
+        <button class="btn-primary" type="button" data-practice-action="typing-restart">
           <i class="fas fa-redo"></i> Làm lại
         </button>
         <button class="btn-secondary" type="button" data-practice-action="practice-exit">
@@ -566,15 +647,14 @@ function showDictationResults() {
 }
 
 /* ===== NAV ===== */
-export function restartDictation() {
-  startDictation(window.practiceScope, window.dictationSettings);
+export function restartTyping() {
+  startTyping(window.practiceScope, window.typingSettings);
 }
 
-export function exitDictation() {
+export function exitTyping() {
+  stopTypingTimer();
   stopSpeaking();
-  clearAutoNextTimer();
   resetPractice();
-  // thoát chuẩn là back header -> practice-exit; nhưng giữ cho tương thích
   window.hidePracticeArea?.();
 }
 
@@ -584,6 +664,7 @@ function escapeHtml(text) {
   div.textContent = String(text ?? '');
   return div.innerHTML;
 }
+
 function formatDuration(seconds) {
   const s = Number(seconds || 0);
   const mins = Math.floor(s / 60);
@@ -592,7 +673,11 @@ function formatDuration(seconds) {
 }
 
 /* ===== GLOBALS ===== */
-window.startDictation = startDictation;
-window.restartDictation = restartDictation;
-window.exitDictation = exitDictation;
-export { startDictation as run };
+window.startTyping = startTyping;
+window.skipTyping = skipTyping;
+window.speakTypingWord = speakTypingWord;
+window.exitTyping = exitTyping;
+window.restartTyping = restartTyping;
+
+// compat alias
+export { startTyping as run };
