@@ -672,6 +672,14 @@ function formatDuration(seconds) {
   return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
+export function renderTyping() {
+  // Resume: render lại UI theo practiceState hiện tại, KHÔNG initPractice
+  renderTypingUI();
+  bindTypingUIEvents();
+  showCurrentTyping();
+}
+window.renderTyping = renderTyping;
+
 /* ===== GLOBALS ===== */
 window.startTyping = startTyping;
 window.skipTyping = skipTyping;
