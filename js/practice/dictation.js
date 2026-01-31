@@ -1,5 +1,4 @@
-/* ===== DICTATION MODE (Settings-driven, schema-aware) ===== */
-/* VoLearn - Nghe - Viết (render into #practice-content) */
+/* ===== DICTATION MODE (Settings-driven, schema-aware, common header) ===== */
 
 import {
   initPractice,
@@ -10,8 +9,7 @@ import {
   getWordsByScope,
   resetPractice,
   skipWord,
-  showPracticeArea,
-  hidePracticeArea
+  showPracticeArea
 } from './practiceEngine.js';
 
 import { speak, stopSpeaking } from '../utils/speech.js';
@@ -25,6 +23,7 @@ const DEFAULT_SETTINGS = {
 
   listenFieldIds: [1],
   hintFieldIds: [5],
+
   scoring: 'exact',        // exact | half | partial | lenient
   showAnswer: false,
   strictMode: false,
@@ -35,7 +34,7 @@ const DEFAULT_SETTINGS = {
 
 let settings = { ...DEFAULT_SETTINGS };
 
-// per-question state
+// per-question
 let playCount = 0;
 let hintIndex = 0;
 let answered = false;
@@ -46,157 +45,98 @@ let lastCorrectText = '';
 let autoNextTimer = null;
 let uiBound = false;
 
-/* ===== FIELD DEFINITIONS ===== */
-const FIELD_MAP = new Map([
-  [1, { key: 'word', label: 'Từ vựng' }],
-  [2, { key: 'phonetic', label: 'Phát âm' }],
-  [3, { key: 'pos', label: 'Loại từ' }],
-  [4, { key: 'defEn', label: 'Định nghĩa (EN)' }],
-  [5, { key: 'defVi', label: 'Nghĩa (VI)' }],
-  [6, { key: 'example', label: 'Ví dụ' }],
-  [7, { key: 'synonyms', label: 'Từ đồng nghĩa' }],
-  [8, { key: 'antonyms', label: 'Từ trái nghĩa' }]
-]);
+/* ===== FIELD LABELS ===== */
+const FIELD_LABEL = {
+  1: 'Từ vựng',
+  2: 'Phát âm',
+  3: 'Loại từ',
+  4: 'Định nghĩa (EN)',
+  5: 'Nghĩa (VI)',
+  6: 'Ví dụ',
+  7: 'Từ đồng nghĩa',
+  8: 'Từ trái nghĩa'
+};
 
-/* ===== Schema-aware value helpers ===== */
-function pickFirstMeaning(word) {
-  const m = Array.isArray(word?.meanings) ? word.meanings : [];
-  return m[0] || null;
+const POS_MAPPING = {
+  noun: 'Danh từ',
+  verb: 'Động từ',
+  adjective: 'Tính từ',
+  adverb: 'Trạng từ',
+  preposition: 'Giới từ',
+  conjunction: 'Liên từ',
+  interjection: 'Thán từ',
+  pronoun: 'Đại từ',
+  article: 'Mạo từ',
+  'auxiliary verb': 'Trợ động từ',
+  'phrasal verb': 'Cụm động từ'
+};
+
+/* ===== SCHEMA HELPERS ===== */
+function primaryMeaning(word) {
+  return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
 }
 
-function joinMaybeArray(v) {
-  if (Array.isArray(v)) return v.filter(Boolean).join(', ');
-  return String(v ?? '').trim();
+function norm(v) {
+  if (v == null) return '';
+  if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
+  return String(v).trim();
 }
 
-function getMeaningField(meaningObj, keys) {
-  if (!meaningObj) return '';
-  for (const k of keys) {
-    const v = meaningObj?.[k];
-    const text = joinMaybeArray(v);
-    if (text) return text;
-  }
-  return '';
-}
-
-/**
- * getFieldText resolves content from BOTH:
- * - new schema: word.meanings[] (primary)
- * - legacy schema: word.defVi/defEn/example/synonyms/antonyms (fallback)
- */
 function getFieldText(word, fieldId) {
-  const id = Number(fieldId);
+  const m = primaryMeaning(word);
 
-  // Direct basic fields
-  if (id === 1) return String(word?.word ?? '').trim();
-  if (id === 2) return String(word?.phonetic ?? '').trim();
-
-  // Part of speech: might exist on word or in meaning
-  if (id === 3) {
-    const posDirect = String(word?.pos ?? word?.partOfSpeech ?? '').trim();
-    if (posDirect) return posDirect;
-
-    const m = pickFirstMeaning(word);
-    const posFromMeaning = String(m?.pos ?? m?.type ?? m?.partOfSpeech ?? '').trim();
-    return posFromMeaning;
+  switch (Number(fieldId)) {
+    case 1: return norm(word?.word);
+    case 2: return norm(m.phoneticUS || m.phoneticUK || word?.phonetic);
+    case 3: return norm(POS_MAPPING[m.pos] || m.pos || word?.partOfSpeech);
+    case 4: return norm(m.defEn);
+    case 5: return norm(m.defVi);
+    case 6: return norm(m.example);
+    case 7: return norm(m.synonyms);
+    case 8: return norm(m.antonyms);
+    default: return '';
   }
-
-  const m = pickFirstMeaning(word);
-
-  // EN definition
-  if (id === 4) {
-    // prefer structured meaning
-    const fromMeaning = getMeaningField(m, ['defEn', 'definition', 'meaningEn', 'en', 'glossEn', 'gloss']);
-    if (fromMeaning) return fromMeaning;
-
-    // fallback legacy on root word
-    return String(word?.defEn ?? word?.definition ?? '').trim();
-  }
-
-  // VI meaning / translation
-  if (id === 5) {
-    const fromMeaning = getMeaningField(m, ['defVi', 'meaningVi', 'translation', 'vi', 'meaning', 'glossVi']);
-    if (fromMeaning) return fromMeaning;
-
-    return String(word?.defVi ?? word?.meaning ?? '').trim();
-  }
-
-  // Example
-  if (id === 6) {
-    // meaning.example could be string; meaning.examples could be array
-    const ex1 = getMeaningField(m, ['example', 'sentence', 'sample']);
-    if (ex1) return ex1;
-
-    const exArr = m?.examples;
-    if (Array.isArray(exArr) && exArr.length) {
-      const first = joinMaybeArray(exArr[0]);
-      if (first) return first;
-    }
-
-    // fallback
-    return String(word?.example ?? '').trim();
-  }
-
-  // Synonyms
-  if (id === 7) {
-    const fromMeaning = getMeaningField(m, ['synonyms', 'syns', 'similar']);
-    if (fromMeaning) return fromMeaning;
-    return joinMaybeArray(word?.synonyms);
-  }
-
-  // Antonyms
-  if (id === 8) {
-    const fromMeaning = getMeaningField(m, ['antonyms', 'ants', 'opposites']);
-    if (fromMeaning) return fromMeaning;
-    return joinMaybeArray(word?.antonyms);
-  }
-
-  return '';
 }
 
 function normalizeFieldIds(arr, fallback) {
   const out = Array.isArray(arr)
-    ? arr.map(n => Number(n)).filter(n => Number.isFinite(n) && n >= 1 && n <= 8)
+    ? arr.map(Number).filter(n => Number.isFinite(n) && n >= 1 && n <= 8)
     : [];
   return out.length ? out : [...fallback];
 }
 
 function pickListenFieldId() {
-  const pool = normalizeFieldIds(settings?.listenFieldIds, [1]);
+  const pool = normalizeFieldIds(settings.listenFieldIds, [1]);
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function getSpeakLangForListenField(fieldId) {
-  // Nghĩa (VI) -> Vietnamese
   if (Number(fieldId) === 5) return 'vi-VN';
-
-  // Others -> English voice setting if available
   const voice = appData?.settings?.voice;
   if (typeof voice === 'string' && voice.trim()) return voice.trim();
   return 'en-US';
 }
 
 /* ===== SCORING ===== */
-function normalizeText(s, { strictMode = false } = {}) {
+function normalizeText(s, strictMode) {
   let t = String(s ?? '').trim().replace(/\s+/g, ' ');
   if (!strictMode) t = t.toLowerCase();
   return t;
 }
 
-function levenshteinDistance(a, b) {
-  const s = a ?? '';
-  const t = b ?? '';
+function levenshtein(a, b) {
+  const s = String(a ?? '');
+  const t = String(b ?? '');
   const m = s.length, n = t.length;
   if (m === 0) return n;
   if (n === 0) return m;
 
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  const dp = Array.from({ length: n + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= m; j++) dp[0][j] = j;
 
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const cost = t[i - 1] === s[j - 1] ? 0 : 1;
       dp[i][j] = Math.min(
         dp[i - 1][j] + 1,
         dp[i][j - 1] + 1,
@@ -204,49 +144,41 @@ function levenshteinDistance(a, b) {
       );
     }
   }
-  return dp[m][n];
+  return dp[n][m];
 }
 
 function similarityRatio(a, b) {
-  const s = String(a ?? '');
-  const t = String(b ?? '');
-  const maxLen = Math.max(s.length, t.length);
-  if (maxLen === 0) return 1;
-  return 1 - levenshteinDistance(s, t) / maxLen;
+  const longer = a.length >= b.length ? a : b;
+  const shorter = a.length >= b.length ? b : a;
+  if (!longer.length) return 1;
+  const dist = levenshtein(longer, shorter);
+  return (longer.length - dist) / longer.length;
 }
 
 function evaluateAnswer(userInput, correctText) {
   const mode = settings.scoring || 'exact';
   const strict = !!settings.strictMode;
 
-  const u = normalizeText(userInput, { strictMode: strict });
-  const c = normalizeText(correctText, { strictMode: strict });
-
+  const u = normalizeText(userInput, strict);
+  const c = normalizeText(correctText, strict);
   if (!u) return { isCorrect: false, ratio: 0 };
 
-  if (mode === 'exact') {
-    return { isCorrect: u === c, ratio: u === c ? 1 : similarityRatio(u, c) };
-  }
-
+  if (mode === 'exact') return { isCorrect: u === c, ratio: u === c ? 1 : similarityRatio(u, c) };
   const ratio = similarityRatio(u, c);
   if (mode === 'half') return { isCorrect: ratio >= 0.5, ratio };
   if (mode === 'partial') return { isCorrect: ratio > 0, ratio };
-  if (mode === 'lenient') return { isCorrect: ratio >= 0.8, ratio };
-
+  if (mode === 'lenient') return { isCorrect: levenshtein(u, c) <= 2, ratio };
   return { isCorrect: u === c, ratio };
 }
 
 function autoCorrectSuggestion(userInput, correctText) {
   if (!settings.autoCorrect) return null;
-  const u = String(userInput ?? '').trim();
-  const c = String(correctText ?? '').trim();
+  const strict = !!settings.strictMode;
+  const u = normalizeText(userInput, strict);
+  const c = normalizeText(correctText, strict);
   if (!u || !c) return null;
-
-  const r = similarityRatio(
-    normalizeText(u, { strictMode: !!settings.strictMode }),
-    normalizeText(c, { strictMode: !!settings.strictMode })
-  );
-  if (r >= 0.6 && r < 1) return c;
+  const r = similarityRatio(u, c);
+  if (r >= 0.6 && r < 1) return String(correctText || '').trim();
   return null;
 }
 
@@ -266,9 +198,11 @@ export function startDictation(scope, incomingSettings = {}) {
     ...incomingSettings
   };
 
-  // Hard-normalize ids
   settings.listenFieldIds = normalizeFieldIds(settings.listenFieldIds, [1]);
   settings.hintFieldIds = normalizeFieldIds(settings.hintFieldIds, [5]);
+
+  window.practiceScope = scope;
+  window.dictationSettings = settings;
 
   if (!initPractice('dictation', words, settings)) return;
 
@@ -277,31 +211,13 @@ export function startDictation(scope, incomingSettings = {}) {
   showCurrentDictation();
 }
 
-/* ===== UI ===== */
+/* ===== UI (NO header riêng) ===== */
 function renderDictationUI() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
   container.innerHTML = `
     <div class="dictation-card" data-render="dictation-ui">
-      <div class="dictation-header">
-        <button class="btn-icon btn-back" type="button" data-action="dictation-exit" aria-label="Back">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-
-        <div class="dictation-progress">
-          <span id="dictation-progress-text">0 / 0</span>
-          <div class="progress-bar">
-            <div id="dictation-progress-bar" class="progress-fill"></div>
-          </div>
-        </div>
-
-        <div class="dictation-score">
-          <i class="fas fa-check-circle text-success"></i>
-          <span id="dictation-score">0</span>
-        </div>
-      </div>
-
       <div class="dictation-main">
         <div class="dictation-prompt">
           <p>Nghe và gõ lại nội dung</p>
@@ -331,11 +247,11 @@ function renderDictationUI() {
       </div>
 
       <div class="dictation-controls">
-        <button class="btn-secondary" id="btn-hint" type="button" data-action="dictation-hint">
+        <button class="btn-secondary" type="button" data-action="dictation-hint">
           <i class="fas fa-lightbulb"></i> Gợi ý
         </button>
 
-        <button class="btn-primary" id="btn-check" type="button" data-action="dictation-check">
+        <button class="btn-primary" type="button" data-action="dictation-check">
           <i class="fas fa-check"></i> Kiểm tra
         </button>
 
@@ -354,23 +270,18 @@ function bindDictationUIEvents() {
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-render="dictation-ui"] [data-action]');
     if (!btn) return;
-    const action = btn.getAttribute('data-action');
 
-    switch (action) {
-      case 'dictation-exit': exitDictation(); break;
-      case 'dictation-play': playDictationAudio(); break;
-      case 'dictation-hint': showDictationHint(); break;
-      case 'dictation-check': checkDictationAnswer(); break;
-      case 'dictation-skip': skipDictationAction(); break;
-      default: break;
-    }
+    const action = btn.getAttribute('data-action');
+    if (action === 'dictation-play') playDictationAudio();
+    if (action === 'dictation-hint') showDictationHint();
+    if (action === 'dictation-check') checkDictationAnswer();
+    if (action === 'dictation-skip') skipDictationAction();
   });
 
   document.addEventListener('keydown', (e) => {
     const input = document.getElementById('dictation-answer');
     if (!input) return;
     if (document.activeElement !== input) return;
-
     if (e.key === 'Enter') {
       e.preventDefault();
       checkDictationAnswer();
@@ -395,28 +306,20 @@ function showCurrentDictation() {
   currentListenFieldId = pickListenFieldId();
   lastCorrectText = getFieldText(word, currentListenFieldId);
 
-  // If chosen field is empty, try other chosen fields before falling back to word
   if (!lastCorrectText) {
     for (const fid of settings.listenFieldIds) {
       const t = getFieldText(word, fid);
-      if (t) {
-        currentListenFieldId = fid;
-        lastCorrectText = t;
-        break;
-      }
+      if (t) { currentListenFieldId = fid; lastCorrectText = t; break; }
     }
   }
-
-  // final fallback
   if (!lastCorrectText) {
     currentListenFieldId = 1;
-    lastCorrectText = String(word?.word ?? '').trim();
+    lastCorrectText = norm(word?.word);
   }
 
   const input = document.getElementById('dictation-answer');
   const feedback = document.getElementById('dictation-feedback');
   const hint = document.getElementById('dictation-hint');
-  const checkBtn = document.getElementById('btn-check');
   const skipBtn = document.getElementById('btn-skip');
 
   if (input) {
@@ -427,13 +330,12 @@ function showCurrentDictation() {
   }
   if (feedback) feedback.innerHTML = '';
   if (hint) { hint.style.display = 'none'; hint.innerHTML = ''; }
-  if (checkBtn) checkBtn.style.display = 'inline-flex';
   if (skipBtn) skipBtn.innerHTML = `Bỏ qua <i class="fas fa-forward"></i>`;
 
   updatePlayCount();
-  updateDictationProgress();
+  updateCommonHeaderProgress();
 
-  setTimeout(() => playDictationAudio(), 350);
+  setTimeout(() => playDictationAudio(), 250);
 }
 
 /* ===== AUDIO ===== */
@@ -472,19 +374,16 @@ function updatePlayCount() {
 
   if (unlimited) {
     if (playCountEl) playCountEl.textContent = 'Không giới hạn lượt nghe';
-    if (playBtn) { playBtn.disabled = false; playBtn.classList.remove('disabled'); }
+    if (playBtn) playBtn.disabled = false;
     return;
   }
 
   const remaining = Math.max(0, limit - playCount);
   if (playCountEl) playCountEl.textContent = remaining > 0 ? `Còn ${remaining} lượt nghe` : 'Hết lượt nghe';
-  if (playBtn) {
-    playBtn.disabled = remaining <= 0;
-    playBtn.classList.toggle('disabled', remaining <= 0);
-  }
+  if (playBtn) playBtn.disabled = remaining <= 0;
 }
 
-/* ===== HINTS ===== */
+/* ===== HINT ===== */
 export function showDictationHint() {
   const word = getCurrentWord();
   if (!word) return;
@@ -496,7 +395,7 @@ export function showDictationHint() {
   const fieldId = hintIds[hintIndex % hintIds.length];
   hintIndex++;
 
-  const label = FIELD_MAP.get(fieldId)?.label || 'Gợi ý';
+  const label = FIELD_LABEL[fieldId] || 'Gợi ý';
   const text = getFieldText(word, fieldId);
 
   hintEl.innerHTML = `<i class="fas fa-lightbulb"></i> <strong>${escapeHtml(label)}:</strong> ${escapeHtml(text || '(trống)')}`;
@@ -510,7 +409,6 @@ export function checkDictationAnswer() {
 
   const input = document.getElementById('dictation-answer');
   const feedback = document.getElementById('dictation-feedback');
-  const checkBtn = document.getElementById('btn-check');
   const skipBtn = document.getElementById('btn-skip');
 
   if (!input || !feedback) return;
@@ -530,51 +428,36 @@ export function checkDictationAnswer() {
   input.disabled = true;
 
   if (isCorrect) {
-    feedback.innerHTML = `
-      <div class="feedback-correct">
-        <i class="fas fa-check-circle"></i>
-        <span>Chính xác!</span>
-      </div>
-    `;
+    feedback.innerHTML = `<div class="feedback-correct"><i class="fas fa-check-circle"></i><span>Chính xác!</span></div>`;
     input.classList.add('correct');
   } else {
     const suggestion = autoCorrectSuggestion(userAnswer, lastCorrectText);
 
     const answerBlock = settings.showAnswer
-      ? `
-        <div class="feedback-answer">
-          <small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small>
-          ${suggestion ? `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(suggestion)}</strong></small></div>` : ''}
-          <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
-        </div>
-      `
-      : `
-        ${suggestion ? `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(suggestion)}</strong></small></div>` : ''}
-        <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
-      `;
+      ? `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`
+      : '';
+
+    const suggestBlock = suggestion
+      ? `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(suggestion)}</strong></small></div>`
+      : '';
 
     feedback.innerHTML = `
-      <div class="feedback-wrong">
-        <i class="fas fa-times-circle"></i>
-        <span>Sai rồi!</span>
-      </div>
+      <div class="feedback-wrong"><i class="fas fa-times-circle"></i><span>Sai rồi!</span></div>
       ${answerBlock}
+      ${suggestBlock}
+      <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
     `;
     input.classList.add('wrong');
   }
 
-  if (checkBtn) checkBtn.style.display = 'none';
   if (skipBtn) skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
 
-  updateDictationProgress();
+  updateCommonHeaderProgress();
   if (settings.autoNext) startAutoNext(2);
 }
 
 /* ===== SKIP ===== */
 function skipDictationAction() {
-  const word = getCurrentWord();
-  if (!word) return;
-
   if (answered) {
     showCurrentDictation();
     return;
@@ -596,39 +479,20 @@ function skipDictationAction() {
     : '';
 
   if (feedback) {
-    feedback.innerHTML = `
-      <div class="feedback-skipped">
-        <i class="fas fa-forward"></i>
-        <span>Đã bỏ qua.</span>
-      </div>
-      ${answerLine}
-    `;
+    feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>${answerLine}`;
   }
 
-  updateDictationProgress();
-  setTimeout(() => showCurrentDictation(), 900);
-}
-
-/* ===== PROGRESS ===== */
-function updateDictationProgress() {
-  const state = getPracticeState();
-  const progressText = document.getElementById('dictation-progress-text');
-  const progressBar = document.getElementById('dictation-progress-bar');
-  const scoreEl = document.getElementById('dictation-score');
-
-  if (progressText) progressText.textContent = `${Math.min(state.currentIndex + 1, state.total)} / ${state.total}`;
-  if (progressBar) progressBar.style.width = `${state.progress}%`;
-  if (scoreEl) scoreEl.textContent = String(state.score ?? 0);
+  updateCommonHeaderProgress();
+  setTimeout(showCurrentDictation, 700);
 }
 
 /* ===== AUTO NEXT ===== */
 function startAutoNext(seconds) {
   clearAutoNextTimer();
   const s = Math.max(1, Number(seconds || 2));
-
-  const skipBtn = document.getElementById('btn-skip');
   let remaining = s;
 
+  const skipBtn = document.getElementById('btn-skip');
   if (skipBtn) skipBtn.innerHTML = `Tiếp theo (${remaining}s) <i class="fas fa-arrow-right"></i>`;
 
   autoNextTimer = setInterval(() => {
@@ -648,6 +512,15 @@ function clearAutoNextTimer() {
   }
 }
 
+/* ===== COMMON HEADER PROGRESS ===== */
+function updateCommonHeaderProgress() {
+  const state = getPracticeState();
+  const bar = document.getElementById('practice-progress-bar');
+  const text = document.getElementById('practice-progress-text');
+  if (bar?.style) bar.style.width = `${state.progress}%`;
+  if (text) text.textContent = `${state.currentIndex}/${state.total}`;
+}
+
 /* ===== RESULTS ===== */
 function showDictationResults() {
   stopSpeaking();
@@ -658,7 +531,7 @@ function showDictationResults() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="practice-results dictation-results" data-render="dictation-results">
+    <div class="practice-results dictation-results">
       <div class="results-header">
         <i class="fas fa-headphones"></i>
         <h2>Kết quả nghe - viết</h2>
@@ -676,36 +549,33 @@ function showDictationResults() {
       </div>
 
       <div class="results-actions">
-        <button class="btn-primary" type="button" data-action="dictation-restart">
+        <button class="btn-primary" type="button" data-practice-action="dictation-restart">
           <i class="fas fa-redo"></i> Làm lại
         </button>
-        <button class="btn-secondary" type="button" data-action="dictation-exit-results">
+        <button class="btn-secondary" type="button" data-practice-action="practice-exit">
           <i class="fas fa-home"></i> Quay lại luyện tập
         </button>
       </div>
     </div>
   `;
 
-  container.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const action = btn.getAttribute('data-action');
-    if (action === 'dictation-restart') restartDictation();
-    if (action === 'dictation-exit-results') exitDictation();
-  }, { once: true });
+  const bar = document.getElementById('practice-progress-bar');
+  const text = document.getElementById('practice-progress-text');
+  if (bar?.style) bar.style.width = '100%';
+  if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
 /* ===== NAV ===== */
+export function restartDictation() {
+  startDictation(window.practiceScope, window.dictationSettings);
+}
+
 export function exitDictation() {
   stopSpeaking();
   clearAutoNextTimer();
   resetPractice();
-  hidePracticeArea?.();
-}
-
-export function restartDictation() {
-  const scope = window.practiceScope;
-  startDictation(scope, settings);
+  // thoát chuẩn là back header -> practice-exit; nhưng giữ cho tương thích
+  window.hidePracticeArea?.();
 }
 
 /* ===== UTILS ===== */
@@ -721,12 +591,8 @@ function formatDuration(seconds) {
   return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
-/* ===== WINDOW EXPORTS ===== */
+/* ===== GLOBALS ===== */
 window.startDictation = startDictation;
-window.playDictationAudio = playDictationAudio;
-window.showDictationHint = showDictationHint;
-window.checkDictationAnswer = checkDictationAnswer;
-window.exitDictation = exitDictation;
 window.restartDictation = restartDictation;
-
+window.exitDictation = exitDictation;
 export { startDictation as run };
