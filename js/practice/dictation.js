@@ -608,6 +608,13 @@ function formatDuration(seconds) {
   return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
 }
 
+export function renderDictation() {
+  renderDictationUI();
+  bindDictationUIEvents();
+  showCurrentDictation();
+}
+window.renderDictation = renderDictation;
+
 /* ===== GLOBALS ===== */
 window.startDictation = startDictation;
 window.playDictationAudio = playDictationAudio;
