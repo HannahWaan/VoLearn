@@ -52,6 +52,7 @@ let answered = false;
 
 let typingTimer = null;
 let timeLeft = 0;
+let autoNextTimer = null;
 
 /* ===== FIELDS (1..8 like Dictation/Quiz) ===== */
 const TYPING_FIELDS = [
@@ -202,6 +203,7 @@ export function startTyping(scope, incomingSettings = {}) {
   renderTypingUI();
   bindTypingUIEvents();
   showCurrentTyping();
+  clearAutoNextTimer();
 
   showToast(`Bắt đầu luyện gõ ${getPracticeState().total} từ`, 'success');
 }
@@ -449,7 +451,8 @@ function onTypingTimeout() {
   updateHeaderProgress();
 
   // auto next if enabled
-  if (s.autoNext) setTimeout(() => showCurrentTyping(), 700);
+  if (s.autoNext) startTypingAutoNext(5);
+  else setTimeout(() => showCurrentTyping(), 700);
 }
 
 /* ===== ACTIONS ===== */
@@ -507,7 +510,7 @@ function checkTypingAnswer() {
 
   updateHeaderProgress();
 
-  if (s.autoNext) setTimeout(() => showCurrentTyping(), 650);
+  if (s.autoNext) startTypingAutoNext(5);
 }
 
 export function skipTyping() {
@@ -545,7 +548,8 @@ export function skipTyping() {
 
   updateHeaderProgress();
 
-  setTimeout(() => showCurrentTyping(), 650);
+  if (s.autoNext) startTypingAutoNext(5);
+  else setTimeout(() => showCurrentTyping(), 650);
 }
 
 export function speakTypingWord() {
@@ -572,6 +576,7 @@ function updateHeaderProgress() {
 
 /* ===== RESULTS ===== */
 function showTypingResults() {
+  clearAutoNextTimer();
   stopTypingTimer();
   stopSpeaking();
 
@@ -652,6 +657,7 @@ export function restartTyping() {
 }
 
 export function exitTyping() {
+  clearAutoNextTimer();
   stopTypingTimer();
   stopSpeaking();
   resetPractice();
@@ -679,6 +685,36 @@ export function renderTyping() {
   showCurrentTyping();
 }
 window.renderTyping = renderTyping;
+
+function clearAutoNextTimer() {
+  if (autoNextTimer) {
+    clearInterval(autoNextTimer);
+    autoNextTimer = null;
+  }
+}
+
+function startTypingAutoNext(seconds) {
+  clearAutoNextTimer();
+
+  let remaining = Math.max(1, Number(seconds || 5));
+
+  const feedbackEl = document.getElementById('typing-feedback');
+  if (feedbackEl) {
+    feedbackEl.innerHTML += `<div class="feedback-meta"><small>Tự động chuyển sau ${remaining}s</small></div>`;
+  }
+
+  autoNextTimer = setInterval(() => {
+    remaining--;
+
+    const meta = document.querySelector('#typing-feedback .feedback-meta small');
+    if (meta) meta.textContent = `Tự động chuyển sau ${Math.max(0, remaining)}s`;
+
+    if (remaining <= 0) {
+      clearAutoNextTimer();
+      showCurrentTyping();
+    }
+  }, 1000);
+}
 
 /* ===== GLOBALS ===== */
 window.startTyping = startTyping;
