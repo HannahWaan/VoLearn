@@ -1,5 +1,5 @@
 /* ===== TYPING MODE ===== */
-/* VoLearn v2 - Chế độ gõ từ (upgraded to match Test-style Typing Settings, keep VoLearn UI) */
+/* VoLearn - Typing (Settings-driven, keep style but use common practice header/back) */
 
 import {
   initPractice,
@@ -13,18 +13,17 @@ import {
 
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
-import { navigate } from '../core/router.js';
 
 /* ===== FIELD DEFINITIONS (match Dictation/Quiz) ===== */
 const TYPING_FIELDS = [
-  { id: 1, key: 'word', label: 'Từ vựng' },
-  { id: 2, key: 'phonetic', label: 'Phát âm' },
-  { id: 3, key: 'pos', label: 'Loại từ' },
-  { id: 4, key: 'defEn', label: 'Định nghĩa (EN)' },
-  { id: 5, key: 'defVi', label: 'Nghĩa (VI)' },
-  { id: 6, key: 'example', label: 'Ví dụ' },
-  { id: 7, key: 'synonyms', label: 'Từ đồng nghĩa' },
-  { id: 8, key: 'antonyms', label: 'Từ trái nghĩa' }
+  { id: 1, label: 'Từ vựng' },
+  { id: 2, label: 'Phát âm' },
+  { id: 3, label: 'Loại từ' },
+  { id: 4, label: 'Định nghĩa (EN)' },
+  { id: 5, label: 'Nghĩa (VI)' },
+  { id: 6, label: 'Ví dụ' },
+  { id: 7, label: 'Từ đồng nghĩa' },
+  { id: 8, label: 'Từ trái nghĩa' }
 ];
 
 const POS_MAPPING = {
@@ -42,33 +41,28 @@ const POS_MAPPING = {
 };
 
 /* ===== STATE ===== */
-let typingTimer = null;
 let startTime = null;
-
-/* per-question snapshot */
 let currentAnswerFieldId = 1;
 let currentCorrectAnswer = '';
 let currentHintFieldIds = [];
 let suggestionTimer = null;
 
-/* ===== START TYPING ===== */
+/* ===== START ===== */
 export function startTyping(scope, settings = {}) {
   const words = getWordsByScope(scope);
-
   if (!words.length) {
     showToast('Không có từ để luyện tập!', 'warning');
     return;
   }
 
-  // Default settings (now aligned with typingSettings.js)
-  const defaultSettings = {
+  const defaults = {
     shuffle: true,
     limit: 0,
 
     answerFieldIds: [1],
     hintFieldIds: [5],
 
-    scoring: 'exact', // exact | half | partial | lenient
+    scoring: 'exact', // exact|half|partial|lenient
     showAnswer: false,
     strictMode: false,
     autoNext: true,
@@ -77,30 +71,26 @@ export function startTyping(scope, settings = {}) {
     showLength: true
   };
 
-  const mergedSettings = { ...defaultSettings, ...settings };
+  const merged = { ...defaults, ...settings };
+  merged.answerFieldIds = normalizeFieldIds(merged.answerFieldIds, [1]);
+  merged.hintFieldIds = normalizeFieldIds(merged.hintFieldIds, [5]);
 
-  // normalize ids
-  mergedSettings.answerFieldIds = normalizeFieldIdArray(mergedSettings.answerFieldIds, [1]);
-  mergedSettings.hintFieldIds = normalizeFieldIdArray(mergedSettings.hintFieldIds, [5]);
+  if (!initPractice('typing', words, merged)) return;
 
-  if (!initPractice('typing', words, mergedSettings)) return;
-
-  // keep for restart
   window.practiceScope = scope;
-  window.typingSettings = mergedSettings;
+  window.typingSettings = merged;
 
   renderTypingUI();
   showCurrentTyping();
 }
 
-/* ===== RENDER UI (keep VoLearn UI) ===== */
+/* ===== UI ===== */
 function renderTypingUI() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
   container.innerHTML = `
     <div class="typing-container" data-render="typing-ui">
-      <!-- typing-header bỏ nút back riêng; progress dùng header chung -->
       <div class="typing-header" style="justify-content:flex-end;">
         <div class="typing-stats">
           <span id="typing-score" class="stat-correct">0</span>
@@ -113,11 +103,6 @@ function renderTypingUI() {
         <div class="typing-word-display">
           <div class="word-meaning" id="typing-meaning"></div>
           <div class="word-preview" id="word-preview"></div>
-        </div>
-
-        <div class="typing-timer" id="typing-timer" style="display:none;">
-          <i class="fas fa-clock"></i>
-          <span id="timer-value">0:00</span>
         </div>
 
         <div class="typing-input-area">
@@ -143,34 +128,24 @@ function renderTypingUI() {
     </div>
   `;
 
-  // Input listeners
   const input = document.getElementById('typing-input');
   if (input) {
-    input.addEventListener('input', handleTypingInput);
-    input.addEventListener('keydown', handleTypingKeydown);
+    input.addEventListener('input', onInput);
+    input.addEventListener('keydown', onKeydown);
   }
 
-  // Control buttons (no inline onclick)
   container.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
+    const btn = e.target.closest('[data-render="typing-ui"] [data-action]');
     if (!btn) return;
-
     const act = btn.getAttribute('data-action');
-    if (act === 'typing-speak') {
-      speakTypingWord();
-      return;
-    }
-    if (act === 'typing-skip') {
-      skipTyping();
-      return;
-    }
-  }, { once: true }); // rebind each renderTypingUI
+    if (act === 'typing-speak') speakTypingWord();
+    if (act === 'typing-skip') skipTyping();
+  });
 }
 
-/* ===== SHOW CURRENT ===== */
+/* ===== FLOW ===== */
 function showCurrentTyping() {
   clearSuggestionTimer();
-  stopTypingTimer();
 
   const word = getCurrentWord();
   if (!word) {
@@ -180,32 +155,24 @@ function showCurrentTyping() {
 
   startTime = Date.now();
 
-  const state = getPracticeState();
-  const settings = state.settings || {};
+  const { settings } = getPracticeState();
+  const answerPool = normalizeFieldIds(settings?.answerFieldIds, [1]);
+  const hintPool = normalizeFieldIds(settings?.hintFieldIds, [5]);
 
-  // pick answer field for this question
-  currentAnswerFieldId = pickRandom(settings.answerFieldIds) ?? 1;
+  currentAnswerFieldId = pickRandom(answerPool) ?? 1;
+  currentCorrectAnswer = getFieldText(word, currentAnswerFieldId) || getFieldText(word, 1);
 
-  // compute correct answer text
-  currentCorrectAnswer = getFieldText(word, currentAnswerFieldId);
+  currentHintFieldIds = hintPool.filter(id => Number(id) !== Number(currentAnswerFieldId));
 
-  // if empty (field missing), fallback to word
-  if (!currentCorrectAnswer) {
-    currentAnswerFieldId = 1;
-    currentCorrectAnswer = getFieldText(word, 1);
-  }
+  renderHints(word, settings);
 
-  // hint fields list (exclude the answer field to avoid leaking)
-  currentHintFieldIds = Array.isArray(settings.hintFieldIds) ? settings.hintFieldIds : [5];
-  currentHintFieldIds = currentHintFieldIds.filter(id => Number(id) !== Number(currentAnswerFieldId));
+  updatePreview('');
+  resetInput();
 
-  // Render hint panel (in #typing-meaning)
-  renderHintsPanel(word, settings);
+  updateHeaderAndStats();
+}
 
-  // Render preview placeholders (length/first letter helpers)
-  updateWordPreview('');
-
-  // reset input
+function resetInput() {
   const input = document.getElementById('typing-input');
   const feedback = document.getElementById('typing-feedback');
 
@@ -216,36 +183,31 @@ function showCurrentTyping() {
     input.focus();
   }
   if (feedback) feedback.innerHTML = '';
-
-  updateTypingProgress();
 }
 
-/* ===== HINT RENDERING (replace old meaning/phonetic) ===== */
-function renderHintsPanel(word, settings) {
-  const meaningEl = document.getElementById('typing-meaning');
-  if (!meaningEl) return;
+function renderHints(word, settings) {
+  const el = document.getElementById('typing-meaning');
+  if (!el) return;
 
   const answerLabel = getFieldLabel(currentAnswerFieldId);
-  const hintItems = currentHintFieldIds
-    .map((id) => {
-      const label = getFieldLabel(id);
-      const value = getFieldText(word, id);
-      if (!value) return '';
-      return `
-        <div class="typing-hint-item">
-          <strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}
-        </div>
-      `;
-    })
-    .filter(Boolean)
-    .join('');
+
+  const hintItems = currentHintFieldIds.map(id => {
+    const label = getFieldLabel(id);
+    const value = getFieldText(word, id);
+    if (!value) return '';
+    return `<div class="typing-hint-item"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`;
+  }).filter(Boolean).join('');
 
   const letterHint = buildLetterHint(currentCorrectAnswer, settings);
 
+  const suggestBlock = settings.autoCorrect
+    ? `<div id="typing-suggestion" class="typing-suggestion" style="display:none;"></div>`
+    : '';
+
   const showAnswerBlock = settings.showAnswer
     ? `
-      <div class="typing-show-answer">
-        <button class="btn-secondary btn-small" type="button" onclick="window.toggleTypingShowAnswer()">
+      <div class="typing-show-answer" style="margin-top:10px;">
+        <button class="btn-secondary btn-small" type="button" data-action="typing-toggle-answer">
           <i class="fas fa-eye"></i> Xem đáp án
         </button>
         <div id="typing-answer-reveal" class="typing-answer-reveal" style="display:none; margin-top:10px;">
@@ -256,11 +218,7 @@ function renderHintsPanel(word, settings) {
     `
     : '';
 
-  const suggestionBlock = settings.autoCorrect
-    ? `<div id="typing-suggestion" class="typing-suggestion" style="display:none;"></div>`
-    : '';
-
-  meaningEl.innerHTML = `
+  el.innerHTML = `
     <div class="typing-hints-wrap">
       <div class="typing-question-title">
         <i class="fas fa-keyboard"></i>
@@ -271,137 +229,42 @@ function renderHintsPanel(word, settings) {
 
       ${letterHint ? `<div class="typing-letter-hint">${escapeHtml(letterHint)}</div>` : ''}
 
-      ${suggestionBlock}
-
+      ${suggestBlock}
       ${showAnswerBlock}
     </div>
   `;
-}
 
-/* ===== PREVIEW (use correctAnswer instead of word.word) ===== */
-function updateWordPreview(typed) {
-  const state = getPracticeState();
-  const settings = state.settings || {};
-  const previewEl = document.getElementById('word-preview');
-  if (!previewEl) return;
-
-  // Preview target is the correctAnswer for the current field
-  const target = String(currentCorrectAnswer ?? '');
-  if (!target) {
-    previewEl.innerHTML = '';
-    return;
-  }
-
-  const typedStr = String(typed ?? '');
-
-  // highlight per-character correctness (based on strictMode)
-  const strict = !!settings.strictMode;
-  const a = strict ? typedStr : typedStr.toLowerCase();
-  const b = strict ? target : target.toLowerCase();
-
-  let html = '';
-  for (let i = 0; i < target.length; i++) {
-    const char = target[i];
-    const typedChar = a[i];
-    const correctChar = b[i];
-
-    if (i < a.length) {
-      const ok = typedChar === correctChar;
-      html += `<span class="char ${ok ? 'correct' : 'wrong'}">${escapeHtml(char)}</span>`;
-    } else if (i === a.length) {
-      html += `<span class="char current">${escapeHtml(char)}</span>`;
-    } else {
-      html += `<span class="char pending">${escapeHtml(char)}</span>`;
-    }
-  }
-
-  previewEl.innerHTML = html;
-}
-
-/* ===== INPUT HANDLERS ===== */
-function handleTypingInput(e) {
-  const typed = e.target.value ?? '';
-  updateWordPreview(typed);
-
-  const state = getPracticeState();
-  const settings = state.settings || {};
-
-  if (settings.autoCorrect) {
-    scheduleSuggestion(String(typed));
+  // bind toggle answer (no inline)
+  if (settings.showAnswer) {
+    el.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="typing-toggle-answer"]');
+      if (!btn) return;
+      toggleTypingShowAnswer();
+    }, { once: true });
   }
 }
 
-function handleTypingKeydown(e) {
+function onInput(e) {
+  const typed = String(e.target.value ?? '');
+  updatePreview(typed);
+
+  const { settings } = getPracticeState();
+  if (settings?.autoCorrect) scheduleSuggestion(typed, settings);
+}
+
+function onKeydown(e) {
   if (e.key === 'Enter') {
     const input = document.getElementById('typing-input');
     if (!input) return;
     if (!String(input.value || '').trim()) return;
-
-    // On Enter -> evaluate
     completeTyping();
   }
 }
 
-/* ===== SUGGESTION (autoCorrect) ===== */
-function scheduleSuggestion(rawTyped) {
-  clearSuggestionTimer();
-  suggestionTimer = setTimeout(() => {
-    showTypingSuggestion(rawTyped);
-  }, 80);
-}
-
-function clearSuggestionTimer() {
-  if (suggestionTimer) {
-    clearTimeout(suggestionTimer);
-    suggestionTimer = null;
-  }
-}
-
-function showTypingSuggestion(rawTyped) {
-  const state = getPracticeState();
-  const settings = state.settings || {};
-  if (!settings.autoCorrect) return;
-
-  const el = document.getElementById('typing-suggestion');
-  if (!el) return;
-
-  const typed = String(rawTyped ?? '').trim();
-  if (!typed) {
-    el.style.display = 'none';
-    return;
-  }
-
-  const strict = !!settings.strictMode;
-  const target = String(currentCorrectAnswer ?? '').trim();
-  if (!target) {
-    el.style.display = 'none';
-    return;
-  }
-
-  const a = strict ? typed : typed.toLowerCase();
-  const b = strict ? target : target.toLowerCase();
-
-  if (a.length < 2) {
-    el.style.display = 'none';
-    return;
-  }
-
-  // Suggest only if user typed is a prefix
-  if (b.startsWith(a)) {
-    const remaining = target.slice(typed.length);
-    el.innerHTML = `<span class="suggestion-text">${escapeHtml(typed)}<span class="suggestion-hint">${escapeHtml(remaining)}</span></span>`;
-    el.style.display = 'block';
-  } else {
-    el.style.display = 'none';
-  }
-}
-
-/* ===== COMPLETE / SCORING ===== */
 function completeTyping() {
   const word = getCurrentWord();
   if (!word) return;
 
-  stopTypingTimer();
   clearSuggestionTimer();
 
   const state = getPracticeState();
@@ -409,16 +272,15 @@ function completeTyping() {
 
   const inputEl = document.getElementById('typing-input');
   const feedback = document.getElementById('typing-feedback');
-  const userRaw = String(inputEl?.value ?? '').trim();
+  const user = String(inputEl?.value ?? '').trim();
 
-  if (!userRaw) {
+  if (!user) {
     showToast('Vui lòng nhập câu trả lời!', 'error');
     return;
   }
 
-  const isCorrect = checkByScoring(userRaw, currentCorrectAnswer, settings);
-
-  submitAnswer(userRaw, isCorrect);
+  const isCorrect = checkByScoring(user, currentCorrectAnswer, settings);
+  submitAnswer(user, isCorrect);
 
   if (inputEl) {
     inputEl.disabled = true;
@@ -426,149 +288,48 @@ function completeTyping() {
   }
 
   if (feedback) {
-    if (isCorrect) {
-      const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
-      feedback.innerHTML = `
-        <div class="feedback-correct">
-          <i class="fas fa-check-circle"></i>
-          <span>Tuyệt vời! (${timeTaken}s)</span>
-        </div>
-      `;
-    } else {
-      feedback.innerHTML = `
-        <div class="feedback-wrong">
-          <i class="fas fa-times-circle"></i>
-          <span>Đáp án đúng: <strong>${escapeHtml(currentCorrectAnswer)}</strong></span>
-        </div>
-      `;
-    }
+    feedback.innerHTML = isCorrect
+      ? `<div class="feedback-correct"><i class="fas fa-check-circle"></i><span>Tuyệt vời! (${(((Date.now() - startTime) / 1000) || 0).toFixed(1)}s)</span></div>`
+      : `<div class="feedback-wrong"><i class="fas fa-times-circle"></i><span>Đáp án đúng: <strong>${escapeHtml(currentCorrectAnswer)}</strong></span></div>`;
   }
 
-  updateTypingProgress();
+  updateHeaderAndStats();
 
-  // next
-  const delay = isCorrect ? 1000 : 1500;
   if (settings.autoNext) {
-    setTimeout(() => showCurrentTyping(), delay);
+    setTimeout(showCurrentTyping, isCorrect ? 1000 : 1500);
   } else {
-    // If autoNext off, guide user to press Enter again or click skip (keep UI simple)
     showToast('Nhấn Enter để sang câu tiếp theo hoặc bấm Bỏ qua', 'info');
   }
 }
 
-function checkByScoring(userAnswer, correctAnswer, settings) {
-  const scoring = settings.scoring || 'exact';
-  const strict = !!settings.strictMode;
-
-  const u = String(userAnswer ?? '').trim();
-  const c = String(correctAnswer ?? '').trim();
-
-  const a = strict ? u : u.toLowerCase();
-  const b = strict ? c : c.toLowerCase();
-
-  if (!b) return false;
-
-  switch (scoring) {
-    case 'exact':
-      return a === b;
-
-    case 'half': {
-      const sim = similarityRatio(a, b);
-      return sim >= 0.5;
-    }
-
-    case 'partial': {
-      // “Đúng một phần”: chỉ cần có ít nhất 1 ký tự trùng vị trí HOẶC substring dài >= 1
-      // (tránh quá dễ: nếu user nhập 1 ký tự bất kỳ không tồn tại thì false)
-      if (!a) return false;
-      if (b.includes(a)) return true;
-      return hasAnyCorrectPositionChar(a, b);
-    }
-
-    case 'lenient': {
-      const dist = levenshtein(a, b);
-      return dist <= 2;
-    }
-
-    default:
-      return a === b;
-  }
-}
-
-function hasAnyCorrectPositionChar(a, b) {
-  const n = Math.min(a.length, b.length);
-  for (let i = 0; i < n; i++) {
-    if (a[i] === b[i]) return true;
-  }
-  return false;
-}
-
-/* ===== TIMER (kept - not used by settings currently) ===== */
-function stopTypingTimer() {
-  if (typingTimer) {
-    clearInterval(typingTimer);
-    typingTimer = null;
-  }
-}
-
-function updateTimerDisplay(seconds) {
-  const timerValue = document.getElementById('timer-value');
-  if (timerValue) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    timerValue.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-    timerValue.classList.toggle('warning', seconds <= 5);
-  }
-}
-
-/* ===== SKIP ===== */
+/* ===== ACTIONS ===== */
 export function skipTyping() {
-  stopTypingTimer();
-  // treat as wrong answer, but without input
   submitAnswer('', false);
   showCurrentTyping();
 }
 
-/* ===== SPEAK ===== */
 export function speakTypingWord() {
   const word = getCurrentWord();
   if (word?.word) speak(word.word);
 }
 
-/* ===== TOGGLE SHOW ANSWER ===== */
 export function toggleTypingShowAnswer() {
   const el = document.getElementById('typing-answer-reveal');
   if (!el) return;
   el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
 }
 
-/* ===== UPDATE PROGRESS ===== */
-function updateTypingProgress() {
-  const state = getPracticeState();
-
-  const scoreEl = document.getElementById('typing-score');
-  const wrongEl = document.getElementById('typing-wrong');
-  if (scoreEl) scoreEl.textContent = state.score;
-  if (wrongEl) wrongEl.textContent = state.wrong;
-
-  // sync common header
-  const bar2 = document.getElementById('practice-progress-bar');
-  const text2 = document.getElementById('practice-progress-text');
-  if (bar2?.style) bar2.style.width = `${state.progress}%`;
-  if (text2) text2.textContent = `${state.currentIndex}/${state.total}`;
+export function restartTyping() {
+  startTyping(window.practiceScope, window.typingSettings);
 }
 
-/* ===== SHOW RESULTS ===== */
+/* ===== RESULTS ===== */
 function showTypingResults() {
-  stopTypingTimer();
   const result = finishPractice();
-
   const container = document.getElementById('practice-content');
   if (!container) return;
 
-  const wpm = result.duration > 0
-    ? Math.round((result.total * 5) / (result.duration / 60))
-    : 0;
+  const wpm = result.duration > 0 ? Math.round((result.total * 5) / (result.duration / 60)) : 0;
 
   container.innerHTML = `
     <div class="practice-results typing-results">
@@ -588,30 +349,12 @@ function showTypingResults() {
         </div>
 
         <div class="stats-grid">
-          <div class="stat-item">
-            <span class="value">${result.total}</span>
-            <span class="label">Tổng số</span>
-          </div>
-          <div class="stat-item correct">
-            <span class="value">${result.score}</span>
-            <span class="label">Đúng</span>
-          </div>
-          <div class="stat-item wrong">
-            <span class="value">${result.wrong}</span>
-            <span class="label">Sai</span>
-          </div>
-          <div class="stat-item">
-            <span class="value">${result.skipped || 0}</span>
-            <span class="label">Bỏ qua</span>
-          </div>
-          <div class="stat-item">
-            <span class="value">${wpm}</span>
-            <span class="label">WPM (ước tính)</span>
-          </div>
-          <div class="stat-item">
-            <span class="value">${formatDuration(result.duration)}</span>
-            <span class="label">Thời gian</span>
-          </div>
+          <div class="stat-item"><span class="value">${result.total}</span><span class="label">Tổng số</span></div>
+          <div class="stat-item correct"><span class="value">${result.score}</span><span class="label">Đúng</span></div>
+          <div class="stat-item wrong"><span class="value">${result.wrong}</span><span class="label">Sai</span></div>
+          <div class="stat-item"><span class="value">${result.skipped || 0}</span><span class="label">Bỏ qua</span></div>
+          <div class="stat-item"><span class="value">${wpm}</span><span class="label">WPM (ước tính)</span></div>
+          <div class="stat-item"><span class="value">${formatDuration(result.duration)}</span><span class="label">Thời gian</span></div>
         </div>
       </div>
 
@@ -632,32 +375,150 @@ function showTypingResults() {
   if (text) text.textContent = `${result.total}/${result.total}`;
 }
 
-/* ===== NAVIGATION ===== */
-export function exitTyping() {
-  stopTypingTimer();
-  resetPractice();
-  navigate('practice');
+/* ===== HEADER/SATS ===== */
+function updateHeaderAndStats() {
+  const state = getPracticeState();
+
+  const scoreEl = document.getElementById('typing-score');
+  const wrongEl = document.getElementById('typing-wrong');
+  if (scoreEl) scoreEl.textContent = String(state.score ?? 0);
+  if (wrongEl) wrongEl.textContent = String(state.wrong ?? 0);
+
+  const bar = document.getElementById('practice-progress-bar');
+  const text = document.getElementById('practice-progress-text');
+  if (bar?.style) bar.style.width = `${state.progress}%`;
+  if (text) text.textContent = `${state.currentIndex}/${state.total}`;
 }
 
-export function restartTyping() {
-  const scope = window.practiceScope;
-  const settings = window.typingSettings;
-  startTyping(scope, settings);
+/* ===== PREVIEW ===== */
+function updatePreview(typed) {
+  const previewEl = document.getElementById('word-preview');
+  if (!previewEl) return;
+
+  const { settings } = getPracticeState();
+  const strict = !!settings?.strictMode;
+
+  const target = String(currentCorrectAnswer ?? '');
+  if (!target) { previewEl.innerHTML = ''; return; }
+
+  const typedStr = String(typed ?? '');
+  const a = strict ? typedStr : typedStr.toLowerCase();
+  const b = strict ? target : target.toLowerCase();
+
+  let html = '';
+  for (let i = 0; i < target.length; i++) {
+    const ch = target[i];
+    if (i < a.length) {
+      html += `<span class="char ${a[i] === b[i] ? 'correct' : 'wrong'}">${escapeHtml(ch)}</span>`;
+    } else if (i === a.length) {
+      html += `<span class="char current">${escapeHtml(ch)}</span>`;
+    } else {
+      html += `<span class="char pending">${escapeHtml(ch)}</span>`;
+    }
+  }
+  previewEl.innerHTML = html;
 }
 
-/* ===== HELPERS: word schema ===== */
+/* ===== AUTO-CORRECT SUGGESTION ===== */
+function scheduleSuggestion(typed, settings) {
+  clearSuggestionTimer();
+  suggestionTimer = setTimeout(() => showSuggestion(typed, settings), 80);
+}
+function clearSuggestionTimer() {
+  if (suggestionTimer) { clearTimeout(suggestionTimer); suggestionTimer = null; }
+}
+function showSuggestion(rawTyped, settings) {
+  const el = document.getElementById('typing-suggestion');
+  if (!el) return;
+
+  const typed = String(rawTyped ?? '').trim();
+  if (!typed) { el.style.display = 'none'; return; }
+
+  const strict = !!settings.strictMode;
+  const target = String(currentCorrectAnswer ?? '').trim();
+  if (!target) { el.style.display = 'none'; return; }
+
+  const a = strict ? typed : typed.toLowerCase();
+  const b = strict ? target : target.toLowerCase();
+
+  if (a.length < 2) { el.style.display = 'none'; return; }
+
+  if (b.startsWith(a)) {
+    const remaining = target.slice(typed.length);
+    el.innerHTML = `<span class="suggestion-text">${escapeHtml(typed)}<span class="suggestion-hint">${escapeHtml(remaining)}</span></span>`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+/* ===== SCORING ===== */
+function checkByScoring(user, correct, settings) {
+  const scoring = settings.scoring || 'exact';
+  const strict = !!settings.strictMode;
+
+  const u = strict ? String(user).trim() : String(user).trim().toLowerCase();
+  const c = strict ? String(correct).trim() : String(correct).trim().toLowerCase();
+  if (!c) return false;
+
+  if (scoring === 'exact') return u === c;
+
+  if (scoring === 'half') return similarityRatio(u, c) >= 0.5;
+
+  if (scoring === 'partial') {
+    if (!u) return false;
+    if (c.includes(u)) return true;
+    return hasAnyCorrectPositionChar(u, c);
+  }
+
+  if (scoring === 'lenient') return levenshtein(u, c) <= 2;
+
+  return u === c;
+}
+
+function hasAnyCorrectPositionChar(a, b) {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) if (a[i] === b[i]) return true;
+  return false;
+}
+
+function levenshtein(a, b) {
+  const s = String(a ?? '');
+  const t = String(b ?? '');
+  const m = s.length, n = t.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  const dp = Array.from({ length: n + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= m; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const cost = t[i - 1] === s[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[n][m];
+}
+
+function similarityRatio(a, b) {
+  const longer = a.length >= b.length ? a : b;
+  const shorter = a.length >= b.length ? b : a;
+  if (!longer.length) return 1;
+  const dist = levenshtein(longer, shorter);
+  return (longer.length - dist) / longer.length;
+}
+
+/* ===== WORD SCHEMA ===== */
 function primaryMeaning(word) {
   return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
 }
-
-function getFieldLabel(fieldId) {
-  const f = TYPING_FIELDS.find(x => x.id === Number(fieldId));
-  return f?.label || 'Nội dung';
-}
-
 function getFieldText(word, fieldId) {
   const m = primaryMeaning(word);
-
   const norm = (v) => {
     if (v == null) return '';
     if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
@@ -676,89 +537,47 @@ function getFieldText(word, fieldId) {
     default: return '';
   }
 }
-
-function buildLetterHint(answer, settings) {
-  const showFirst = !!settings.showFirstLetter;
-  const showLen = !!settings.showLength;
-
-  const s = String(answer ?? '');
-  if (!s) return '';
-
-  if (showFirst && showLen) {
-    if (s.length <= 1) return s;
-    return s.charAt(0) + '_'.repeat(s.length - 1);
-  }
-  if (showFirst) return s.charAt(0) + '...';
-  if (showLen) return '_'.repeat(s.length);
-  return '';
+function getFieldLabel(id) {
+  return (TYPING_FIELDS.find(f => f.id === Number(id))?.label) || 'Nội dung';
 }
-
-function normalizeFieldIdArray(arr, fallback) {
+function normalizeFieldIds(arr, fallback) {
   const out = (Array.isArray(arr) ? arr : [])
     .map(Number)
     .filter(n => Number.isFinite(n) && n >= 1 && n <= 8);
   return out.length ? out : fallback;
 }
-
+function buildLetterHint(answer, settings) {
+  const s = String(answer ?? '');
+  if (!s) return '';
+  const showFirst = !!settings.showFirstLetter;
+  const showLen = !!settings.showLength;
+  if (showFirst && showLen) return s.length <= 1 ? s : (s[0] + '_'.repeat(s.length - 1));
+  if (showFirst) return s[0] + '...';
+  if (showLen) return '_'.repeat(s.length);
+  return '';
+}
 function pickRandom(arr) {
   if (!Array.isArray(arr) || !arr.length) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/* ===== TEXT / SCORE UTILS ===== */
+/* ===== UTILS ===== */
 function escapeHtml(text) {
-  if (!text) return '';
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = String(text ?? '');
   return div.innerHTML;
 }
-
 function formatDuration(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const s = Number(seconds || 0);
+  const mins = Math.floor(s / 60);
+  const secs = Math.floor(s % 60);
   return mins > 0 ? `${mins}p ${secs}s` : `${secs}s`;
-}
-
-function levenshtein(a, b) {
-  const s = String(a ?? '');
-  const t = String(b ?? '');
-  const m = s.length;
-  const n = t.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-
-  const dp = Array.from({ length: n + 1 }, (_, i) => [i]);
-  for (let j = 1; j <= m; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= n; i++) {
-    for (let j = 1; j <= m; j++) {
-      const cost = t.charAt(i - 1) === s.charAt(j - 1) ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
-    }
-  }
-  return dp[n][m];
-}
-
-function similarityRatio(a, b) {
-  const s = String(a ?? '');
-  const t = String(b ?? '');
-  const longer = s.length >= t.length ? s : t;
-  const shorter = s.length >= t.length ? t : s;
-  if (!longer.length) return 1;
-  const dist = levenshtein(longer, shorter);
-  return (longer.length - dist) / longer.length;
 }
 
 /* ===== EXPORTS ===== */
 export { startTyping as run };
-
 window.startTyping = startTyping;
 window.skipTyping = skipTyping;
 window.speakTypingWord = speakTypingWord;
-window.exitTyping = exitTyping;
 window.restartTyping = restartTyping;
 window.toggleTypingShowAnswer = toggleTypingShowAnswer;
