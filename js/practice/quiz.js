@@ -16,11 +16,13 @@ import {
 
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
+import { getRandomFieldValue, getRandomMeaningFields } from './meaningSelector.js';
 
 /* ===== STATE ===== */
 let options = [];
 let selectedOption = null;
 let answered = false;
+let currentMeaningIndex = 0;
 
 // snapshot settings for this run (don’t rely on getPracticeState().settings)
 let quizSettings = {};
@@ -86,6 +88,13 @@ function showCurrentQuestion() {
     return;
   }
 
+  const meanings = word.meanings || [];
+  if (meanings.length > 1) {
+    currentMeaningIndex = Math.floor(Math.random() * meanings.length);
+  } else {
+    currentMeaningIndex = 0;
+  }
+  
   answered = false;
   selectedOption = null;
 
@@ -446,7 +455,9 @@ function getFieldLabel(fieldId) {
 }
 
 function getFieldText(word, fieldId) {
-  const m = getPrimaryMeaningObj(word);
+  const meanings = word?.meanings || [];
+  const m = meanings[currentMeaningIndex] || meanings[0] || {};
+  
   const normalize = (v) => {
     if (v == null) return '';
     if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
