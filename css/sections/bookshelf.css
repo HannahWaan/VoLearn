@@ -1,0 +1,175 @@
+/* ===== BOOKSHELF SECTION ===== */
+/* VoLearn v2.1.0 */
+
+#bookshelf-section .section-header {
+    flex-wrap: wrap;
+}
+
+/* ===== SET CARDS GRID ===== */
+#sets-container,
+.sets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+}
+
+/* ===== SET CARD ===== */
+.set-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    padding-right: 90px; /* Chừa chỗ cho nút actions */
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.15));
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    min-height: 80px;
+    overflow: visible;
+}
+
+.set-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.2));
+    border-color: var(--primary-color, #e91e8c);
+}
+
+/* ===== SET COLOR ICON ===== */
+.set-color-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 20px;
+    background: var(--primary-color, #667eea);
+}
+
+/* ===== SET INFO ===== */
+.set-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.set-name {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.set-count {
+    font-size: 14px;
+    color: var(--text-secondary, #a0a0a0);
+    display: block;
+}
+
+/* ===== FIX SET CARD ACTIONS ===== */
+.set-card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 20;
+    background: none;       /* QUAN TRỌNG */
+    border-radius: 0;       /* QUAN TRỌNG */
+    padding: 0;             /* QUAN TRỌNG */
+}
+
+/* hover card thì hiện */
+.set-card:hover .set-card-actions {
+    opacity: 1;
+}
+
+/* mỗi nút là 1 khối độc lập */
+.btn-edit-set,
+.btn-delete-set {
+    all: unset;                     /* reset style */
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+}
+
+/* edit */
+.btn-edit-set {
+    color: var(--primary-color, #667eea);
+}
+
+.btn-edit-set:hover {
+    background: var(--primary-color, #667eea);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* delete */
+.btn-delete-set {
+    color: #ef4444;
+}
+
+.btn-delete-set:hover {
+    background: #ef4444;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* ===== ALL WORDS CARD ===== */
+.set-card.all-words {
+    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
+    border: none;
+    padding-right: 20px; /* Không có nút actions */
+}
+
+.set-card.all-words .set-name,
+.set-card.all-words .set-count {
+    color: #fff;
+}
+
+.set-card.all-words .set-color-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.set-card.all-words:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    #sets-container,
+    .sets-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .set-card {
+        padding-right: 100px;
+    }
+    
+    .set-card-actions {
+        opacity: 1; /* Luôn hiện trên mobile */
+    }
+}
+
+

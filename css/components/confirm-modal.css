@@ -1,0 +1,189 @@
+/* ========================================
+   VoLearn - Confirm Modal Styles
+   ======================================== */
+
+/* Modal Overlay */
+#confirm-modal {
+    z-index: 10000;
+}
+
+#confirm-modal .modal-content {
+    max-width: 420px;
+    text-align: center;
+    padding: 0;
+    border-radius: var(--radius-xl, 16px);
+    overflow: hidden;
+}
+
+/* Modal Header với Icon */
+.confirm-modal-header {
+    padding: 24px 24px 16px;
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+.confirm-modal-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+}
+
+/* Icon variants */
+.modal-confirm.danger .confirm-modal-icon {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.modal-confirm.warning .confirm-modal-icon {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.modal-confirm.info .confirm-modal-icon {
+    background: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.modal-confirm.primary .confirm-modal-icon {
+    background: rgba(233, 30, 140, 0.1);
+    color: var(--primary-color, #e91e8c);
+}
+
+/* Title & Message */
+.confirm-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a2e);
+    margin: 0 0 8px;
+}
+
+.confirm-modal-body {
+    padding: 0 24px 24px;
+}
+
+.confirm-modal-message {
+    color: var(--text-secondary, #6c757d);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Footer Buttons */
+.confirm-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px 24px;
+    justify-content: center;
+}
+
+.confirm-modal-footer .btn {
+    min-width: 120px;
+    padding: 12px 24px;
+    border-radius: var(--radius-lg, 12px);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Cancel Button */
+#confirm-modal-cancel {
+    background: var(--bg-secondary, #f1f3f4);
+    color: var(--text-primary, #1a1a2e) !important;
+    border: 1px solid var(--border-color, #e0e0e0);
+}
+
+#confirm-modal-cancel:hover {
+    background: var(--bg-tertiary, #e8e8e8);
+}
+
+#confirm-modal-cancel i,
+#confirm-modal-cancel span {
+    color: var(--text-primary, #1a1a2e) !important;
+}
+
+/* OK/Confirm Button - Default danger */
+#confirm-modal-ok {
+    background: #dc3545 !important;
+    color: white !important;
+    border: none;
+}
+
+#confirm-modal-ok:hover {
+    background: #c82333 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+#confirm-modal-ok i,
+#confirm-modal-ok span {
+    color: white !important;
+}
+
+/* Button variants by modal type */
+.modal-confirm.warning #confirm-modal-ok {
+    background: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.modal-confirm.warning #confirm-modal-ok:hover {
+    background: #e0a800 !important;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.modal-confirm.warning #confirm-modal-ok i,
+.modal-confirm.warning #confirm-modal-ok span {
+    color: #212529 !important;
+}
+
+.modal-confirm.info #confirm-modal-ok {
+    background: #0d6efd !important;
+    color: white !important;
+}
+
+.modal-confirm.info #confirm-modal-ok:hover {
+    background: #0b5ed7 !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.modal-confirm.primary #confirm-modal-ok {
+    background: var(--primary-color, #e91e8c) !important;
+    color: white !important;
+}
+
+.modal-confirm.primary #confirm-modal-ok:hover {
+    background: var(--primary-dark, #d1177d) !important;
+    box-shadow: 0 4px 12px rgba(233, 30, 140, 0.3);
+}
+
+/* Dark mode */
+body.dark-mode .confirm-modal-header {
+    background: var(--bg-tertiary, #2d2d44);
+}
+
+body.dark-mode .confirm-modal-title {
+    color: var(--text-primary, #ffffff);
+}
+
+body.dark-mode .confirm-modal-message {
+    color: var(--text-secondary, #a0a0a0);
+}
+
+body.dark-mode #confirm-modal-cancel {
+    background: var(--bg-tertiary, #3d3d5c);
+    color: var(--text-primary, #ffffff) !important;
+    border-color: var(--border-color, #4d4d6d);
+}
+
+body.dark-mode #confirm-modal-cancel i,
+body.dark-mode #confirm-modal-cancel span {
+    color: var(--text-primary, #ffffff) !important;
+}

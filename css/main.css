@@ -1,0 +1,48 @@
+/* ========================================
+   VoLearn v2.1.0 - Main CSS
+   Import all CSS modules
+   ======================================== */
+
+/* ===== BASE ===== */
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/animations.css';
+
+/* ===== LAYOUT ===== */
+@import './layout/sidebar.css';
+@import './layout/header.css';
+@import './layout/main-content.css';
+
+/* ===== COMPONENTS ===== */
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/forms.css';
+@import './components/modals.css';
+@import './components/toast.css';
+@import './components/badges.css';
+@import './components/loading.css'; 
+@import './components/cambridge.css';
+@import './components/practice-settings.css';
+@import './components/confirm-modal.css';
+@import './components/quiz.css';
+@import './components/flashcard.css';
+@import './components/dictation.css';
+
+/* ===== SECTIONS ===== */
+@import './sections/home.css';
+@import './sections/add-word.css';
+@import './sections/bookshelf.css';
+@import './sections/set-view.css';
+@import './sections/practice.css';
+@import './sections/calendar.css';
+@import './sections/settings.css';
+
+/* ===== UTILITIES ===== */
+@import './utilities/responsive.css';
+
+/* ===== LEGACY ===== */
+@import url("./legacy/test-typing-card.css");
+
+
+
+

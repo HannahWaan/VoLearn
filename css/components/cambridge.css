@@ -1,0 +1,190 @@
+/* ===== CAMBRIDGE DICTIONARY WIDGET ===== */
+.cambridge-toggle-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(to right, #0f193d, #2c2f62, #1a2753);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(29, 42, 87, 0.5);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: all 0.3s ease;
+}
+
+.cambridge-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(29, 42, 87, 0.6);
+}
+
+.cambridge-widget {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 300px;
+    background: linear-gradient(to right, #0f193d, #2c2f62, #1a2753);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    z-index: 9001;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.cambridge-widget.show {
+    display: flex;
+}
+
+.cambridge-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cambridge-widget-header span {
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cambridge-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.cambridge-close-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.cambridge-widget-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.cambridge-form {
+    width: 100%;
+}
+
+.cambridge-search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cambridge-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.cambridge-input:focus {
+    outline: none;
+    border-color: #FEC400;
+    box-shadow: 0 0 0 2px rgba(254, 196, 0, 0.3);
+}
+
+.cambridge-submit {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #FEC400;
+    color: #1D2A57;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.cambridge-submit:hover {
+    background: #e5b200;
+    transform: scale(1.05);
+}
+
+.cambridge-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cambridge-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.cambridge-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.cambridge-brand {
+    display: block;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cambridge-brand img {
+    height: 28px;
+    width: auto;
+    opacity: 0.9;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+    .cambridge-widget {
+        width: calc(100% - 32px);
+        right: 16px;
+        left: 16px;
+        bottom: 80px;
+    }
+    
+    .cambridge-toggle-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+        bottom: 16px;
+        right: 16px;
+    }
+}

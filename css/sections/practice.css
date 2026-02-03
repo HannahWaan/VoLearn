@@ -1,0 +1,542 @@
+/* ===== PRACTICE SECTION ===== */
+#practice-section {
+    display: none;
+    padding: 24px;
+}
+
+#practice-section.active {
+    display: block;
+}
+
+.practice-modes {
+    max-width: 954px;
+    margin: 0 auto;
+}
+
+/* ===== SRS CARD ===== */
+.srs-card {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 28px;
+    background: var(--gradient-primary);
+    border-radius: var(--border-radius-lg);
+    color: white;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.srs-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.srs-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.srs-info h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.srs-info p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.srs-count-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.srs-count-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.srs-count {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.btn-srs-start {
+    padding: 14px 28px;
+    background: white;
+    color: var(--primary-color);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-srs-start:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+}
+
+/* ===== DIVIDER ===== */
+.practice-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.practice-divider::before,
+.practice-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+/* ===== PRACTICE GRID 2x2 ===== */
+.practice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.practice-mode-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 28px;
+    text-align: center;
+    transition: var(--transition-fast);
+}
+
+.practice-mode-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.mode-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    margin: 0 auto 16px;
+}
+
+.mode-icon.flashcard-icon {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.mode-icon.quiz-icon {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.mode-icon.dictation-icon {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.mode-icon.typing-icon {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.practice-mode-card h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.practice-mode-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.practice-mode-card .btn-secondary {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ===== PRACTICE AREA ===== */
+.practice-area {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.practice-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.practice-progress {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+#practice-progress-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 50px;
+}
+
+/* ===== PRACTICE CONTENT ===== */
+.practice-content {
+    min-height: 400px;
+}
+
+/* Style mặc định khi chưa vào session */
+#practice-section:not(.in-session) .practice-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 32px;
+}
+
+/* Khi trong session - container trong suốt để quiz/flashcard tự style */
+#practice-section.in-session .practice-content {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    #practice-section {
+        padding: 16px;
+    }
+    
+    .practice-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .srs-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .btn-srs-start {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .practice-mode-card {
+        padding: 20px;
+    }
+}
+
+/* ===== FIX: Đảm bảo practice-modes hiển thị đúng ===== */
+
+/* Khi đang trong session - ẩn modes, hiện area */
+#practice-section.in-session .practice-modes {
+    display: none !important;
+}
+
+#practice-section.in-session .practice-area {
+    display: block !important;
+}
+
+/* Khi không trong session - hiện modes, ẩn area */
+#practice-section:not(.in-session) .practice-modes {
+    display: block !important;
+}
+
+#practice-section:not(.in-session) .practice-area {
+    display: none !important;
+}
+
+/* ==========================================================================
+   PRACTICE SUMMARY & RESULTS - Dùng chung cho tất cả mode
+   ========================================================================== */
+
+/* ===== PRACTICE SUMMARY (Tạm dừng) ===== */
+#practice-section .practice-summary {
+    text-align: center;
+    padding: 48px 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+#practice-section .practice-summary .summary-icon {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+#practice-section .practice-summary h2 {
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+}
+
+#practice-section .summary-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 32px;
+}
+
+#practice-section .summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#practice-section .summary-stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+
+#practice-section .summary-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+#practice-section .summary-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#practice-section .summary-actions .btn-secondary,
+#practice-section .summary-actions .btn-primary {
+    min-width: 140px;
+}
+
+/* ===== PRACTICE RESULTS (Hoàn thành) ===== */
+#practice-section .practice-results {
+    text-align: center;
+    padding: 48px 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+#practice-section .results-header {
+    margin-bottom: 30px;
+}
+
+#practice-section .results-header i {
+    font-size: 4rem;
+    color: #fbbf24;
+    margin-bottom: 16px;
+    display: block;
+}
+
+#practice-section .results-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+}
+
+#practice-section .results-stats {
+    margin-bottom: 32px;
+}
+
+#practice-section .stat-circle {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 24px;
+    position: relative;
+}
+
+#practice-section .stat-circle svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+#practice-section .stat-circle .stat-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 3;
+}
+
+#practice-section .stat-circle .stat-fill {
+    fill: none;
+    stroke: var(--primary-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+}
+
+#practice-section .stat-circle .stat-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+#practice-section .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#practice-section .practice-results .stat-item {
+    padding: 18px;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+}
+
+#practice-section .practice-results .stat-item .value {
+    display: block;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+    line-height: 1.1;
+}
+
+#practice-section .practice-results .stat-item .label {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+#practice-section .practice-results .stat-item.correct .value {
+    color: #10b981;
+}
+
+#practice-section .practice-results .stat-item.wrong .value {
+    color: #ef4444;
+}
+
+#practice-section .results-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#practice-section .results-actions .btn-primary,
+#practice-section .results-actions .btn-secondary {
+    padding: 14px 28px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-width: 160px;
+}
+
+#practice-section .summary-actions .btn-primary,
+#practice-section .summary-actions .btn-secondary {
+    padding: 14px 28px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-width: 160px;
+}
+
+/* ===== PRACTICE COMPLETE ===== */
+#practice-section .practice-complete {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+#practice-section .practice-complete i {
+    font-size: 5rem;
+    color: var(--warning-color);
+    margin-bottom: 24px;
+    display: block;
+}
+
+#practice-section .practice-complete h2 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+#practice-section .practice-complete p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+/* ===== RESPONSIVE cho Summary/Results ===== */
+@media (max-width: 768px) {
+    #practice-section .summary-stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #practice-section .summary-actions,
+    #practice-section .results-actions {
+        flex-direction: column;
+    }
+
+    #practice-section .summary-actions .btn-secondary,
+    #practice-section .summary-actions .btn-primary,
+    #practice-section .results-actions button {
+        width: 100%;
+    }
+
+    #practice-section .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    #practice-section .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

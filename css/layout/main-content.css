@@ -1,0 +1,97 @@
+/* ========================================
+   VoLearn - Main Content Layout
+   ======================================== */
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    background: var(--bg-primary);
+    transition: margin-left var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+}
+
+body.sidebar-collapsed .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ===== SECTIONS ===== */
+.section {
+    display: none;
+    padding: 24px;
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+    max-width: 954px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.section.active {
+    display: block;
+}
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* ===== SECTION TITLE ===== */
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--primary-color);
+}
+
+/* ===== CONTENT GRID ===== */
+.content-grid {
+    display: grid;
+    gap: 24px;
+}
+
+.content-grid.two-columns {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.content-grid.three-columns {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .main-content {
+        margin-left: 0;
+    }
+    
+    body.sidebar-collapsed .main-content {
+        margin-left: 0;
+    }
+    
+    .section {
+        padding: 16px;
+    }
+    
+    .content-grid.two-columns,
+    .content-grid.three-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .section {
+        padding: 12px;
+    }
+}
+
+

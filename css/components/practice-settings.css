@@ -1,0 +1,604 @@
+/* ========================================
+   FLASHCARD SETTINGS MODAL - Từ code cũ
+   ======================================== */
+
+/* ===== MODAL LARGE ===== */
+.modal-large .modal-content {
+    max-width: 700px;
+}
+
+.flashcard-settings-body {
+    padding: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* ===== SETTINGS TABS ===== */
+.settings-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    background: var(--bg-tertiary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.settings-tab {
+    flex: 1;
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.settings-tab:hover {
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.settings-tab.active {
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.settings-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 3px 3px 0 0;
+}
+
+/* ===== TAB CONTENT ===== */
+.settings-tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* ===== SETTING SECTION ===== */
+.setting-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.setting-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.section-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* ===== SETTING ROW ===== */
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.setting-label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.setting-value {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.btn-circle:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: transparent;
+}
+
+#card-limit-value,
+#quiz-limit-value,
+#dictation-limit-value,
+#typing-limit-value,
+#quiz-timer-value,
+#dictation-replay-value {
+    min-width: 100px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+/* ===== FULL WIDTH SLIDER ===== */
+.full-slider {
+    width: 100%;
+    height: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    outline: none;
+}
+
+.full-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(233, 30, 140, 0.3);
+}
+
+/* ===== SCOPE OPTIONS ===== */
+.scope-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.scope-option:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+}
+
+.scope-option i:first-child {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    width: 24px;
+}
+
+.scope-option span {
+    flex: 1;
+    font-weight: 500;
+}
+
+.scope-option i:last-child {
+    color: var(--text-muted);
+}
+
+/* ===== CHECKBOX ITEMS ===== */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkbox-item:last-child {
+    border-bottom: none;
+}
+
+.checkbox-item input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.checkbox-item input:checked + .checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.checkbox-item input:checked + .checkmark::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: white;
+    font-size: 12px;
+}
+
+.checkbox-label {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+/* ===== RADIO GROUP ===== */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition-fast);
+}
+
+.radio-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.radio-item input[type="radio"] {
+    display: none;
+}
+
+.radio-mark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.radio-item input:checked + .radio-mark {
+    border-color: var(--primary-color);
+}
+
+.radio-item input:checked + .radio-mark::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+.radio-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.radio-content span {
+    font-weight: 500;
+}
+
+.radio-content small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ===== FIELD SELECTOR ===== */
+.field-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    user-select: none;
+}
+
+.field-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.field-item input[type="checkbox"] {
+    display: none;
+}
+
+/* Khi được chọn */
+.field-item:has(input:checked) {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.field-item:has(input:checked) .field-order {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.field-item:has(input:checked) .field-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Số thứ tự trong vòng tròn */
+.field-order {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: var(--transition-fast);
+}
+
+/* Tên field */
+.field-name {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* ===== TOGGLE SETTING ===== */
+.toggle-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.toggle-setting span {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toggle-info span {
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-info small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 24px;
+}
+
+.setting-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+/* ===== REFRESH BUTTON ===== */
+.btn-refresh {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+}
+
+.btn-refresh:hover {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+/* ===== START PRACTICE BUTTON ===== */
+.btn-start-practice {
+    width: 100%;
+    padding: 16px;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition-fast);
+}
+
+.btn-start-practice:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ===== SCOPE SELECTOR MODAL ===== */
+.scope-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.scope-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.scope-list-item:hover {
+    background: var(--primary-light);
+}
+
+.scope-list-item.selected {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.scope-list-item i {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    width: 24px;
+}
+
+.scope-list-item span {
+    flex: 1;
+}
+
+.scope-list-item .count {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* ===== SCOPE MULTIPLE CHOICE ===== */
+.scope-multiple {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.scope-list-item-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    user-select: none;
+}
+
+.scope-list-item-checkbox:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.scope-list-item-checkbox.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+}
+
+.scope-list-item-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.scope-checkmark {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+}
+
+.scope-list-item-checkbox.selected .scope-checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.scope-list-item-checkbox.selected .scope-checkmark::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: white;
+    font-size: 12px;
+}
+
+.scope-list-item-checkbox i {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    width: 24px;
+    flex-shrink: 0;
+}
+
+.scope-item-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.scope-list-item-checkbox .count {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    background: var(--bg-secondary);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.scope-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--border-color);
+}

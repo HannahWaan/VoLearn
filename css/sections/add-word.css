@@ -1,0 +1,278 @@
+/* ========================================
+   VoLearn - Add Word Section
+   ======================================== */
+
+/* ===== SECTION LAYOUT - FIX CENTER ===== */
+#add-word-section.section.active {
+    display: block;
+}
+
+#add-word-section .card {
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ===== MEANINGS CONTAINER ===== */
+.meanings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+/* ===== MEANING BLOCK ===== */
+.meaning-block {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.2s;
+}
+
+.meaning-block:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.meaning-block.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+    border: 2px dashed var(--primary-color);
+}
+
+.meaning-block.drag-over {
+    border-top: 3px solid var(--primary-color);
+}
+
+.meaning-block .form-group {
+    margin-bottom: 16px;
+}
+
+.meaning-block .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.meaning-block input,
+.meaning-block textarea,
+.meaning-block select {
+    background: var(--bg-primary);
+}
+
+/* ===== MEANING HEADER ===== */
+.meaning-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.meaning-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--primary-color);
+}
+
+.meaning-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== DRAG HANDLE ===== */
+.drag-handle {
+    cursor: grab;
+    padding: 6px 8px;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.drag-handle:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* ===== MEANING ACTION BUTTONS ===== */
+.btn-clear-meaning,
+.btn-remove-meaning {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-clear-meaning:hover {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning-color);
+}
+
+.btn-remove-meaning:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger-color);
+}
+
+/* ===== SUGGESTIONS DROPDOWN ===== */
+.form-group:has(#word-input) {
+    position: relative;
+}
+
+#word-suggestions,
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-lg);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    margin-top: 4px;
+}
+
+.suggestions-dropdown.show,
+#word-suggestions[style*="block"] {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition-fast);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--primary-light);
+}
+
+.suggestion-phonetic-inline {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+.suggestion-phonetic-inline .phonetic-us {
+    color: var(--info-color);
+    margin-right: 8px;
+}
+
+.suggestion-phonetic-inline .phonetic-uk {
+    color: var(--danger-color);
+}
+
+.suggestion-vi {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 6px 0 4px;
+}
+
+.suggestion-en {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.suggestion-example {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 6px;
+}
+
+.suggestion-loading,
+.suggestion-empty,
+.suggestion-error,
+.suggestion-not-found {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.suggestion-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.suggestion-loading i {
+    color: var(--primary-color);
+    font-size: 18px;
+    animation: spin 1s linear infinite;
+}
+
+.suggestion-error {
+    color: var(--danger-color);
+}
+
+/* ===== NOT FOUND ALTERNATIVES ===== */
+.not-found-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.not-found-message i {
+    color: var(--warning-color);
+}
+
+.alternatives-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.alternatives-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alternative-word {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--primary-color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.alternative-word:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
