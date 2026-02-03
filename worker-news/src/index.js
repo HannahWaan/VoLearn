@@ -7,7 +7,7 @@ export default {
     }
 
     if (url.pathname === "/" || url.pathname === "") {
-      return json({ ok: true, service: "volearn-guardian-reader", version: "2.4" }, request);
+      return json({ ok: true, service: "volearn-guardian-reader", version: "2.5" }, request);
     }
 
     if (url.pathname === "/debug/guardian") {
@@ -56,7 +56,7 @@ async function fetchWithTimeout(url, timeout = 8000) {
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "VoLearnReader/2.4" }
+      headers: { "User-Agent": "VoLearnReader/2.5" }
     });
     clearTimeout(id);
     return res;
@@ -124,28 +124,38 @@ async function handleGuardianItem(url, env, ctx, request) {
     const content = data?.response?.content;
     if (!content) return json({ error: "Content not found" }, request, 404);
 
-    // Extract ALL images from elements
+    // Extract images (only "main" relation, skip thumbnail duplicates)
     const elements = content.elements || [];
     const images = [];
+    const seenIds = new Set();
     
     for (const el of elements) {
-      if (el.type === "image" && el.assets?.length > 0) {
-        const sorted = el.assets.sort((a, b) => (b.typeData?.width || 0) - (a.typeData?.width || 0));
+      if (el.type === "image" && el.relation === "main" && el.assets?.length > 0) {
+        // Skip if we've seen this image ID
+        if (seenIds.has(el.id)) continue;
+        seenIds.add(el.id);
+        
+        const sorted = el.assets.sort((a, b) => 
+          (parseInt(b.typeData?.width) || 0) - (parseInt(a.typeData?.width) || 0)
+        );
         const best = sorted[0];
+        
         images.push({
           url: best.file || "",
-          width: best.typeData?.width || 0,
-          height: best.typeData?.height || 0,
-          caption: best.typeData?.caption || el.imageTypeData?.caption || "",
-          credit: best.typeData?.credit || el.imageTypeData?.credit || "",
-          altText: best.typeData?.altText || el.imageTypeData?.altText || ""
+          width: parseInt(best.typeData?.width) || 0,
+          height: parseInt(best.typeData?.height) || 0,
+          caption: best.typeData?.caption || "",
+          credit: best.typeData?.credit || "",
+          altText: best.typeData?.altText || ""
         });
       }
     }
 
-    // Clean and enhance HTML
+    // Clean HTML
     let bodyHtml = content.fields?.body || "";
-    bodyHtml = cleanAndEnhanceHtml(bodyHtml, images);
+    bodyHtml = cleanContentHtml(bodyHtml);
+
+    const mainImage = images[0] || null;
 
     const item = {
       guardianId: content.id || "",
@@ -157,9 +167,9 @@ async function handleGuardianItem(url, env, ctx, request) {
       text: content.fields?.bodyText || "",
       wordCount: parseInt(content.fields?.wordcount, 10) || 0,
       author: content.fields?.byline || "The Guardian",
-      image: content.fields?.thumbnail || (images[0]?.url || ""),
-      imageCaption: images[0]?.caption || "",
-      imageCredit: images[0]?.credit || "",
+      image: mainImage?.url || content.fields?.thumbnail || "",
+      imageCaption: mainImage?.caption || "",
+      imageCredit: mainImage?.credit || "",
       images: images,
       source: { name: "The Guardian", url: "https://www.theguardian.com" }
     };
@@ -170,13 +180,13 @@ async function handleGuardianItem(url, env, ctx, request) {
   }
 }
 
-// ========== Clean and Enhance HTML ==========
-function cleanAndEnhanceHtml(html, images) {
+// ========== Clean Content HTML ==========
+function cleanContentHtml(html) {
   if (!html) return "";
   
   let h = html;
   
-  // 1. Remove unwanted paragraphs containing these phrases
+  // 1. Remove paragraphs containing unwanted text
   const removePatterns = [
     'Sign up:',
     'Sign up for',
@@ -184,16 +194,20 @@ function cleanAndEnhanceHtml(html, images) {
     'Breaking News email',
     'AU Breaking News',
     'Tribute post from',
+    '[Interactive]',
     'Interactive',
     'Related:',
-    'Skip past newsletter promotion'
+    'Skip past newsletter',
+    'Updated at',
+    'First published on',
+    'Last modified on'
   ];
   
   for (const pattern of removePatterns) {
     const lowerPattern = pattern.toLowerCase();
     let safety = 0;
     
-    while (h.toLowerCase().includes(lowerPattern) && safety < 10) {
+    while (h.toLowerCase().includes(lowerPattern) && safety < 20) {
       safety++;
       const idx = h.toLowerCase().indexOf(lowerPattern);
       
@@ -204,102 +218,32 @@ function cleanAndEnhanceHtml(html, images) {
       if (pStart !== -1 && pEnd !== -1 && (idx - pStart) < 500) {
         h = h.slice(0, pStart) + h.slice(pEnd + 4);
       } else {
-        // Try to remove just that line
-        let lineStart = h.lastIndexOf('>', idx) + 1;
-        let lineEnd = h.indexOf('<', idx);
-        if (lineEnd > lineStart) {
-          h = h.slice(0, lineStart) + h.slice(lineEnd);
-        } else {
-          break;
-        }
+        break;
       }
     }
   }
   
-  // 2. Remove markdown-style links [text](url) - convert to just text
+  // 2. Remove timestamp patterns like "8.31am GMT" or "9.27am GMT"
+  h = h.replace(/<p>\s*\d{1,2}\.\d{2}(am|pm)\s*(GMT|BST|EST|PST)[^<]*<\/p>/gi, '');
+  h = h.replace(/<p>\s*\d{1,2}:\d{2}\s*(am|pm)?\s*(GMT|BST|EST|PST)?[^<]*<\/p>/gi, '');
+  
+  // 3. Remove markdown-style links [text](url) - keep just the text
   h = h.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // 3. Remove standalone URLs in text
-  h = h.replace(/<p>[^<]*https?:\/\/[^<]*<\/p>/gi, '');
+  // 4. Remove standalone URL paragraphs
+  h = h.replace(/<p>\s*https?:\/\/[^<]*<\/p>/gi, '');
   
-  // 4. Remove empty paragraphs
+  // 5. Remove link tags pointing to guardian internal URLs but keep the text
+  h = h.replace(/<a[^>]*href="[^"]*guardianapis\.com[^"]*"[^>]*>([^<]*)<\/a>/gi, '$1');
+  h = h.replace(/<a[^>]*href="[^"]*theguardian\.com[^"]*"[^>]*>([^<]*)<\/a>/gi, '$1');
+  
+  // 6. Remove empty paragraphs
   h = h.replace(/<p>\s*<\/p>/gi, '');
   h = h.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '');
   
-  // 5. Clean up multiple line breaks
+  // 7. Clean up excessive whitespace
+  h = h.replace(/\n\s*\n/g, '\n');
   h = h.replace(/(<br\s*\/?>\s*){3,}/gi, '<br><br>');
   
-  // 6. INSERT IMAGES into content
-  if (images && images.length > 0) {
-    // Check if content already has images
-    const hasImages = /<img\s/i.test(h);
-    
-    if (!hasImages) {
-      // Split content into paragraphs
-      const parts = h.split(/<\/p>/i);
-      
-      if (parts.length > 2) {
-        // Insert first image after 2nd paragraph
-        const img1 = buildFigureHtml(images[0]);
-        if (img1 && parts.length > 2) {
-          parts[1] = parts[1] + '</p>' + img1;
-          parts[1] = parts[1].replace('</p></p>', '</p>');
-        }
-        
-        // Insert second image after 5th paragraph if exists
-        if (images.length > 1 && parts.length > 5) {
-          const img2 = buildFigureHtml(images[1]);
-          parts[4] = parts[4] + '</p>' + img2;
-          parts[4] = parts[4].replace('</p></p>', '</p>');
-        }
-        
-        // Insert third image after 8th paragraph if exists
-        if (images.length > 2 && parts.length > 8) {
-          const img3 = buildFigureHtml(images[2]);
-          parts[7] = parts[7] + '</p>' + img3;
-          parts[7] = parts[7].replace('</p></p>', '</p>');
-        }
-        
-        h = parts.join('</p>');
-      } else if (parts.length > 0) {
-        // Short content - insert at beginning
-        h = buildFigureHtml(images[0]) + h;
-      }
-    }
-  }
-  
-  // 7. Fix any broken HTML from our manipulation
-  h = h.replace(/<\/p>\s*<\/p>/gi, '</p>');
-  h = h.replace(/<p>\s*<p>/gi, '<p>');
-  
   return h.trim();
-}
-
-function buildFigureHtml(img) {
-  if (!img || !img.url) return '';
-  
-  const caption = img.caption || '';
-  const credit = img.credit || '';
-  
-  let figcaption = '';
-  if (caption || credit) {
-    const parts = [];
-    if (caption) parts.push(caption);
-    if (credit) parts.push(`<span class="img-credit">Photograph: ${escapeHtml(credit)}</span>`);
-    figcaption = `<figcaption>${parts.join(' ')}</figcaption>`;
-  }
-  
-  return `
-<figure class="content-figure">
-  <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.altText || '')}" loading="lazy">
-  ${figcaption}
-</figure>`;
-}
-
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
