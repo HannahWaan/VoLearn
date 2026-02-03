@@ -268,31 +268,39 @@ function renderReader(item) {
   const coverEl = $('news-cover');
   const readerEl = $('news-reader');
 
-  if (titleEl) titleEl.textContent = item?.title || '(Không có tiêu đề)';
+  // Title
+  if (titleEl) {
+    titleEl.textContent = item?.title || '(Không có tiêu đề)';
+  }
 
+  // Meta
   if (metaEl) {
     const ago = timeAgo(item?.publishedAt);
     const time = formatTime(item?.publishedAt);
     const author = item?.author || 'The Guardian';
+    
     metaEl.innerHTML = `
       <span class="news-time-ago">${escapeHtml(ago)}</span>
-      <span>•</span>
-      <span>${escapeHtml(author)}</span>
-      <span>•</span>
       <span class="news-time-full">${escapeHtml(time)}</span>
+      <span>• ${escapeHtml(author)}</span>
     `;
   }
 
-  // Cover image area (lead image)
+  // Cover image
   if (coverEl) {
     if (item?.image) {
-      const caption = (item?.imageCaption || '').trim();
-      const credit = (item?.imageCredit || '').trim();
-      const captionText = [caption, credit ? `Photograph: ${credit}` : ''].filter(Boolean).join(' ');
+      const caption = item?.imageCaption || '';
+      const credit = item?.imageCredit || '';
+      let captionHtml = '';
+      
+      if (caption || credit) {
+        captionHtml = `<figcaption>${escapeHtml(caption)}${credit ? ' Photograph: ' + escapeHtml(credit) : ''}</figcaption>`;
+      }
+      
       coverEl.innerHTML = `
         <figure class="news-figure">
-          <img src="${escapeHtml(item.image)}" alt="">
-          ${captionText ? `<figcaption>${escapeHtml(captionText)}</figcaption>` : ''}
+          <img src="${escapeHtml(item.image)}" alt="" loading="lazy">
+          ${captionHtml}
         </figure>
       `;
     } else {
@@ -300,22 +308,20 @@ function renderReader(item) {
     }
   }
 
+  // Content - dùng contentHtml
   if (readerEl) {
-    const contentHtml = String(item?.contentHtml || '').trim();
-    const text = String(item?.text || '').trim();
-    const summaryHtml = String(item?.summaryHtml || '').trim();
-
     let html = '';
-    if (contentHtml) {
-      html = injectLeadFigureIfMissing(contentHtml, item);
-    } else if (text) {
-      html = textToHtml(text);
-    } else if (summaryHtml) {
-      html = `<p>${summaryHtml}</p>`;
-    } else {
-      html = `<p>(Không có nội dung)</p>`;
+    
+    if (item?.contentHtml) {
+      html = item.contentHtml;
+    } else if (item?.text) {
+      html = item.text.trim().split(/\n\n+/)
+        .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+    } else if (item?.summaryHtml) {
+      html = `<p>${item.summaryHtml}</p>`;
     }
-
+    
     readerEl.innerHTML = sanitizeHtml(html);
   }
 
