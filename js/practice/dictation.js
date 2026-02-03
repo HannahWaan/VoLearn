@@ -484,6 +484,7 @@ function skipDictationAction() {
 
   const input = document.getElementById('dictation-answer');
   const feedback = document.getElementById('dictation-feedback');
+  const skipBtn = document.getElementById('btn-skip');
 
   if (input) {
     input.disabled = true;
@@ -498,9 +499,15 @@ function skipDictationAction() {
     feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>${answerLine}`;
   }
 
+  if (skipBtn) {
+    skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
+  }
+
   updateCommonHeaderProgress();
-  if (settings.autoNext) startAutoNext(5);
-  setTimeout(showCurrentDictation, 700);
+
+  if (settings.autoNext) {
+    startAutoNext(5);
+  }
 }
 
 /* ===== AUTO NEXT ===== */
