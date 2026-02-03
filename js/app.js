@@ -22,6 +22,7 @@ import { initSettings, applySettings } from './ui/settings.js';
 import { initNews } from './ui/news.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
 import { initConfirmModal } from './ui/confirmModal.js';
+import { initWordLookup } from './ui/wordLookup.js';
 
 // ===== PRACTICE IMPORTS =====
 import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
@@ -92,6 +93,7 @@ async function initApp() {
         initCalendar();
         initSettings();
         initNews();
+        initWordLookup();
         
         // Step 6: Initialize practice
         console.log('🏋️ Step 6: Initializing practice...');
