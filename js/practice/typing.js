@@ -54,6 +54,7 @@ let typingTimer = null;
 let timeLeft = 0;
 
 let autoNextTimer = null;
+let currentMeaningIndex = 0;
 
 /* ===== FIELDS (1..8 like Dictation/Quiz) ===== */
 const TYPING_FIELDS = [
@@ -85,13 +86,23 @@ const POS_MAPPING = {
 function primaryMeaning(word) {
   return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
 }
+
 function norm(v) {
   if (v == null) return '';
   if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
   return String(v).trim();
 }
+
 function getTypingFieldValue(word, fieldId) {
-  const m = primaryMeaning(word);
+  const meanings = word?.meanings || [];
+  const m = meanings[currentMeaningIndex] || meanings[0] || {};
+  
+  const norm = (v) => {
+    if (v == null) return '';
+    if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
+    return String(v).trim();
+  };
+  
   switch (Number(fieldId)) {
     case 1: return norm(word?.word);
     case 2: return norm(m.phoneticUS || m.phoneticUK || word?.phonetic);
@@ -297,6 +308,14 @@ function showCurrentTyping() {
   }
 
   answered = false;
+
+  // === Random chọn 1 meaning cho câu hỏi này ===
+  const meanings = word.meanings || [];
+  if (meanings.length > 1) {
+    currentMeaningIndex = Math.floor(Math.random() * meanings.length);
+  } else {
+    currentMeaningIndex = 0;
+  }
 
   const answerFieldIds = normalizeFieldIds(s.answerFieldIds, [1]);
   const hintFieldIds = normalizeFieldIds(s.hintFieldIds, [5]);
