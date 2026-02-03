@@ -950,3 +950,255 @@
 .wlp-context-btn:hover i {
     opacity: 1;
 }
+
+/* ===== LIGHT MODE FIX ===== */
+[data-theme="light"] #news-section {
+    --news-accent: #c70000;
+    --news-accent-light: rgba(199, 0, 0, 0.08);
+    --news-border: rgba(0, 0, 0, 0.1);
+    --news-muted: rgba(0, 0, 0, 0.6);
+    --news-bg-card: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] #news-section .news-header h2,
+[data-theme="light"] #news-section .news-header-text {
+    color: #1e293b;
+}
+
+[data-theme="light"] #news-section .news-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] #news-section .news-refresh-btn {
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-refresh-btn:hover {
+    color: var(--news-accent);
+    border-color: var(--news-accent);
+    background: var(--news-accent-light);
+}
+
+[data-theme="light"] #news-section .news-tab {
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-tab:hover {
+    background: var(--news-accent-light);
+    border-color: var(--news-accent);
+    color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section .news-tab.active {
+    background: var(--news-accent);
+    border-color: var(--news-accent);
+    color: #fff;
+}
+
+[data-theme="light"] #news-section .news-tabs-extra {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-status {
+    color: #64748b;
+}
+
+[data-theme="light"] #news-section .news-card {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-card:hover {
+    background: #f8fafc;
+}
+
+[data-theme="light"] #news-section .news-card-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] #news-section .news-card-summary {
+    color: #64748b;
+}
+
+[data-theme="light"] #news-section .news-card-meta {
+    color: #94a3b8;
+}
+
+[data-theme="light"] #news-section .news-card-thumb {
+    background: #f1f5f9;
+}
+
+[data-theme="light"] #news-section .news-pagination {
+    border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-page-btn {
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-page-btn:hover:not(:disabled) {
+    background: var(--news-accent);
+    border-color: var(--news-accent);
+    color: #fff;
+}
+
+[data-theme="light"] #news-section #news-page-info {
+    color: #64748b;
+}
+
+[data-theme="light"] #news-section .news-loading,
+[data-theme="light"] #news-section .news-empty {
+    color: #64748b;
+}
+
+/* Reader View - Light Mode */
+[data-theme="light"] #news-section .news-reader-toolbar {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-back-btn {
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-back-btn:hover {
+    background: var(--news-accent-light);
+    border-color: var(--news-accent);
+    color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section .news-font-controls button {
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-font-controls button:hover {
+    background: var(--news-accent-light);
+    border-color: var(--news-accent);
+    color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section #news-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] #news-section .news-article-meta {
+    color: #64748b;
+}
+
+[data-theme="light"] #news-section .news-time-ago {
+    color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section .news-trail-text {
+    color: #334155;
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-figure figcaption {
+    color: #64748b;
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-reader-content,
+[data-theme="light"] #news-section #news-reader {
+    color: #334155;
+}
+
+[data-theme="light"] #news-section .news-reader-content a {
+    color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section .news-reader-content blockquote {
+    color: #475569;
+    border-left-color: var(--news-accent);
+}
+
+[data-theme="light"] #news-section .news-reader-content figcaption {
+    color: #64748b;
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-reader-content h2,
+[data-theme="light"] #news-section .news-reader-content h3 {
+    color: #1e293b;
+}
+
+[data-theme="light"] #news-section .news-reader-content hr {
+    border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] #news-section .news-article-footer {
+    border-top-color: #e2e8f0;
+}
+
+/* Word Lookup Popup - Light Mode */
+[data-theme="light"] .word-lookup-popup {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    color: #1e293b;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-header {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-word {
+    color: #1e293b;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-speak,
+[data-theme="light"] .word-lookup-popup .wlp-close {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-phonetic {
+    color: #64748b;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-def {
+    color: #334155;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-example {
+    color: #64748b;
+    border-left-color: #e2e8f0;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-actions {
+    background: #f8fafc;
+    border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+}
+
+/* Context Menu - Light Mode */
+[data-theme="light"] .wlp-context-menu,
+[data-theme="light"] #word-lookup-context-menu {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .wlp-context-btn,
+[data-theme="light"] #word-lookup-context-menu button {
+    color: #334155;
+}
+
+[data-theme="light"] .wlp-context-btn:hover,
+[data-theme="light"] #word-lookup-context-menu button:hover {
+    background: #f1f5f9;
+    color: #6366f1;
+}
