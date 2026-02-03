@@ -13,7 +13,7 @@ export default {
     }
     
     if (url.pathname === "/debug/version") {
-      return json({ version: "worker-2026-02-03-v2" }, request);
+      return json({ version: "workers-build-0f6cd3d" }, request);
     }
     
     // Debug env key (safe-ish: only last4 + length)
