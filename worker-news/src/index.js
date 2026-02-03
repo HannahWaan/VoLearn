@@ -2,24 +2,49 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    // CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders(request) });
     }
 
+    // Health
     if (url.pathname === "/") {
       return json({ ok: true, service: "volearn-guardian-reader" }, request);
     }
 
+    // Debug env key (safe-ish: only last4 + length)
     if (url.pathname === "/debug/guardian") {
       const k = (env.GUARDIAN_API_KEY || "").trim();
-      return json({ hasKey: !!k, keyLen: k.length, keyLast4: k ? k.slice(-4) : null }, request);
+      return json(
+        { hasKey: !!k, keyLen: k.length, keyLast4: k ? k.slice(-4) : null },
+        request
+      );
     }
 
+    // Debug (doesn't leak the key)
     if (url.pathname === "/debug/env") {
       return json({ hasGuardianKey: !!env.GUARDIAN_API_KEY }, request);
     }
 
-    // GET /guardian/feed
+    // DEBUG: call Guardian upstream
+    if (url.pathname === "/debug/guardian-call") {
+      const k = (env.GUARDIAN_API_KEY || "").trim();
+      const upstream =
+        "https://content.guardianapis.com/search?page-size=1&api-key=" +
+        encodeURIComponent(k);
+
+      const r = await fetch(upstream, {
+        headers: {
+          "user-agent":
+            "Mozilla/5.0 (compatible; VoLearnReader/1.0; +https://hannahwaan.github.io/VoLearn/)",
+          accept: "application/json,text/plain,*/*",
+        },
+      });
+      const t = await r.text().catch(() => "");
+      return json({ upstreamStatus: r.status, sample: t.slice(0, 200) }, request);
+    }
+
+    // GET /guardian/feed?section=world&page=1&pageSize=10
     if (url.pathname === "/guardian/feed") {
       assertKey(env);
 
@@ -32,7 +57,10 @@ export default {
       upstream.searchParams.set("page", String(page));
       upstream.searchParams.set("page-size", String(pageSize));
       upstream.searchParams.set("order-by", "newest");
-      upstream.searchParams.set("show-fields", "trailText,thumbnail,byline,wordcount");
+      upstream.searchParams.set(
+        "show-fields",
+        "trailText,thumbnail,byline,wordcount"
+      );
       upstream.searchParams.set("api-key", env.GUARDIAN_API_KEY);
 
       const res = await fetchCached(upstream.toString(), request, ctx, 180);
@@ -42,25 +70,32 @@ export default {
       const results = data?.response?.results || [];
       const items = results.map((r) => normalizeGuardianResult(r, section));
 
-      return json({
-        provider: { id: "guardian", name: "The Guardian" },
-        section,
-        page,
-        pageSize,
-        total: data?.response?.total ?? null,
-        items,
-      }, request);
+      return json(
+        {
+          provider: { id: "guardian", name: "The Guardian" },
+          section,
+          page,
+          pageSize,
+          total: data?.response?.total ?? null,
+          items,
+        },
+        request
+      );
     }
 
-    // GET /guardian/item
+    // GET /guardian/item?id=world/2026/feb/03/...
     if (url.pathname === "/guardian/item") {
       assertKey(env);
 
       const id = (url.searchParams.get("id") || "").trim();
       if (!id) return json({ error: "Missing id" }, request, 400);
 
+      // Request HTML body + main + image elements
       const upstream = new URL(`https://content.guardianapis.com/${id}`);
-      upstream.searchParams.set("show-fields", "trailText,body,thumbnail,byline,wordcount,main");
+      upstream.searchParams.set(
+        "show-fields",
+        "trailText,body,bodyText,thumbnail,byline,wordcount,main"
+      );
       upstream.searchParams.set("show-elements", "image");
       upstream.searchParams.set("api-key", env.GUARDIAN_API_KEY);
 
@@ -117,8 +152,9 @@ async function fetchCached(targetUrl, request, ctx, ttlSeconds = 300) {
 
   const res = await fetch(targetUrl, {
     headers: {
-      "user-agent": "Mozilla/5.0 (compatible; VoLearnReader/1.0)",
-      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (compatible; VoLearnReader/1.0; +https://hannahwaan.github.io/VoLearn/)",
+      accept: "application/json,text/plain,*/*",
     },
   });
 
@@ -132,8 +168,14 @@ async function fetchCached(targetUrl, request, ctx, ttlSeconds = 300) {
 
 async function upstreamError(tag, res, request) {
   let bodyText = "";
-  try { bodyText = await res.text(); } catch {}
-  return json({ error: "Upstream error", tag, status: res.status, body: bodyText.slice(0, 500) }, request, 502);
+  try {
+    bodyText = await res.text();
+  } catch {}
+  return json(
+    { error: "Upstream error", tag, status: res.status, body: bodyText.slice(0, 500) },
+    request,
+    502
+  );
 }
 
 function clampInt(v, min, max, fallback) {
@@ -163,32 +205,32 @@ function normalizeGuardianResult(r, section) {
 
 function normalizeGuardianContent(c) {
   const fields = c?.fields || {};
-  const elements = c?.elements || [];
-  
-  // Extract images with captions
+  const elements = Array.isArray(c?.elements) ? c.elements : [];
+
+  // Extract image elements -> images[]
   const images = elements
-    .filter(el => el?.type === "image")
-    .map(el => {
-      const assets = el?.assets || [];
-      // Get largest image
-      const mainAsset = assets.reduce((best, a) => {
+    .filter((el) => el?.type === "image")
+    .map((el) => {
+      const assets = Array.isArray(el?.assets) ? el.assets : [];
+      // choose largest width
+      const best = assets.reduce((acc, a) => {
         const w = parseInt(a?.typeData?.width, 10) || 0;
-        const bestW = parseInt(best?.typeData?.width, 10) || 0;
-        return w > bestW ? a : best;
-      }, assets[0] || {});
-      
+        const aw = parseInt(acc?.typeData?.width, 10) || 0;
+        return w > aw ? a : acc;
+      }, assets[0] || null);
+
+      const itd = el?.imageTypeData || {};
       return {
-        url: mainAsset?.file || "",
-        width: mainAsset?.typeData?.width || null,
-        height: mainAsset?.typeData?.height || null,
-        caption: el?.imageTypeData?.caption || "",
-        credit: el?.imageTypeData?.credit || "",
-        alt: el?.imageTypeData?.alt || "",
+        url: best?.file || "",
+        width: best?.typeData?.width || null,
+        height: best?.typeData?.height || null,
+        caption: itd?.caption || "",
+        credit: itd?.credit || "",
+        alt: itd?.alt || "",
       };
     })
-    .filter(img => img.url);
+    .filter((img) => img.url);
 
-  // Main image (first or from fields.main)
   const mainImage = images[0] || null;
 
   return {
@@ -200,22 +242,22 @@ function normalizeGuardianContent(c) {
     title: c?.webTitle || "",
     url: c?.webUrl || "",
     publishedAt: c?.webPublicationDate || null,
+
     summaryHtml: fields?.trailText || "",
-    
-    // HTML content 
+
+    // HTML + text fallback
     contentHtml: fields?.body || "",
-    
+    text: fields?.bodyText || "",
+
     wordCount: fields?.wordcount ?? null,
     author: fields?.byline || "",
-    
-    // Main image with caption
+
+    // Lead image data
     image: mainImage?.url || fields?.thumbnail || "",
     imageCaption: mainImage?.caption || "",
     imageCredit: mainImage?.credit || "",
-    
-    // All images in article
-    images: images,
-    
+    images,
+
     source: { id: "guardian", name: "The Guardian" },
   };
 }
