@@ -1,0 +1,90 @@
+/* ========================================
+   VoLearn - News Reader CSS
+   Scope: #news-section only
+   ======================================== */
+
+#news-section #news-reader {
+  /* Reader container */
+  max-width: 760px;
+  margin: 0 auto;
+
+  /* Typography */
+  font-size: 1.05rem;
+  line-height: 1.85;
+  letter-spacing: 0.2px;
+
+  /* Better wrapping for long words/URLs */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Paragraph spacing */
+#news-section #news-reader p {
+  margin: 0 0 1.05em;
+}
+
+/* Line breaks converted from text */
+#news-section #news-reader br {
+  content: "";
+}
+
+/* Headings (if any appear later) */
+#news-section #news-reader h1,
+#news-section #news-reader h2,
+#news-section #news-reader h3 {
+  line-height: 1.25;
+  margin: 1.1em 0 0.5em;
+}
+
+/* Quotes */
+#news-section #news-reader blockquote {
+  margin: 1em 0;
+  padding: 0.75em 1em;
+  border-left: 4px solid var(--primary-color, #6d5efc);
+  background: rgba(109, 94, 252, 0.08);
+  border-radius: 10px;
+}
+
+/* Links */
+#news-section #news-reader a {
+  color: var(--primary-color, #6d5efc);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Images if later you render any */
+#news-section #news-reader img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  margin: 12px auto;
+}
+
+/* Reader mode: make the article area feel like a page */
+#news-section .card-body #news-title {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#news-section .card-body #news-meta {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Optional: slightly larger on wide screens */
+@media (min-width: 1024px) {
+  #news-section #news-reader {
+    font-size: 1.1rem;
+  }
+}
+
+/* Optional: tighter on small screens */
+@media (max-width: 480px) {
+  #news-section #news-reader {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+}
