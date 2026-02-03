@@ -599,15 +599,6 @@
   margin-top: 4px;
 }
 
-/* ===== STATUS SECTION ===== */
-.status-grid {
-  padding: 24px;
-  display: grid;
-  grid-template-columns: 1fr 200px;
-  gap: 20px;
-  align-items: center;
-}
-
 /* ===== CANVAS ===== */
 canvas {
   max-width: 100%;
@@ -691,10 +682,6 @@ canvas {
   }
   
   .dist-grid,
-  .status-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
   
   .dist-legend {
     display: grid;
@@ -831,3 +818,4 @@ canvas {
     font-size: 1.1rem;
   }
 }
+
