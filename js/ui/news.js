@@ -152,6 +152,7 @@ function renderList() {
     card.dataset.guardianId = item.guardianId || '';
 
     const title = item.title || '(Không có tiêu đề)';
+    const summary = item.summary || item.trailText || item.description || '';
     const author = item.author || 'The Guardian';
     const date = formatDate(item.publishedAt);
     const thumb = item.image || '';
@@ -160,6 +161,7 @@ function renderList() {
       ${thumb ? `<img class="news-card-thumb" src="${escapeHtml(thumb)}" alt="" loading="lazy">` : ''}
       <div class="news-card-content">
         <h3 class="news-card-title">${escapeHtml(title)}</h3>
+        ${summary ? `<p class="news-card-summary">${escapeHtml(summary)}</p>` : ''}
         <div class="news-card-meta">
           <span><i class="fas fa-user"></i> ${escapeHtml(author)}</span>
           <span><i class="fas fa-clock"></i> ${escapeHtml(date)}</span>
