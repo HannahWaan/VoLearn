@@ -6,23 +6,19 @@ export default {
       return new Response(null, { headers: corsHeaders(request) });
     }
 
-    // Health check
     if (url.pathname === "/" || url.pathname === "") {
-      return json({ ok: true, service: "volearn-guardian-reader", version: "2.2" }, request);
+      return json({ ok: true, service: "volearn-guardian-reader", version: "2.3" }, request);
     }
 
-    // Debug
     if (url.pathname === "/debug/guardian") {
       const key = env.GUARDIAN_API_KEY || "";
       return json({ hasKey: !!key, keyLen: key.length, keyLast4: key.slice(-4) }, request);
     }
 
-    // Guardian feed
     if (url.pathname === "/guardian/feed") {
       return handleGuardianFeed(url, env, ctx, request);
     }
 
-    // Guardian item
     if (url.pathname === "/guardian/item") {
       return handleGuardianItem(url, env, ctx, request);
     }
@@ -60,7 +56,7 @@ async function fetchWithTimeout(url, timeout = 8000) {
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "VoLearnReader/2.2" }
+      headers: { "User-Agent": "VoLearnReader/2.3" }
     });
     clearTimeout(id);
     return res;
@@ -116,7 +112,8 @@ async function handleGuardianItem(url, env, ctx, request) {
   const id = url.searchParams.get("id");
   if (!id) return json({ error: "Missing id parameter" }, request, 400);
 
-  const apiUrl = `https://content.guardianapis.com/${encodeURIComponent(id)}?` +
+  // KHÔNG encode id vì nó chứa dấu / cần giữ nguyên
+  const apiUrl = `https://content.guardianapis.com/${id}?` +
     `show-fields=trailText,body,bodyText,thumbnail,byline,wordcount` +
     `&show-elements=image&api-key=${key}`;
 
@@ -147,7 +144,7 @@ async function handleGuardianItem(url, env, ctx, request) {
       }
     }
 
-    // Clean HTML safely
+    // Clean HTML
     let bodyHtml = content.fields?.body || "";
     bodyHtml = cleanContentHtml(bodyHtml);
 
@@ -174,51 +171,30 @@ async function handleGuardianItem(url, env, ctx, request) {
   }
 }
 
-// ========== Clean HTML (Safe version) ==========
+// ========== Clean HTML ==========
 function cleanContentHtml(html) {
   if (!html) return "";
   
   let h = html;
   
-  // Remove sign-up links (simple string matching, not regex catastrophe)
-  const signupPatterns = [
-    'Sign up:',
-    'Sign up for',
-    'Newsletter',
-    'Breaking News email',
-    'AU Breaking News'
-  ];
+  // Remove sign-up paragraphs
+  const patterns = ['Sign up:', 'Sign up for', 'Newsletter', 'Breaking News email', 'AU Breaking News'];
   
-  // Remove <a> tags containing signup text
-  for (const pattern of signupPatterns) {
-    const lowerH = h.toLowerCase();
-    const lowerP = pattern.toLowerCase();
-    let idx = lowerH.indexOf(lowerP);
-    
+  for (const pattern of patterns) {
+    let idx = h.toLowerCase().indexOf(pattern.toLowerCase());
     while (idx !== -1) {
-      // Find surrounding <p> or <a> tag and remove
       const before = h.lastIndexOf('<p', idx);
       const after = h.indexOf('</p>', idx);
-      
       if (before !== -1 && after !== -1 && (idx - before) < 200) {
         h = h.slice(0, before) + h.slice(after + 4);
       } else {
-        // Try removing just the link
-        const aBefore = h.lastIndexOf('<a', idx);
-        const aAfter = h.indexOf('</a>', idx);
-        if (aBefore !== -1 && aAfter !== -1 && (idx - aBefore) < 300) {
-          h = h.slice(0, aBefore) + h.slice(aAfter + 4);
-        } else {
-          break;
-        }
+        break;
       }
-      
-      const newLowerH = h.toLowerCase();
-      idx = newLowerH.indexOf(lowerP);
+      idx = h.toLowerCase().indexOf(pattern.toLowerCase());
     }
   }
   
-  // Remove Interactive embeds
+  // Remove Interactive
   h = h.replace(/<p>\s*\[Interactive\][^<]*<\/p>/gi, '');
   h = h.replace(/\[Interactive\]/gi, '');
   
