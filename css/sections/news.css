@@ -88,3 +88,43 @@
     line-height: 1.75;
   }
 }
+
+/* Default reader variables (only inside News section) */
+#news-section {
+  --news-reader-font-px: 18;
+  --news-reader-bg: transparent;
+  --news-reader-fg: inherit;
+  --news-reader-muted: rgba(0,0,0,.65);
+  --news-reader-link: var(--primary-color, #6d5efc);
+}
+
+/* Apply to the reading container */
+#news-section #news-reader {
+  font-size: calc(var(--news-reader-font-px) * 1px);
+  line-height: 1.85;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 12px;
+  color: var(--news-reader-fg);
+  background: var(--news-reader-bg);
+  overflow-wrap: anywhere;
+}
+
+#news-section #news-reader p { margin: 0 0 1.05em; }
+#news-section #news-reader a { color: var(--news-reader-link); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Optional: meta/title style */
+#news-section #news-meta { max-width: 760px; margin: 0 auto 10px; color: var(--news-reader-muted); }
+
+/* Reader Dark mode (scoped only to News section) */
+#news-section.news-reader-dark {
+  --news-reader-bg: #0f1115;
+  --news-reader-fg: #e9eef5;
+  --news-reader-muted: rgba(233,238,245,.7);
+  --news-reader-link: #9aa8ff;
+}
+
+#news-section.news-reader-dark #news-reader {
+  border-radius: 12px;
+  padding: 14px 16px;
+}
