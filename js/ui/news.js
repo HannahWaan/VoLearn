@@ -21,6 +21,8 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
+/* ==================== Helpers ==================== */
+
 function setStatus(text) {
   const el = $('news-status');
   if (el) el.textContent = text;
@@ -36,24 +38,14 @@ function timeAgo(iso) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
 
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch {
     return iso;
-  }
-}
-
-function formatTime(iso) {
-  if (!iso) return '';
-  try {
-    return new Date(iso).toLocaleTimeString('en-GB', {
-      hour: '2-digit', minute: '2-digit', hour12: false
-    }) + ' GMT';
-  } catch {
-    return '';
   }
 }
 
@@ -61,8 +53,11 @@ function formatDate(iso) {
   if (!iso) return '';
   try {
     return new Date(iso).toLocaleString('vi-VN', {
-      hour: '2-digit', minute: '2-digit',
-      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       hour12: false
     });
   } catch {
@@ -75,7 +70,7 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
+    .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
 
@@ -86,21 +81,21 @@ function stripHtml(html) {
 }
 
 function sanitizeHtml(html) {
-  if (window.DOMPurify) {
+  if (typeof DOMPurify !== 'undefined') {
     return DOMPurify.sanitize(html || '', {
       USE_PROFILES: { html: true },
       ALLOWED_TAGS: [
-        'p','br','strong','b','em','i','u','s','strike','del',
-        'h1','h2','h3','h4','h5','h6',
-        'blockquote','q','cite',
-        'ul','ol','li',
-        'a','img','figure','figcaption',
-        'table','thead','tbody','tr','th','td',
-        'pre','code','span','div','sub','sup','hr'
+        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'blockquote', 'q', 'cite',
+        'ul', 'ol', 'li',
+        'a', 'img', 'figure', 'figcaption',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'pre', 'code', 'span', 'div', 'sub', 'sup', 'hr'
       ],
       ALLOWED_ATTR: [
-        'href','src','alt','title','target','rel',
-        'class','id','style','colspan','rowspan'
+        'href', 'src', 'alt', 'title', 'target', 'rel',
+        'class', 'id', 'style', 'colspan', 'rowspan', 'loading'
       ]
     });
   }
@@ -113,80 +108,12 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-/* --------- PATCH: paragraph heuristic for bodyText --------- */
-function textToParagraphsHeuristic(text) {
-  const raw = String(text || '').trim();
-  if (!raw) return [];
-
-  let t = raw.replace(/\r\n/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
-
-  if (/\n{2,}/.test(t)) {
-    return t.split(/\n{2,}/g).map(p => p.trim()).filter(Boolean);
-  }
-
-  const sentences = t.split(/(?<=[.!?])\s+(?=[A-Z“‘(])/g);
-  const paras = [];
-  let buf = [];
-
-  for (const s of sentences) {
-    const ss = s.trim();
-    if (!ss) continue;
-    buf.push(ss);
-    if (buf.length >= 3) {
-      paras.push(buf.join(' '));
-      buf = [];
-    }
-  }
-  if (buf.length) paras.push(buf.join(' '));
-
-  if (paras.length <= 1 && t.length > 900) {
-    const out = [];
-    let i = 0;
-    const step = 420;
-    while (i < t.length) {
-      out.push(t.slice(i, i + step).trim());
-      i += step;
-    }
-    return out.filter(Boolean);
-  }
-
-  return paras;
-}
-
-function textToHtml(text) {
-  const paras = textToParagraphsHeuristic(text);
-  if (!paras.length) return '';
-  return paras.map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
-}
-
-/* --------- Inject lead figure if contentHtml has no images --------- */
-function injectLeadFigureIfMissing(html, item) {
-  const content = String(html || '');
-  const hasImg = /<img\b/i.test(content) || /<figure\b/i.test(content);
-  if (hasImg) return content;
-
-  const img = item?.images?.[0];
-  const url = (img?.url || item?.image || '').trim();
-  if (!url) return content;
-
-  const caption = (img?.caption || item?.imageCaption || '').trim();
-  const credit = (img?.credit || item?.imageCredit || '').trim();
-  const cap = [caption, credit ? `Photograph: ${credit}` : ''].filter(Boolean).join(' ');
-
-  const fig = `
-    <figure class="news-figure">
-      <img src="${escapeHtml(url)}" alt="${escapeHtml(img?.alt || '')}">
-      ${cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : ''}
-    </figure>
-  `;
-  return fig + content;
-}
-
-/* ==================== UI Helpers ==================== */
+/* ==================== UI State ==================== */
 
 function setActiveTab(section) {
   document.querySelectorAll('#news-section .news-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.guardianSection === section);
+    const isActive = btn.dataset.guardianSection === section;
+    btn.classList.toggle('active', isActive);
   });
 }
 
@@ -194,21 +121,33 @@ function toggleMoreTabs() {
   const more = $('news-more-tabs');
   const toggle = $('news-more-toggle');
   if (!more || !toggle) return;
+  
   const isOpen = more.classList.contains('open');
   more.classList.toggle('open', !isOpen);
   toggle.classList.toggle('active', !isOpen);
 }
 
 function showListView() {
-  $('news-list-view')?.style && ($('news-list-view').style.display = 'flex');
-  $('news-reader-view')?.style && ($('news-reader-view').style.display = 'none');
+  const section = $('news-section');
+  const listView = $('news-list-view');
+  const readerView = $('news-reader-view');
+  
+  if (listView) listView.style.display = 'flex';
+  if (readerView) readerView.style.display = 'none';
+  if (section) section.classList.remove('reader-mode');
 }
 
 function showReaderView() {
-  $('news-list-view')?.style && ($('news-list-view').style.display = 'none');
-  const rv = $('news-reader-view');
-  if (rv?.style) rv.style.display = 'block';
-  rv?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  const section = $('news-section');
+  const listView = $('news-list-view');
+  const readerView = $('news-reader-view');
+  
+  if (listView) listView.style.display = 'none';
+  if (readerView) readerView.style.display = 'block';
+  if (section) section.classList.add('reader-mode');
+  
+  // Scroll to top of reader
+  readerView?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
 
 function updatePagination() {
@@ -233,6 +172,11 @@ function renderList() {
 
   list.innerHTML = '';
 
+  if (pageItems.length === 0) {
+    list.innerHTML = '<p class="news-empty">Không có bài viết nào.</p>';
+    return;
+  }
+
   pageItems.forEach(item => {
     const card = document.createElement('div');
     card.className = 'news-card';
@@ -245,17 +189,17 @@ function renderList() {
 
     card.innerHTML = `
       ${thumb ? `<img class="news-card-thumb" src="${escapeHtml(thumb)}" alt="" loading="lazy">` : ''}
-      <div class="news-card-content">
+      <div class="news-card-body">
         <h3 class="news-card-title">${escapeHtml(title)}</h3>
         ${summary ? `<p class="news-card-summary">${escapeHtml(summary)}</p>` : ''}
         <div class="news-card-meta">
-          <span><i class="fas fa-user"></i> ${escapeHtml(author)}</span>
-          <span><i class="fas fa-clock"></i> ${escapeHtml(date)}</span>
+          <span class="news-card-author"><i class="fas fa-user"></i> ${escapeHtml(author)}</span>
+          <span class="news-card-date"><i class="fas fa-clock"></i> ${escapeHtml(date)}</span>
         </div>
       </div>
     `;
 
-    card.addEventListener('click', () => openItem(item.guardianId));
+    card.addEventListener('click', () => openItem(item.guardianId, item.url));
     list.appendChild(card);
   });
 
@@ -267,6 +211,7 @@ function renderReader(item) {
   const metaEl = $('news-meta');
   const coverEl = $('news-cover');
   const readerEl = $('news-reader');
+  const sourceLinkEl = $('news-source-link');
 
   // Title
   if (titleEl) {
@@ -276,13 +221,11 @@ function renderReader(item) {
   // Meta
   if (metaEl) {
     const ago = timeAgo(item?.publishedAt);
-    const time = formatTime(item?.publishedAt);
     const author = item?.author || 'The Guardian';
     
     metaEl.innerHTML = `
       <span class="news-time-ago">${escapeHtml(ago)}</span>
-      <span class="news-time-full">${escapeHtml(time)}</span>
-      <span>• ${escapeHtml(author)}</span>
+      <span class="news-author">• ${escapeHtml(author)}</span>
     `;
   }
 
@@ -294,7 +237,10 @@ function renderReader(item) {
       let captionHtml = '';
       
       if (caption || credit) {
-        captionHtml = `<figcaption>${escapeHtml(caption)}${credit ? ' Photograph: ' + escapeHtml(credit) : ''}</figcaption>`;
+        const parts = [];
+        if (caption) parts.push(escapeHtml(caption));
+        if (credit) parts.push(`<span class="img-credit">Photograph: ${escapeHtml(credit)}</span>`);
+        captionHtml = `<figcaption>${parts.join(' ')}</figcaption>`;
       }
       
       coverEl.innerHTML = `
@@ -308,14 +254,17 @@ function renderReader(item) {
     }
   }
 
-  // Content - dùng contentHtml
+  // Content
   if (readerEl) {
     let html = '';
     
     if (item?.contentHtml) {
       html = item.contentHtml;
     } else if (item?.text) {
-      html = item.text.trim().split(/\n\n+/)
+      // Convert plain text to paragraphs
+      html = item.text
+        .trim()
+        .split(/\n\n+/)
         .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
         .join('');
     } else if (item?.summaryHtml) {
@@ -325,34 +274,52 @@ function renderReader(item) {
     readerEl.innerHTML = sanitizeHtml(html);
   }
 
+  // Source link
+  if (sourceLinkEl && item?.url) {
+    sourceLinkEl.href = item.url;
+  }
+
   showReaderView();
 }
 
 /* ==================== Data ==================== */
 
-async function openItem(guardianId) {
+async function openItem(guardianId, originalUrl) {
   if (!guardianId) return;
+  
   setStatus('Đang tải bài viết...');
 
   try {
     const url = `${NEWS_API_BASE}/guardian/item?id=${encodeURIComponent(guardianId)}`;
     const item = await fetchJSON(url);
+    
+    // Keep original URL if not returned
+    if (!item.url && originalUrl) {
+      item.url = originalUrl;
+    }
+    
     renderReader(item);
     setStatus('');
   } catch (e) {
     console.error('News openItem error:', e);
-    setStatus('Không tải được bài.');
+    setStatus('Không tải được bài viết.');
     showToast?.('Lỗi tải bài viết', 'error');
   }
 }
 
 async function loadFeed(section) {
+  if (state.loading) return;
+  
   state.section = section;
   state.loading = true;
   state.currentPage = 1;
+  
   setActiveTab(section);
   setStatus('Đang tải tin...');
   showListView();
+
+  const list = $('news-list');
+  if (list) list.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
 
   try {
     const url = `${NEWS_API_BASE}/guardian/feed?section=${encodeURIComponent(section)}&pageSize=30`;
@@ -365,22 +332,22 @@ async function loadFeed(section) {
 
     if (!items.length) {
       setStatus('Không có bài viết.');
-      const listEl = $('news-list');
-      if (listEl) listEl.innerHTML = '<p style="text-align:center;opacity:0.6;padding:40px;">Không tìm thấy tin nào.</p>';
+      if (list) list.innerHTML = '<p class="news-empty">Không tìm thấy tin nào.</p>';
       return;
     }
 
-    setStatus(`${items.length} bài viết • ${data?.provider?.name || 'The Guardian'}`);
+    setStatus(`${items.length} bài viết`);
     renderList();
   } catch (e) {
     state.loading = false;
     console.error('News loadFeed error:', e);
     setStatus('Không tải được tin.');
+    if (list) list.innerHTML = '<p class="news-empty">Lỗi khi tải tin. Vui lòng thử lại.</p>';
     showToast?.(`Lỗi tải tin (${section})`, 'error');
   }
 }
 
-/* ==================== Events ==================== */
+/* ==================== Event Bindings ==================== */
 
 function bindNewsUI() {
   if (state.bound) return;
@@ -389,21 +356,40 @@ function bindNewsUI() {
   const root = $('news-section');
   if (!root) return;
 
-  $('news-more-toggle')?.addEventListener('click', () => toggleMoreTabs());
-  $('news-refresh')?.addEventListener('click', () => loadFeed(state.section));
+  // More tabs toggle (only close when clicking toggle button again)
+  $('news-more-toggle')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMoreTabs();
+  });
 
-  root.querySelectorAll('.news-tab').forEach(btn => {
+  // Refresh
+  $('news-refresh')?.addEventListener('click', () => {
+    if (!state.loading) loadFeed(state.section);
+  });
+
+  // Tab clicks
+  root.querySelectorAll('.news-tab[data-guardian-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const section = btn.dataset.guardianSection;
-      if (section) loadFeed(section);
+      if (section && section !== state.section) {
+        loadFeed(section);
+      }
     });
   });
 
+  // Back button (toolbar)
   $('news-reader-back')?.addEventListener('click', () => {
     showListView();
-    setStatus(`${state.items.length} bài viết • The Guardian`);
+    setStatus(`${state.items.length} bài viết`);
   });
 
+  // Floating back button
+  $('news-floating-back')?.addEventListener('click', () => {
+    showListView();
+    setStatus(`${state.items.length} bài viết`);
+  });
+
+  // Pagination
   $('news-prev')?.addEventListener('click', () => {
     if (state.currentPage > 1) {
       state.currentPage--;
@@ -420,9 +406,11 @@ function bindNewsUI() {
     }
   });
 
-  // Font controls (persist)
+  // Font size controls
   let fontSize = parseInt(localStorage.getItem(FONT_KEY) || '18', 10);
-  if (!Number.isFinite(fontSize)) fontSize = 18;
+  if (!Number.isFinite(fontSize) || fontSize < 14 || fontSize > 28) {
+    fontSize = 18;
+  }
 
   const applyFont = () => {
     fontSize = Math.max(14, Math.min(28, fontSize));
@@ -431,16 +419,30 @@ function bindNewsUI() {
     if (reader) reader.style.fontSize = `${fontSize}px`;
   };
 
-  $('news-font-inc')?.addEventListener('click', () => { fontSize += 2; applyFont(); });
-  $('news-font-dec')?.addEventListener('click', () => { fontSize -= 2; applyFont(); });
+  $('news-font-dec')?.addEventListener('click', () => {
+    fontSize -= 2;
+    applyFont();
+  });
 
+  $('news-font-inc')?.addEventListener('click', () => {
+    fontSize += 2;
+    applyFont();
+  });
+
+  // Apply saved font size
   applyFont();
 }
+
+/* ==================== Init ==================== */
 
 export function initNews() {
   onNavigate('news', () => {
     bindNewsUI();
     showListView();
-    loadFeed(DEFAULT_SECTION);
+    
+    // Load default section if no items loaded yet
+    if (state.items.length === 0) {
+      loadFeed(DEFAULT_SECTION);
+    }
   });
 }
