@@ -12,15 +12,18 @@ let cachedData = null;
 let isInitialized = false;
 let lastSelectedText = '';
 
+// Drag state
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
 /* ===== CREATE POPUP ===== */
 function createPopup() {
     if (popupEl) return popupEl;
     
     popupEl = document.createElement('div');
     popupEl.id = 'word-lookup-popup';
-    popupEl.className = 'word-lookup-popup';
     
-    // INLINE STYLES
     popupEl.style.cssText = `
         display: none;
         position: fixed;
@@ -29,9 +32,9 @@ function createPopup() {
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        min-width: 300px;
+        min-width: 320px;
         max-width: 420px;
-        max-height: 450px;
+        max-height: 480px;
         overflow: hidden;
         font-size: 14px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -39,14 +42,17 @@ function createPopup() {
     `;
     
     popupEl.innerHTML = `
-        <div style="
+        <div class="wlp-header" style="
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 14px 16px;
+            padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: move;
+            user-select: none;
         ">
+            <i class="fas fa-grip-vertical" style="color: rgba(255,255,255,0.3); font-size: 12px;"></i>
             <span class="wlp-word" style="
                 flex: 1;
                 font-size: 20px;
@@ -54,8 +60,8 @@ function createPopup() {
                 color: #ffffff;
             "></span>
             <button class="wlp-speak" title="Phát âm" style="
-                width: 34px;
-                height: 34px;
+                width: 32px;
+                height: 32px;
                 border: none;
                 border-radius: 8px;
                 background: rgba(255, 255, 255, 0.1);
@@ -65,10 +71,11 @@ function createPopup() {
                 align-items: center;
                 justify-content: center;
                 font-size: 14px;
+                transition: all 0.15s;
             "><i class="fas fa-volume-up"></i></button>
             <button class="wlp-close" title="Đóng" style="
-                width: 34px;
-                height: 34px;
+                width: 32px;
+                height: 32px;
                 border: none;
                 border-radius: 8px;
                 background: rgba(255, 255, 255, 0.1);
@@ -78,29 +85,28 @@ function createPopup() {
                 align-items: center;
                 justify-content: center;
                 font-size: 14px;
+                transition: all 0.15s;
             "><i class="fas fa-times"></i></button>
         </div>
         <div class="wlp-phonetic" style="
-            padding: 10px 16px 0;
+            padding: 8px 16px 0;
             font-size: 15px;
             color: rgba(255, 255, 255, 0.6);
             font-family: monospace;
         "></div>
         <div class="wlp-content" style="
-            padding: 14px 16px;
-            max-height: 260px;
+            padding: 12px 16px;
+            max-height: 280px;
             overflow-y: auto;
-        ">
-            <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">Đang tra từ...</div>
-        </div>
-        <div style="
-            padding: 14px 16px;
+        "></div>
+        <div class="wlp-footer" style="
+            padding: 12px 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.03);
         ">
             <button class="wlp-add-btn" disabled style="
                 width: 100%;
-                padding: 12px 16px;
+                padding: 11px 16px;
                 border: none;
                 border-radius: 8px;
                 background: #6366f1;
@@ -113,6 +119,7 @@ function createPopup() {
                 justify-content: center;
                 gap: 8px;
                 opacity: 0.5;
+                transition: all 0.15s;
             ">
                 <i class="fas fa-plus"></i> Thêm vào từ điển
             </button>
@@ -121,10 +128,35 @@ function createPopup() {
     
     document.body.appendChild(popupEl);
     
-    // Events
-    popupEl.querySelector('.wlp-close').onclick = hidePopup;
-    popupEl.querySelector('.wlp-speak').onclick = () => speakWord(currentWord);
-    popupEl.querySelector('.wlp-add-btn').onclick = handleAddWord;
+    // ===== DRAG FUNCTIONALITY =====
+    const header = popupEl.querySelector('.wlp-header');
+    
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        
+        isDragging = true;
+        dragOffsetX = e.clientX - popupEl.offsetLeft;
+        dragOffsetY = e.clientY - popupEl.offsetTop;
+        
+        header.style.cursor = 'grabbing';
+        popupEl.style.userSelect = 'none';
+        
+        e.preventDefault();
+    });
+    
+    // ===== BUTTON EVENTS =====
+    popupEl.querySelector('.wlp-close').onclick = (e) => {
+        e.stopPropagation();
+        hidePopup();
+    };
+    popupEl.querySelector('.wlp-speak').onclick = (e) => {
+        e.stopPropagation();
+        speakWord(currentWord);
+    };
+    popupEl.querySelector('.wlp-add-btn').onclick = (e) => {
+        e.stopPropagation();
+        handleAddWord();
+    };
     
     // Hover effects
     const speakBtn = popupEl.querySelector('.wlp-speak');
@@ -136,16 +168,15 @@ function createPopup() {
     closeBtn.onmouseleave = () => { closeBtn.style.background = 'rgba(255,255,255,0.1)'; closeBtn.style.color = 'rgba(255,255,255,0.7)'; };
     
     const addBtn = popupEl.querySelector('.wlp-add-btn');
-    addBtn.onmouseenter = () => { if (!addBtn.disabled) { addBtn.style.background = '#4f46e5'; addBtn.style.transform = 'translateY(-1px)'; } };
-    addBtn.onmouseleave = () => { addBtn.style.background = '#6366f1'; addBtn.style.transform = 'none'; };
+    addBtn.onmouseenter = () => { if (!addBtn.disabled) { addBtn.style.background = '#4f46e5'; } };
+    addBtn.onmouseleave = () => { addBtn.style.background = '#6366f1'; };
     
-    // Prevent events from bubbling
+    // Stop propagation
     popupEl.onclick = (e) => e.stopPropagation();
-    popupEl.onmouseup = (e) => e.stopPropagation();
     popupEl.ondblclick = (e) => e.stopPropagation();
     popupEl.oncontextmenu = (e) => e.stopPropagation();
     
-    console.log('✅ Popup created with inline styles');
+    console.log('✅ Popup created with drag support');
     return popupEl;
 }
 
@@ -183,6 +214,7 @@ function createContextMenu() {
         font-weight: 500;
         cursor: pointer;
         text-align: left;
+        transition: all 0.15s;
     `;
     
     contextMenuEl.innerHTML = `
@@ -203,7 +235,6 @@ function createContextMenu() {
         btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.color = 'rgba(255, 255, 255, 0.9)'; };
     });
     
-    // Events
     document.getElementById('wlp-ctx-translate').onclick = (e) => {
         e.stopPropagation();
         hideContextMenu();
@@ -216,14 +247,11 @@ function createContextMenu() {
     document.getElementById('wlp-ctx-speak').onclick = (e) => {
         e.stopPropagation();
         hideContextMenu();
-        if (lastSelectedText) {
-            speakWord(lastSelectedText);
-        }
+        if (lastSelectedText) speakWord(lastSelectedText);
     };
     
     contextMenuEl.onclick = (e) => e.stopPropagation();
     
-    console.log('✅ Context menu created');
     return contextMenuEl;
 }
 
@@ -234,14 +262,9 @@ function showContextMenu(x, y, text) {
     
     menu.style.display = 'block';
     
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-    
-    let left = x;
-    let top = y;
-    
-    if (left + 180 > viewportW) left = viewportW - 190;
-    if (top + 100 > viewportH) top = viewportH - 110;
+    let left = x, top = y;
+    if (left + 180 > window.innerWidth) left = window.innerWidth - 190;
+    if (top + 100 > window.innerHeight) top = window.innerHeight - 110;
     if (left < 10) left = 10;
     if (top < 10) top = 10;
     
@@ -250,63 +273,47 @@ function showContextMenu(x, y, text) {
 }
 
 function hideContextMenu() {
-    if (contextMenuEl) {
-        contextMenuEl.style.display = 'none';
-    }
+    if (contextMenuEl) contextMenuEl.style.display = 'none';
 }
 
 /* ===== SHOW/HIDE POPUP ===== */
 function showPopup(x, y, word) {
-    console.log('showPopup:', x, y, word);
-    
     if (!word || word.length < 2) return;
     
     const popup = createPopup();
     currentWord = word.toLowerCase().trim();
     
-    // Reset
     popup.querySelector('.wlp-word').textContent = currentWord;
     popup.querySelector('.wlp-phonetic').textContent = '';
-    popup.querySelector('.wlp-content').innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Đang tra từ...</div>';
+    popup.querySelector('.wlp-content').innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 24px;"><i class="fas fa-spinner fa-spin"></i> Đang tra từ...</div>';
     
     const addBtn = popup.querySelector('.wlp-add-btn');
     addBtn.disabled = true;
     addBtn.style.opacity = '0.5';
     addBtn.style.cursor = 'not-allowed';
     
-    // Position and show
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-    
-    let left = x + 10;
-    let top = y + 10;
-    
-    // Show first to get dimensions
+    // Position
+    let left = x + 10, top = y + 10;
     popup.style.display = 'block';
     popup.style.left = '-9999px';
     popup.style.top = '-9999px';
     
     setTimeout(() => {
         const rect = popup.getBoundingClientRect();
-        
-        if (left + rect.width > viewportW - 20) left = x - rect.width - 10;
-        if (top + rect.height > viewportH - 20) top = y - rect.height - 10;
+        if (left + rect.width > window.innerWidth - 20) left = x - rect.width - 10;
+        if (top + rect.height > window.innerHeight - 20) top = y - rect.height - 10;
         if (left < 10) left = 10;
         if (top < 10) top = 10;
         
         popup.style.left = left + 'px';
         popup.style.top = top + 'px';
-        
-        console.log('Popup shown at:', left, top);
     }, 0);
     
     fetchDefinition(currentWord);
 }
 
 function hidePopup() {
-    if (popupEl) {
-        popupEl.style.display = 'none';
-    }
+    if (popupEl) popupEl.style.display = 'none';
     currentWord = '';
     cachedData = null;
 }
@@ -319,21 +326,16 @@ async function fetchDefinition(word) {
     
     try {
         const lookupWord = word.split(/\s+/)[0].toLowerCase();
-        const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`;
-        
-        const resp = await fetch(url);
+        const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`);
         
         if (!resp.ok) {
-            contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;"><i class="fas fa-search"></i> Không tìm thấy từ này</div>';
-            cachedData = null;
+            contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 24px;"><i class="fas fa-search"></i> Không tìm thấy từ này</div>';
             return;
         }
         
         const data = await resp.json();
-        
-        if (!data || !data[0]) {
-            contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;"><i class="fas fa-search"></i> Không tìm thấy từ này</div>';
-            cachedData = null;
+        if (!data?.[0]) {
+            contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 24px;">Không tìm thấy</div>';
             return;
         }
         
@@ -343,39 +345,29 @@ async function fetchDefinition(word) {
         popupEl.querySelector('.wlp-word').textContent = entry.word || lookupWord;
         currentWord = entry.word || lookupWord;
         
-        // Phonetic
-        let phonetic = entry.phonetic || '';
-        if (!phonetic && entry.phonetics?.length) {
-            for (const p of entry.phonetics) {
-                if (p.text) { phonetic = p.text; break; }
-            }
-        }
+        let phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
         phoneticEl.textContent = phonetic;
         
-        // Meanings
         let html = '';
         for (const meaning of (entry.meanings || []).slice(0, 3)) {
-            const pos = meaning.partOfSpeech || '';
-            html += `<div style="display: inline-block; background: #6366f1; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin: 12px 0 8px;">${escapeHtml(pos)}</div>`;
+            html += `<div style="display: inline-block; background: #6366f1; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin: 10px 0 6px;">${escapeHtml(meaning.partOfSpeech)}</div>`;
             
             for (const def of (meaning.definitions || []).slice(0, 2)) {
-                html += `<div style="color: rgba(255,255,255,0.9); line-height: 1.6; margin-bottom: 6px;">${escapeHtml(def.definition)}</div>`;
+                html += `<div style="color: rgba(255,255,255,0.9); line-height: 1.55; margin-bottom: 5px;">${escapeHtml(def.definition)}</div>`;
                 if (def.example) {
-                    html += `<div style="color: rgba(255,255,255,0.5); font-style: italic; font-size: 13px; margin-bottom: 10px; padding-left: 12px; border-left: 3px solid rgba(255,255,255,0.2);">"${escapeHtml(def.example)}"</div>`;
+                    html += `<div style="color: rgba(255,255,255,0.5); font-style: italic; font-size: 13px; margin-bottom: 8px; padding-left: 10px; border-left: 3px solid rgba(255,255,255,0.15);">"${escapeHtml(def.example)}"</div>`;
                 }
             }
         }
         
-        contentEl.innerHTML = html || '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">Không có định nghĩa</div>';
-        
+        contentEl.innerHTML = html || '<div style="text-align: center; padding: 20px;">Không có định nghĩa</div>';
         addBtn.disabled = false;
         addBtn.style.opacity = '1';
         addBtn.style.cursor = 'pointer';
         
     } catch (err) {
         console.error('Lookup error:', err);
-        contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;"><i class="fas fa-exclamation-circle"></i> Lỗi khi tra từ</div>';
-        cachedData = null;
+        contentEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 24px;"><i class="fas fa-exclamation-circle"></i> Lỗi khi tra từ</div>';
     }
 }
 
@@ -383,18 +375,17 @@ async function fetchDefinition(word) {
 function speakWord(word) {
     if (!word) return;
     speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
 }
 
 /* ===== ADD TO VOCABULARY ===== */
 function handleAddWord() {
     if (!currentWord || !cachedData) return;
     
-    const existing = appData.vocabulary?.find(w => w.word?.toLowerCase() === currentWord.toLowerCase());
-    if (existing) {
+    if (appData.vocabulary?.find(w => w.word?.toLowerCase() === currentWord.toLowerCase())) {
         showToast('Từ này đã có trong từ điển!', 'warning');
         return;
     }
@@ -402,24 +393,22 @@ function handleAddWord() {
     const entry = cachedData;
     const meanings = [];
     
-    for (const meaning of (entry.meanings || [])) {
-        for (const def of (meaning.definitions || []).slice(0, 2)) {
+    for (const m of (entry.meanings || [])) {
+        for (const d of (m.definitions || []).slice(0, 2)) {
             meanings.push({
                 phoneticUS: entry.phonetic || entry.phonetics?.[0]?.text || '',
                 phoneticUK: entry.phonetics?.find(p => p.audio?.includes('uk'))?.text || '',
-                pos: meaning.partOfSpeech || '',
-                defEn: def.definition || '',
+                pos: m.partOfSpeech || '',
+                defEn: d.definition || '',
                 defVi: '',
-                example: def.example || '',
-                synonyms: meaning.synonyms?.slice(0, 5)?.join(', ') || '',
-                antonyms: meaning.antonyms?.slice(0, 5)?.join(', ') || ''
+                example: d.example || '',
+                synonyms: m.synonyms?.slice(0, 5)?.join(', ') || '',
+                antonyms: m.antonyms?.slice(0, 5)?.join(', ') || ''
             });
         }
     }
     
-    if (meanings.length === 0) {
-        meanings.push({ phoneticUS: '', phoneticUK: '', pos: '', defEn: '', defVi: '', example: '', synonyms: '', antonyms: '' });
-    }
+    if (!meanings.length) meanings.push({ phoneticUS: '', phoneticUK: '', pos: '', defEn: '', defVi: '', example: '', synonyms: '', antonyms: '' });
     
     const wordObj = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
@@ -449,22 +438,48 @@ function handleAddWord() {
 }
 
 /* ===== HELPERS ===== */
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function escapeHtml(s) {
+    return s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 }
 
 function getSelectedText() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return '';
-    let text = selection.toString().trim();
-    if (!text || !/^[a-zA-Z\s'-]+$/.test(text) || text.length < 2 || text.length > 50) return '';
-    return text;
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return '';
+    const t = sel.toString().trim();
+    return (t && /^[a-zA-Z\s'-]+$/.test(t) && t.length >= 2 && t.length <= 50) ? t : '';
 }
 
 function isInNewsSection(el) {
     const news = document.getElementById('news-section');
-    return news && news.contains(el);
+    return news?.contains(el);
+}
+
+/* ===== GLOBAL MOUSE MOVE/UP FOR DRAG ===== */
+function setupDragListeners() {
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !popupEl) return;
+        
+        let newX = e.clientX - dragOffsetX;
+        let newY = e.clientY - dragOffsetY;
+        
+        const rect = popupEl.getBoundingClientRect();
+        newX = Math.max(0, Math.min(newX, window.innerWidth - rect.width));
+        newY = Math.max(0, Math.min(newY, window.innerHeight - rect.height));
+        
+        popupEl.style.left = newX + 'px';
+        popupEl.style.top = newY + 'px';
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            if (popupEl) {
+                const header = popupEl.querySelector('.wlp-header');
+                if (header) header.style.cursor = 'move';
+                popupEl.style.userSelect = '';
+            }
+        }
+    });
 }
 
 /* ===== INIT ===== */
@@ -476,6 +491,7 @@ export function initWordLookup() {
     
     createPopup();
     createContextMenu();
+    setupDragListeners();
     
     // Double-click
     document.addEventListener('dblclick', (e) => {
@@ -503,8 +519,8 @@ export function initWordLookup() {
     
     // Click outside
     document.addEventListener('click', (e) => {
-        if (contextMenuEl?.style.display !== 'none' && !contextMenuEl.contains(e.target)) hideContextMenu();
-        if (popupEl?.style.display !== 'none' && !popupEl.contains(e.target)) hidePopup();
+        if (contextMenuEl?.style.display !== 'none' && !contextMenuEl?.contains(e.target)) hideContextMenu();
+        if (popupEl?.style.display !== 'none' && !popupEl?.contains(e.target)) hidePopup();
     }, true);
     
     // ESC
@@ -512,7 +528,7 @@ export function initWordLookup() {
         if (e.key === 'Escape') { hidePopup(); hideContextMenu(); }
     });
     
-    console.log('✅ Word Lookup ready!');
+    console.log('✅ Word Lookup ready (double-click + right-click + drag)');
 }
 
 window.initWordLookup = initWordLookup;
