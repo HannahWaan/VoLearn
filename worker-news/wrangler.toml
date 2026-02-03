@@ -1,6 +1,3 @@
-name = "volearn-news-proxy"
+name = "volearn"
 main = "src/index.js"
-compatibility_date = "2026-02-01"
-
-# Nếu bạn chỉ cần public endpoint:
-# workers_dev = true
+compatibility_date = "2026-02-03"
