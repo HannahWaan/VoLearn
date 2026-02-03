@@ -457,7 +457,8 @@ function onTypingTimeout() {
     feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Hết giờ.</span></div>`;
   }
 
-  if (s.showAnswer && revealEl) {
+  // LUÔN hiện đáp án khi hết giờ
+  if (revealEl) {
     revealEl.style.display = '';
     revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
   }
@@ -514,7 +515,8 @@ function checkTypingAnswer() {
       <div class="feedback-meta"><small>Độ giống: ${Math.round(ratio * 100)}%</small></div>
     `;
 
-    if (s.showAnswer && revealEl) {
+    // LUÔN hiện đáp án khi sai
+    if (revealEl) {
       revealEl.style.display = '';
       revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
     }
@@ -553,7 +555,8 @@ export function skipTyping() {
     feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>`;
   }
 
-  if (s.showAnswer && revealEl) {
+  // LUÔN hiện đáp án khi bỏ qua
+  if (revealEl) {
     revealEl.style.display = '';
     revealEl.innerHTML = `<small>Đáp án: <strong>${escapeHtml(currentCorrectAnswer)}</strong></small>`;
   }
