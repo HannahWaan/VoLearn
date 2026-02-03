@@ -150,16 +150,18 @@ function renderReader(item) {
   if (metaEl) metaEl.textContent = meta;
 
   // Prefer HTML body; fallback summary; fallback text
-  let html = '';
   if (item?.contentHtml) {
     html = item.contentHtml;
+  } else if (item?.text) {
+    // Full bodyText -> convert to HTML paragraphs
+    html = `<p>${escapeHtml(item.text)
+      .trim()
+      .replaceAll('\r\n', '\n')
+      .replaceAll('\n\n', '</p><p>')
+      .replaceAll('\n', '<br>')}</p>`;
   } else if (item?.summaryHtml) {
     html = item.summaryHtml;
-  } else if (item?.text) {
-    html = `<p>${escapeHtml(item.text).replaceAll('\n\n', '</p><p>').replaceAll('\n', '<br>')}</p>`;
   }
-  if (readerEl) readerEl.innerHTML = sanitizeHtml(html);
-}
 
 async function openItem(guardianId) {
   if (!guardianId) return;
