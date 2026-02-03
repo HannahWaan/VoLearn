@@ -269,11 +269,6 @@ function bindNewsUI() {
       const section = btn.dataset.guardianSection;
       if (!section) return;
       
-      // Close more tabs if clicked from there
-      if (btn.closest('#news-more-tabs')) {
-        toggleMoreTabs(false);
-      }
-      
       loadFeed(section);
     });
   });
