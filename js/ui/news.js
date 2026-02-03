@@ -1,41 +1,65 @@
-/* ========================================
-   VoLearn - News (Guardian Reader)
-   - No new browser tab
-   - Two modes inside the same section:
-     1) Split/List mode
-     2) Fullscreen Reader mode
-   ======================================== */
-
-import { onNavigate } from '../core/router.js';
-import { showToast } from './toast.js';
+// js/ui/news.js
+// Guardian News reader for VoLearn (in-app). Uses Worker endpoints:
+//   GET https://volearn.asstrayca.workers.dev/guardian/feed?section=world&pageSize=10
+//   GET https://volearn.asstrayca.workers.dev/guardian/item?id=<guardianId>
+//
+// Requirements implemented:
+// - Tabs (World default, Science next) + "More..." toggle
+// - Split view: list + quick view
+// - Reader mode (fullscreen inside section, NOT new browser tab)
+// - Font size controls A-/A+ (localStorage persisted)
+// - Dark/Light reader theme (scoped to news section only; does not change global app theme)
+// - Uses DOMPurify if present; otherwise safely escapes
 
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
-const DEFAULT_SECTION = 'world';
 
-let state = {
-  section: DEFAULT_SECTION,
-  items: [],
-  loading: false,
+const DEFAULT_SECTION = 'world';
+const DEFAULT_PAGE_SIZE = 12;
+
+// Reader settings (scoped to News reader only)
+const READER_FONT_KEY = 'volearn_news_reader_font_px';
+const READER_THEME_KEY = 'volearn_news_reader_theme'; // 'light' | 'dark'
+const READER_FONT_MIN = 14;
+const READER_FONT_MAX = 28;
+const READER_FONT_STEP = 1;
+
+const state = {
   bound: false,
-  mode: 'split' // 'split' | 'reader'
+  section: DEFAULT_SECTION,
+  pageSize: DEFAULT_PAGE_SIZE,
+  items: [],
+  selectedId: null,
+  mode: 'split', // 'split' | 'reader'
+  loadingFeed: false,
+  loadingItem: false,
 };
 
-function $(id) { return document.getElementById(id); }
+function $(id) {
+  return document.getElementById(id);
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
 
 function setStatus(text) {
   const el = $('news-status');
-  if (el) el.textContent = text;
+  if (el) el.textContent = text || '';
 }
 
 function formatDate(iso) {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleString('vi-VN', { hour12: false });
-  } catch { return iso; }
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+  } catch {
+    return '';
+  }
 }
 
 function escapeHtml(str) {
-  return String(str ?? '')
+  const s = String(str ?? '');
+  return s
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -44,276 +68,370 @@ function escapeHtml(str) {
 }
 
 function sanitizeHtml(html) {
-  if (!window.DOMPurify) {
-    const div = document.createElement('div');
-    div.textContent = html || '';
-    return div.innerHTML;
+  const raw = String(html ?? '');
+  if (!raw) return '';
+  // Prefer DOMPurify if available (you added in index.html earlier)
+  if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+    return window.DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
   }
-  return window.DOMPurify.sanitize(html || '', { USE_PROFILES: { html: true } });
+  // Fallback: escape everything
+  return `<pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre>`;
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}${text ? ` - ${text.slice(0, 160)}` : ''}`);
-  }
-  return res.json();
+function textToHtmlParagraphs(text) {
+  const safe = escapeHtml((text || '').trim());
+  if (!safe) return '';
+  // Split paragraphs by blank lines; keep single newlines as <br>
+  const blocks = safe
+    .split(/\n{2,}/g)
+    .map(p => p.replace(/\n/g, '<br>'))
+    .filter(Boolean);
+
+  return `<div class="news-text">${blocks.map(b => `<p>${b}</p>`).join('')}</div>`;
 }
 
-function toggleMoreTabs(force) {
-  const more = $('news-more-tabs');
-  const toggle = $('news-more-toggle');
-  if (!more || !toggle) return;
-
-  const shouldOpen = typeof force === 'boolean'
-    ? force
-    : more.style.display === 'none';
-
-  more.style.display = shouldOpen ? 'flex' : 'none';
-  toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-  toggle.textContent = shouldOpen ? 'Less…' : 'More…';
+function getReaderFontPx() {
+  const raw = localStorage.getItem(READER_FONT_KEY);
+  const n = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) ? clamp(n, READER_FONT_MIN, READER_FONT_MAX) : 18;
 }
 
-function setActiveTab(section) {
-  document.querySelectorAll('#news-section .news-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.guardianSection === section);
-  });
+function setReaderFontPx(px) {
+  const v = clamp(px, READER_FONT_MIN, READER_FONT_MAX);
+  localStorage.setItem(READER_FONT_KEY, String(v));
+  const section = $('news-section');
+  if (section) section.style.setProperty('--news-reader-font-px', v);
+  updateReaderControlsUI();
+}
+
+function getReaderTheme() {
+  const t = (localStorage.getItem(READER_THEME_KEY) || 'light').toLowerCase();
+  return t === 'dark' ? 'dark' : 'light';
+}
+
+function setReaderTheme(theme) {
+  const t = theme === 'dark' ? 'dark' : 'light';
+  localStorage.setItem(READER_THEME_KEY, t);
+  const section = $('news-section');
+  if (section) section.classList.toggle('news-reader-dark', t === 'dark');
+  updateReaderControlsUI();
+}
+
+function updateReaderControlsUI() {
+  const decBtn = $('news-font-dec');
+  const incBtn = $('news-font-inc');
+  const themeBtn = $('news-reader-theme-toggle');
+
+  const px = getReaderFontPx();
+  if (decBtn) decBtn.disabled = px <= READER_FONT_MIN;
+  if (incBtn) incBtn.disabled = px >= READER_FONT_MAX;
+
+  const theme = getReaderTheme();
+  if (themeBtn) themeBtn.textContent = theme === 'dark' ? 'Light' : 'Dark';
 }
 
 function setMode(mode) {
-  state.mode = mode;
+  state.mode = mode === 'reader' ? 'reader' : 'split';
 
-  const toolbar = $('news-reader-toolbar');
-  if (toolbar) toolbar.style.display = (mode === 'reader') ? 'flex' : 'none';
-
-  // Hide list + tabs in reader mode
-  const list = $('news-list');
-  if (list) list.style.display = (mode === 'reader') ? 'none' : 'flex';
-
-  // Hide tabs container(s)
-  const tabRow = document.querySelector('#news-section .news-tabs');
-  if (tabRow) tabRow.style.display = (mode === 'reader') ? 'none' : 'flex';
-
-  const moreRow = $('news-more-tabs');
-  if (moreRow) moreRow.style.display = (mode === 'reader') ? 'none' : (moreRow.style.display || 'none');
-
-  const moreToggle = $('news-more-toggle');
-  if (moreToggle) moreToggle.style.display = (mode === 'reader') ? 'none' : '';
-
-  const refresh = $('news-refresh');
-  if (refresh) refresh.style.display = (mode === 'reader') ? 'none' : '';
-
-  // Hide open-source button always (you don't want to go to origin)
-  const openWrap = $('news-open-source-wrap');
-  if (openWrap) openWrap.style.display = 'none';
-
-  // Make reader full width by switching the grid container to block
   const section = $('news-section');
-  const grid = section?.querySelector('div[style*="grid-template-columns"]');
-  if (grid) {
-    if (mode === 'reader') {
-      grid.dataset.prevDisplay = grid.style.display || '';
-      grid.dataset.prevGrid = grid.style.gridTemplateColumns || '';
-      grid.style.display = 'block';
-      grid.style.gridTemplateColumns = '';
-    } else {
-      grid.style.display = grid.dataset.prevDisplay || 'grid';
-      grid.style.gridTemplateColumns = grid.dataset.prevGrid || '1fr 1.2fr';
-    }
+  if (section) {
+    section.classList.toggle('news-reader-mode', state.mode === 'reader');
   }
+
+  const backBtn = $('news-reader-back');
+  if (backBtn) backBtn.style.display = state.mode === 'reader' ? '' : 'none';
+
+  // Optional: if your template includes a wrapper for list area
+  const listWrap = $('news-list-wrap');
+  if (listWrap) listWrap.style.display = state.mode === 'reader' ? 'none' : '';
+
+  // Fallback: hide list + tabs when in reader mode (if IDs exist)
+  const tabs = $('news-tabs');
+  if (tabs) tabs.style.display = state.mode === 'reader' ? 'none' : '';
+  const moreTabs = $('news-more-tabs');
+  if (moreTabs) moreTabs.style.display = state.mode === 'reader' ? 'none' : moreTabs.style.display;
+
+  const list = $('news-list');
+  if (list) list.style.display = state.mode === 'reader' ? 'none' : '';
 }
 
-function renderReaderEmpty() {
-  const title = $('news-title');
-  const meta = $('news-meta');
-  const reader = $('news-reader');
+function toggleMoreTabs(forceOpen) {
+  const more = $('news-more-tabs');
+  const btn = $('news-more-toggle');
+  if (!more) return;
 
-  if (title) title.textContent = 'Chưa chọn bài';
-  if (meta) meta.textContent = '';
-  if (reader) reader.innerHTML = '';
+  const currentlyOpen = more.classList.contains('open');
+  const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
+
+  more.classList.toggle('open', nextOpen);
+  more.style.display = nextOpen ? '' : 'none';
+
+  if (btn) btn.textContent = nextOpen ? 'Less…' : 'More…';
 }
 
-function renderReader(item) {
-  const titleEl = $('news-title');
-  const metaEl = $('news-meta');
-  const readerEl = $('news-reader');
+function setActiveTab(sectionId) {
+  const tabs = document.querySelectorAll('#news-section .news-tab');
+  tabs.forEach(t => {
+    const s = t.getAttribute('data-guardian-section') || '';
+    t.classList.toggle('active', s === sectionId);
+  });
+}
 
-  const title = item?.title || '(Không có tiêu đề)';
-  const meta = [
-    item?.source?.name || 'The Guardian',
-    item?.author ? `• ${item.author}` : '',
-    item?.publishedAt ? `• ${formatDate(item.publishedAt)}` : ''
-  ].join(' ');
-
-  if (titleEl) titleEl.textContent = title;
-  if (metaEl) metaEl.textContent = meta;
-
-  // Prefer HTML body; fallback summary; fallback text
-  if (item?.contentHtml) {
-    html = item.contentHtml;
-  } else if (item?.text) {
-    // Full bodyText -> convert to HTML paragraphs
-    html = `<p>${escapeHtml(item.text)
-      .trim()
-      .replaceAll('\r\n', '\n')
-      .replaceAll('\n\n', '</p><p>')
-      .replaceAll('\n', '<br>')}</p>`;
-  } else if (item?.summaryHtml) {
-    html = item.summaryHtml;
+async function fetchJson(url) {
+  const r = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}: ${txt.slice(0, 200)}`);
   }
-
-async function openItem(guardianId) {
-  if (!guardianId) return;
-  setStatus('Đang tải bài...');
-
-  try {
-    const url = `${NEWS_API_BASE}/guardian/item?id=${encodeURIComponent(guardianId)}`;
-    const item = await fetchJSON(url);
-    renderReader(item);
-    setStatus('Sẵn sàng.');
-  } catch (e) {
-    console.error('News openItem error:', e);
-    setStatus('Không tải được bài.');
-    showToast?.('Tin Tức: lỗi tải bài', 'error');
-  }
+  return r.json();
 }
 
 function renderList(items) {
   const list = $('news-list');
   if (!list) return;
 
-  list.innerHTML = '';
-  list.style.display = 'flex';
-  list.style.flexDirection = 'column';
-  list.style.gap = '10px';
+  if (!items || items.length === 0) {
+    list.innerHTML = `<div class="empty-state">Không có bài nào.</div>`;
+    return;
+  }
 
-  items.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.padding = '12px';
-    card.style.border = '1px solid var(--border-color)';
-    card.style.background = 'var(--card-bg, #fff)';
-
-    const title = item.title || '(Không có tiêu đề)';
+  list.innerHTML = items.map(item => {
+    const title = escapeHtml(item.title || '');
     const meta = [
-      item.source?.name || 'The Guardian',
-      item.author ? `• ${item.author}` : '',
-      item.publishedAt ? `• ${formatDate(item.publishedAt)}` : ''
-    ].join(' ');
+      escapeHtml(item.source?.name || 'The Guardian'),
+      item.sectionName ? escapeHtml(item.sectionName) : null,
+      item.publishedAt ? escapeHtml(formatDate(item.publishedAt)) : null,
+      item.wordCount ? `${escapeHtml(String(item.wordCount))} words` : null,
+    ].filter(Boolean).join(' • ');
 
-    card.innerHTML = `
-      <div style="display:flex; gap:10px; align-items:flex-start;">
-        ${item.image ? `<img src="${item.image}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex:0 0 auto;">` : ''}
-        <div style="min-width:0; flex:1;">
-          <div style="font-weight:700; line-height:1.25; margin-bottom:6px;">
-            ${escapeHtml(title)}
-          </div>
-          <div style="opacity:.8; font-size:.9rem; margin-bottom:10px;">
-            ${escapeHtml(meta)}
-          </div>
+    const summary = item.summaryHtml
+      ? sanitizeHtml(item.summaryHtml)
+      : (item.text ? `<div class="news-item-summary">${escapeHtml(item.text.slice(0, 180))}…</div>` : '');
 
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-primary" type="button" data-action="read" style="padding:6px 10px;">
-              Đọc
-            </button>
-            <button class="btn-secondary" type="button" data-action="preview" style="padding:6px 10px;">
-              Xem nhanh
-            </button>
-          </div>
+    const selected = state.selectedId === item.guardianId ? 'selected' : '';
+
+    return `
+      <article class="news-item ${selected}" data-guardian-id="${escapeHtml(item.guardianId)}">
+        <div class="news-item-main">
+          <h3 class="news-item-title">${title}</h3>
+          <div class="news-item-meta">${meta}</div>
+          <div class="news-item-summary">${summary}</div>
         </div>
-      </div>
+
+        <div class="news-item-actions">
+          <button class="btn btn-secondary news-quick-btn" type="button" data-action="quick" data-guardian-id="${escapeHtml(item.guardianId)}">Xem nhanh</button>
+          <button class="btn btn-primary news-read-btn" type="button" data-action="read" data-guardian-id="${escapeHtml(item.guardianId)}">Đọc</button>
+        </div>
+      </article>
     `;
-
-    card.querySelector('[data-action="preview"]')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      setMode('split');
-      openItem(item.guardianId);
-    });
-
-    card.querySelector('[data-action="read"]')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      setMode('reader');
-      openItem(item.guardianId);
-    });
-
-    list.appendChild(card);
-  });
+  }).join('');
 }
 
-async function loadFeed(section) {
-  state.section = section;
-  state.loading = true;
-  setActiveTab(section);
-  setStatus('Đang tải tin...');
-  renderList([]);
-  renderReaderEmpty();
+function renderReaderFromItemData(data) {
+  const titleEl = $('news-title');
+  const metaEl = $('news-meta');
+  const readerEl = $('news-reader');
+
+  if (titleEl) titleEl.textContent = data?.title || '';
+  if (metaEl) {
+    const bits = [
+      data?.source?.name || 'The Guardian',
+      data?.author ? `by ${data.author}` : null,
+      data?.publishedAt ? formatDate(data.publishedAt) : null,
+      data?.wordCount ? `${data.wordCount} words` : null,
+    ].filter(Boolean);
+    metaEl.textContent = bits.join(' • ');
+  }
+
+  if (!readerEl) return;
+
+  // Priority:
+  // 1) contentHtml (if Worker later provides fields.body)
+  // 2) text (bodyText) -> convert to paragraphs
+  // 3) summaryHtml (trailText)
+  let html = '';
+  if (data?.contentHtml) {
+    html = sanitizeHtml(data.contentHtml);
+  } else if (data?.text) {
+    html = textToHtmlParagraphs(data.text);
+  } else if (data?.summaryHtml) {
+    html = sanitizeHtml(data.summaryHtml);
+  } else {
+    html = `<div class="empty-state">Không có nội dung.</div>`;
+  }
+
+  readerEl.innerHTML = html;
+}
+
+async function openItem(guardianId, mode) {
+  if (!guardianId) return;
+  state.selectedId = guardianId;
+
+  // update list selection highlight
+  const list = $('news-list');
+  if (list) {
+    list.querySelectorAll('.news-item').forEach(el => {
+      el.classList.toggle('selected', el.getAttribute('data-guardian-id') === guardianId);
+    });
+  }
+
+  if (mode) setMode(mode);
+
+  state.loadingItem = true;
+  setStatus('Đang tải bài…');
 
   try {
-    const url = `${NEWS_API_BASE}/guardian/feed?section=${encodeURIComponent(section)}&pageSize=12`;
-    const data = await fetchJSON(url);
+    const url = `${NEWS_API_BASE}/guardian/item?id=${encodeURIComponent(guardianId)}`;
+    const data = await fetchJson(url);
+    renderReaderFromItemData(data);
+    setStatus('');
+  } catch (e) {
+    console.error('[news] openItem error:', e);
+    setStatus('Lỗi tải bài. Vui lòng thử lại.');
+  } finally {
+    state.loadingItem = false;
+  }
+}
+
+async function loadFeed(sectionId) {
+  state.section = sectionId || DEFAULT_SECTION;
+  state.loadingFeed = true;
+
+  setActiveTab(state.section);
+  setStatus('Đang tải danh sách…');
+
+  try {
+    const url = `${NEWS_API_BASE}/guardian/feed?section=${encodeURIComponent(state.section)}&pageSize=${encodeURIComponent(state.pageSize)}`;
+    const data = await fetchJson(url);
+
     const items = Array.isArray(data?.items) ? data.items : [];
     state.items = items;
-    state.loading = false;
 
-    if (!items.length) {
-      setStatus('Không có bài viết.');
-      return;
-    }
-
-    setStatus(`Đã tải ${items.length} bài • ${data?.provider?.name || 'The Guardian'}`);
     renderList(items);
 
-    // Auto preview first item
-    setMode('split');
-    openItem(items[0]?.guardianId);
+    // Auto-open first item in split mode for quick view
+    if (items.length > 0) {
+      await openItem(items[0].guardianId, 'split');
+    } else {
+      renderReaderFromItemData({ title: '', text: '', summaryHtml: '' });
+    }
+
+    setStatus('');
   } catch (e) {
-    state.loading = false;
-    console.error('News loadFeed error:', e);
-    setStatus('Không tải được tin.');
-    showToast?.(`Tin Tức: lỗi tải feed (${section})`, 'error');
+    console.error('[news] loadFeed error:', e);
+    setStatus('Lỗi tải danh sách. Vui lòng thử lại.');
+    const list = $('news-list');
+    if (list) list.innerHTML = `<div class="empty-state">Không tải được dữ liệu.</div>`;
+  } finally {
+    state.loadingFeed = false;
   }
 }
 
 function bindNewsUIOnce() {
-  const root = $('news-section');
-  if (!root || state.bound) return;
+  if (state.bound) return;
   state.bound = true;
 
-  $('news-more-toggle')?.addEventListener('click', () => toggleMoreTabs());
+  // Reader controls
+  const decBtn = $('news-font-dec');
+  const incBtn = $('news-font-inc');
+  const themeBtn = $('news-reader-theme-toggle');
 
-  $('news-refresh')?.addEventListener('click', () => {
-    setMode('split');
-    loadFeed(state.section);
-  });
+  if (decBtn) decBtn.addEventListener('click', () => setReaderFontPx(getReaderFontPx() - READER_FONT_STEP));
+  if (incBtn) incBtn.addEventListener('click', () => setReaderFontPx(getReaderFontPx() + READER_FONT_STEP));
+  if (themeBtn) themeBtn.addEventListener('click', () => setReaderTheme(getReaderTheme() === 'dark' ? 'light' : 'dark'));
 
-  // Tabs click
-  root.querySelectorAll('.news-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const section = btn.dataset.guardianSection;
-      if (!section) return;
+  // Apply saved settings
+  setReaderFontPx(getReaderFontPx());
+  setReaderTheme(getReaderTheme());
 
-      // If clicked in more-tabs, close it
-      const isInMore = btn.closest('#news-more-tabs');
-      if (isInMore) toggleMoreTabs(false);
+  // Back button (reader -> split)
+  const backBtn = $('news-reader-back');
+  if (backBtn) backBtn.addEventListener('click', () => setMode('split'));
 
-      setMode('split');
-      loadFeed(section);
+  // Refresh button
+  const refreshBtn = $('news-refresh');
+  if (refreshBtn) refreshBtn.addEventListener('click', () => loadFeed(state.section));
+
+  // More toggle
+  const moreBtn = $('news-more-toggle');
+  if (moreBtn) moreBtn.addEventListener('click', () => toggleMoreTabs());
+
+  // Tabs click (both primary and more tabs should have .news-tab)
+  const sectionEl = $('news-section');
+  if (sectionEl) {
+    sectionEl.addEventListener('click', (ev) => {
+      const tab = ev.target?.closest?.('.news-tab');
+      if (tab) {
+        const s = tab.getAttribute('data-guardian-section');
+        if (s) {
+          toggleMoreTabs(false);
+          loadFeed(s);
+        }
+        return;
+      }
+
+      // List actions
+      const btn = ev.target?.closest?.('button[data-action]');
+      if (btn) {
+        const action = btn.getAttribute('data-action');
+        const gid = btn.getAttribute('data-guardian-id');
+        if (!gid) return;
+
+        if (action === 'quick') {
+          openItem(gid, 'split');
+        } else if (action === 'read') {
+          openItem(gid, 'reader');
+        }
+        return;
+      }
+
+      // Click on item card also quick-opens
+      const itemEl = ev.target?.closest?.('.news-item');
+      if (itemEl) {
+        const gid = itemEl.getAttribute('data-guardian-id');
+        if (gid) openItem(gid, 'split');
+      }
     });
-  });
-
-  // Back button
-  $('news-reader-back')?.addEventListener('click', () => {
-    setMode('split');
-  });
-
-  toggleMoreTabs(false);
+  }
 }
 
+function ensureNewsSectionExists() {
+  return !!$('news-section');
+}
+
+/**
+ * initNews()
+ * Call this once after templates are loaded.
+ * It is safe to call multiple times.
+ */
 export function initNews() {
-  onNavigate('news', () => {
-    bindNewsUIOnce();
+  if (!ensureNewsSectionExists()) {
+    // Template not loaded yet (templateLoader loads async)
+    return;
+  }
+
+  bindNewsUIOnce();
+
+  // Initial load only when entering News (if router supports onNavigate)
+  if (window.onNavigate && typeof window.onNavigate === 'function') {
+    window.onNavigate('news', () => {
+      // When entering News, load current section if list is empty
+      if (!state.items || state.items.length === 0) {
+        loadFeed(DEFAULT_SECTION);
+      }
+      // Default mode is split
+      setMode('split');
+      updateReaderControlsUI();
+    });
+  } else {
+    // Fallback: load immediately
+    if (!state.items || state.items.length === 0) {
+      loadFeed(DEFAULT_SECTION);
+    }
     setMode('split');
-    loadFeed(DEFAULT_SECTION);
-  });
+    updateReaderControlsUI();
+  }
 }
