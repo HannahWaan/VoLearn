@@ -1,39 +1,64 @@
 /* ========================================
    VoLearn - News (Guardian Reader)
-   - In-app list + in-app reader
-   - New-tab fullscreen reader via hash route:
-     #/reader/guardian/<guardianId>
+   - No new browser tab
+   - Two modes inside the same section:
+     1) Split/List mode
+     2) Fullscreen Reader mode
    ======================================== */
 
-import { onNavigate, navigate } from '../core/router.js';
+import { onNavigate } from '../core/router.js';
 import { showToast } from './toast.js';
 
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
-
-// World trước, science tiếp
 const DEFAULT_SECTION = 'world';
 
 let state = {
   section: DEFAULT_SECTION,
   items: [],
-  selectedId: null,
   loading: false,
-  bound: false
+  bound: false,
+  mode: 'split' // 'split' | 'reader'
 };
 
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
 
 function setStatus(text) {
   const el = $('news-status');
   if (el) el.textContent = text;
 }
 
-function setActiveTab(section) {
-  document.querySelectorAll('#news-section .news-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.guardianSection === section);
-  });
+function formatDate(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleString('vi-VN', { hour12: false });
+  } catch { return iso; }
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function sanitizeHtml(html) {
+  if (!window.DOMPurify) {
+    const div = document.createElement('div');
+    div.textContent = html || '';
+    return div.innerHTML;
+  }
+  return window.DOMPurify.sanitize(html || '', { USE_PROFILES: { html: true } });
+}
+
+async function fetchJSON(url) {
+  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}${text ? ` - ${text.slice(0, 160)}` : ''}`);
+  }
+  return res.json();
 }
 
 function toggleMoreTabs(force) {
@@ -50,91 +75,44 @@ function toggleMoreTabs(force) {
   toggle.textContent = shouldOpen ? 'Less…' : 'More…';
 }
 
-function formatDate(iso) {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString('vi-VN', { hour12: false });
-  } catch {
-    return iso;
-  }
+function setActiveTab(section) {
+  document.querySelectorAll('#news-section .news-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.guardianSection === section);
+  });
 }
 
-function sanitizeHtml(html) {
-  if (!window.DOMPurify) {
-    const div = document.createElement('div');
-    div.textContent = html || '';
-    return div.innerHTML;
-  }
-  return window.DOMPurify.sanitize(html || '', { USE_PROFILES: { html: true } });
-}
+function setMode(mode) {
+  state.mode = mode;
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-async function fetchJSON(url) {
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}${text ? ` - ${text.slice(0, 160)}` : ''}`);
-  }
-  return res.json();
-}
-
-function openInNewReaderTab(guardianId) {
-  if (!guardianId) return;
-  const base = `${location.origin}${location.pathname}`;
-  const hash = `#/reader/guardian/${encodeURIComponent(guardianId)}`;
-  window.open(`${base}${hash}`, '_blank', 'noopener,noreferrer');
-}
-
-function isReaderHash() {
-  return /^#\/reader\/guardian\//.test(location.hash || '');
-}
-
-function parseReaderGuardianId() {
-  const m = (location.hash || '').match(/^#\/reader\/guardian\/(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-function setReaderMode(on) {
-  // Toggle toolbar
   const toolbar = $('news-reader-toolbar');
-  if (toolbar) toolbar.style.display = on ? 'flex' : 'none';
+  if (toolbar) toolbar.style.display = (mode === 'reader') ? 'flex' : 'none';
 
-  // Hide list area + tabs in reader mode
+  // Hide list + tabs in reader mode
   const list = $('news-list');
-  if (list) list.style.display = on ? 'none' : 'flex';
+  if (list) list.style.display = (mode === 'reader') ? 'none' : 'flex';
 
-  // Hide tabs + controls
-  document.querySelectorAll('#news-section .news-tabs, #news-section .news-tabs-more')
-    .forEach(el => (el.style.display = on ? 'none' : ''));
+  // Hide tabs container(s)
+  const tabRow = document.querySelector('#news-section .news-tabs');
+  if (tabRow) tabRow.style.display = (mode === 'reader') ? 'none' : 'flex';
 
-  const moreTabs = $('news-more-tabs');
-  if (moreTabs) moreTabs.style.display = on ? 'none' : (moreTabs.style.display || 'none');
+  const moreRow = $('news-more-tabs');
+  if (moreRow) moreRow.style.display = (mode === 'reader') ? 'none' : (moreRow.style.display || 'none');
 
   const moreToggle = $('news-more-toggle');
-  if (moreToggle) moreToggle.style.display = on ? 'none' : '';
+  if (moreToggle) moreToggle.style.display = (mode === 'reader') ? 'none' : '';
 
   const refresh = $('news-refresh');
-  if (refresh) refresh.style.display = on ? 'none' : '';
+  if (refresh) refresh.style.display = (mode === 'reader') ? 'none' : '';
 
-  // Hide "open source" button in reader mode (you said no jumping to original)
+  // Hide open-source button always (you don't want to go to origin)
   const openWrap = $('news-open-source-wrap');
   if (openWrap) openWrap.style.display = 'none';
 
-  // In reader mode, make reader column full width by switching grid to block
-  // We do it minimally by locating the first grid container inside card-body:
+  // Make reader full width by switching the grid container to block
   const section = $('news-section');
   const grid = section?.querySelector('div[style*="grid-template-columns"]');
   if (grid) {
-    if (on) {
+    if (mode === 'reader') {
       grid.dataset.prevDisplay = grid.style.display || '';
       grid.dataset.prevGrid = grid.style.gridTemplateColumns || '';
       grid.style.display = 'block';
@@ -150,12 +128,10 @@ function renderReaderEmpty() {
   const title = $('news-title');
   const meta = $('news-meta');
   const reader = $('news-reader');
-  const openWrap = $('news-open-source-wrap');
 
   if (title) title.textContent = 'Chưa chọn bài';
   if (meta) meta.textContent = '';
   if (reader) reader.innerHTML = '';
-  if (openWrap) openWrap.style.display = 'none';
 }
 
 function renderReader(item) {
@@ -173,26 +149,20 @@ function renderReader(item) {
   if (titleEl) titleEl.textContent = title;
   if (metaEl) metaEl.textContent = meta;
 
-  // Prefer HTML body; fallback summary; fallback plain text -> paragraphs
-  const contentHtml = item?.contentHtml;
-  const summaryHtml = item?.summaryHtml;
-
+  // Prefer HTML body; fallback summary; fallback text
   let html = '';
-  if (contentHtml) {
-    html = contentHtml;
-  } else if (summaryHtml) {
-    html = summaryHtml;
+  if (item?.contentHtml) {
+    html = item.contentHtml;
+  } else if (item?.summaryHtml) {
+    html = item.summaryHtml;
   } else if (item?.text) {
     html = `<p>${escapeHtml(item.text).replaceAll('\n\n', '</p><p>').replaceAll('\n', '<br>')}</p>`;
   }
-
   if (readerEl) readerEl.innerHTML = sanitizeHtml(html);
 }
 
-async function openItem(guardianId, { readerMode = false } = {}) {
+async function openItem(guardianId) {
   if (!guardianId) return;
-
-  state.selectedId = guardianId;
   setStatus('Đang tải bài...');
 
   try {
@@ -200,8 +170,6 @@ async function openItem(guardianId, { readerMode = false } = {}) {
     const item = await fetchJSON(url);
     renderReader(item);
     setStatus('Sẵn sàng.');
-
-    if (readerMode) setReaderMode(true);
   } catch (e) {
     console.error('News openItem error:', e);
     setStatus('Không tải được bài.');
@@ -245,7 +213,7 @@ function renderList(items) {
 
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn-primary" type="button" data-action="read" style="padding:6px 10px;">
-              Đọc (tab mới)
+              Đọc
             </button>
             <button class="btn-secondary" type="button" data-action="preview" style="padding:6px 10px;">
               Xem nhanh
@@ -255,18 +223,16 @@ function renderList(items) {
       </div>
     `;
 
-    const btnRead = card.querySelector('[data-action="read"]');
-    const btnPreview = card.querySelector('[data-action="preview"]');
-
-    btnRead?.addEventListener('click', (e) => {
+    card.querySelector('[data-action="preview"]')?.addEventListener('click', (e) => {
       e.preventDefault();
-      openInNewReaderTab(item.guardianId);
+      setMode('split');
+      openItem(item.guardianId);
     });
 
-    btnPreview?.addEventListener('click', (e) => {
+    card.querySelector('[data-action="read"]')?.addEventListener('click', (e) => {
       e.preventDefault();
-      setReaderMode(false);
-      openItem(item.guardianId, { readerMode: false });
+      setMode('reader');
+      openItem(item.guardianId);
     });
 
     list.appendChild(card);
@@ -290,17 +256,15 @@ async function loadFeed(section) {
 
     if (!items.length) {
       setStatus('Không có bài viết.');
-      renderList([]);
       return;
     }
 
     setStatus(`Đã tải ${items.length} bài • ${data?.provider?.name || 'The Guardian'}`);
     renderList(items);
 
-    // Auto preview first item (only when not in reader hash mode)
-    if (!isReaderHash()) {
-      await openItem(items[0]?.guardianId, { readerMode: false });
-    }
+    // Auto preview first item
+    setMode('split');
+    openItem(items[0]?.guardianId);
   } catch (e) {
     state.loading = false;
     console.error('News loadFeed error:', e);
@@ -317,7 +281,7 @@ function bindNewsUIOnce() {
   $('news-more-toggle')?.addEventListener('click', () => toggleMoreTabs());
 
   $('news-refresh')?.addEventListener('click', () => {
-    setReaderMode(false);
+    setMode('split');
     loadFeed(state.section);
   });
 
@@ -331,62 +295,23 @@ function bindNewsUIOnce() {
       const isInMore = btn.closest('#news-more-tabs');
       if (isInMore) toggleMoreTabs(false);
 
-      setReaderMode(false);
+      setMode('split');
       loadFeed(section);
     });
   });
 
-  // Reader back button
+  // Back button
   $('news-reader-back')?.addEventListener('click', () => {
-    // go back to list view (same tab)
-    location.hash = '#/news';
-    setReaderMode(false);
-    loadFeed(DEFAULT_SECTION);
+    setMode('split');
   });
 
   toggleMoreTabs(false);
 }
 
-function handleHashRoute() {
-  // Only care when we are on news section (but in new tab it's fine to force navigate)
-  const guardianId = parseReaderGuardianId();
-  if (guardianId) {
-    // Ensure section is visible
-    navigate('news');
-    bindNewsUIOnce();
-    // Fullscreen reader mode
-    setReaderMode(true);
-    openItem(guardianId, { readerMode: true });
-    return;
-  }
-
-  // If hash is #/news or anything else: ensure normal mode
-  if ((location.hash || '').startsWith('#/news')) {
-    setReaderMode(false);
-  }
-}
-
 export function initNews() {
   onNavigate('news', () => {
     bindNewsUIOnce();
-
-    // If opened via new-tab reader hash, handle it
-    if (isReaderHash()) {
-      handleHashRoute();
-      return;
-    }
-
-    // Normal section load: default World
-    setReaderMode(false);
+    setMode('split');
     loadFeed(DEFAULT_SECTION);
-  });
-
-  // Global hashchange listener
-  window.addEventListener('hashchange', () => {
-    // Only act if reader hash OR currently in news section
-    const isNewsActive = document.getElementById('news-section')?.classList.contains('active');
-    if (isReaderHash() || isNewsActive) {
-      handleHashRoute();
-    }
   });
 }
