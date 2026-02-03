@@ -591,3 +591,36 @@
   opacity: 0.8;
   margin-top: 4px;
 }
+
+/* Content figures */
+.content-figure,
+.news-reader-content figure {
+  margin: 24px 0;
+  padding: 0;
+}
+
+.content-figure img,
+.news-reader-content figure img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+.content-figure figcaption,
+.news-reader-content figcaption {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--news-muted, rgba(255,255,255,0.6));
+  margin-top: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--news-border, rgba(255,255,255,0.1));
+  line-height: 1.4;
+}
+
+.img-credit {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  opacity: 0.8;
+}
