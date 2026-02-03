@@ -19,6 +19,7 @@ import { initBookshelf, renderShelves } from './ui/bookshelf.js';
 import { initSetView } from './ui/setView.js';
 import { initCalendar, renderCalendar } from './ui/calendar.js';
 import { initSettings, applySettings } from './ui/settings.js';
+import { initNews } from './ui/news.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
 import { initConfirmModal } from './ui/confirmModal.js';
 
@@ -90,6 +91,7 @@ async function initApp() {
         initSetView();
         initCalendar();
         initSettings();
+        initNews();
         
         // Step 6: Initialize practice
         console.log('🏋️ Step 6: Initializing practice...');
