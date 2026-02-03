@@ -1,4 +1,4 @@
-/* ===== WORD LOOKUP - Double-click & Select to translate ===== */
+/* ===== WORD LOOKUP - Double-click, Select & Right-click to translate ===== */
 /* VoLearn v2.2.0 - Tra từ trong News Reader */
 
 import { appData } from '../core/state.js';
@@ -6,9 +6,11 @@ import { saveData } from '../core/storage.js';
 import { showToast } from './toast.js';
 
 let popupEl = null;
+let contextMenuEl = null;
 let currentWord = '';
 let cachedData = null;
 let isInitialized = false;
+let lastSelectedText = '';
 
 /* ===== CREATE POPUP ===== */
 function createPopup() {
@@ -37,57 +39,145 @@ function createPopup() {
     document.body.appendChild(popupEl);
     
     // Events
-    popupEl.querySelector('.wlp-close').addEventListener('click', hidePopup);
-    popupEl.querySelector('.wlp-speak').addEventListener('click', () => speakWord(currentWord));
-    popupEl.querySelector('.wlp-add-btn').addEventListener('click', handleAddWord);
+    popupEl.querySelector('.wlp-close').onclick = hidePopup;
+    popupEl.querySelector('.wlp-speak').onclick = () => speakWord(currentWord);
+    popupEl.querySelector('.wlp-add-btn').onclick = handleAddWord;
     
-    // Prevent popup clicks from closing it
-    popupEl.addEventListener('click', (e) => e.stopPropagation());
-    popupEl.addEventListener('mouseup', (e) => e.stopPropagation());
-    popupEl.addEventListener('dblclick', (e) => e.stopPropagation());
+    // Prevent events from bubbling
+    popupEl.onclick = (e) => e.stopPropagation();
+    popupEl.onmouseup = (e) => e.stopPropagation();
+    popupEl.ondblclick = (e) => e.stopPropagation();
+    popupEl.oncontextmenu = (e) => e.stopPropagation();
     
+    console.log('✅ Popup element created and appended to body');
     return popupEl;
+}
+
+/* ===== CREATE CONTEXT MENU ===== */
+function createContextMenu() {
+    if (contextMenuEl) return contextMenuEl;
+    
+    contextMenuEl = document.createElement('div');
+    contextMenuEl.id = 'word-lookup-context-menu';
+    contextMenuEl.className = 'wlp-context-menu';
+    contextMenuEl.innerHTML = `
+        <button class="wlp-context-btn" id="wlp-ctx-translate">
+            <i class="fas fa-language"></i> Tra từ điển
+        </button>
+        <button class="wlp-context-btn" id="wlp-ctx-speak">
+            <i class="fas fa-volume-up"></i> Phát âm
+        </button>
+    `;
+    
+    document.body.appendChild(contextMenuEl);
+    
+    // Events
+    document.getElementById('wlp-ctx-translate').onclick = (e) => {
+        e.stopPropagation();
+        hideContextMenu();
+        if (lastSelectedText) {
+            const rect = contextMenuEl.getBoundingClientRect();
+            showPopup(rect.left, rect.top, lastSelectedText);
+        }
+    };
+    
+    document.getElementById('wlp-ctx-speak').onclick = (e) => {
+        e.stopPropagation();
+        hideContextMenu();
+        if (lastSelectedText) {
+            speakWord(lastSelectedText);
+        }
+    };
+    
+    contextMenuEl.onclick = (e) => e.stopPropagation();
+    
+    console.log('✅ Context menu created');
+    return contextMenuEl;
+}
+
+/* ===== SHOW/HIDE CONTEXT MENU ===== */
+function showContextMenu(x, y, text) {
+    const menu = createContextMenu();
+    lastSelectedText = text;
+    
+    menu.style.display = 'block';
+    
+    // Position
+    const menuRect = menu.getBoundingClientRect();
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    
+    let left = x;
+    let top = y;
+    
+    if (left + 180 > viewportW) left = viewportW - 190;
+    if (top + 100 > viewportH) top = viewportH - 110;
+    if (left < 10) left = 10;
+    if (top < 10) top = 10;
+    
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    
+    console.log('Context menu shown at:', left, top, 'for text:', text);
+}
+
+function hideContextMenu() {
+    if (contextMenuEl) {
+        contextMenuEl.style.display = 'none';
+    }
 }
 
 /* ===== SHOW/HIDE POPUP ===== */
 function showPopup(x, y, word) {
+    console.log('=== showPopup() called ===');
+    console.log('Position:', x, y);
+    console.log('Word:', word);
+    
+    if (!word || word.length < 2) {
+        console.log('Word too short, aborting');
+        return;
+    }
+    
     const popup = createPopup();
     currentWord = word.toLowerCase().trim();
     
+    // Reset content
     popup.querySelector('.wlp-word').textContent = currentWord;
     popup.querySelector('.wlp-phonetic').textContent = '';
     popup.querySelector('.wlp-content').innerHTML = '<div class="wlp-loading"><i class="fas fa-spinner fa-spin"></i> Đang tra từ...</div>';
     popup.querySelector('.wlp-add-btn').disabled = true;
     
-    // Show popup first to get dimensions
+    // Show and position
     popup.style.display = 'block';
-    popup.style.opacity = '0';
+    popup.style.left = '0px';
+    popup.style.top = '0px';
     
-    // Calculate position
-    requestAnimationFrame(() => {
+    // Calculate position after display
+    setTimeout(() => {
         const rect = popup.getBoundingClientRect();
         const viewportW = window.innerWidth;
         const viewportH = window.innerHeight;
         
-        let left = x + 10;
-        let top = y + 10;
+        let left = x + 5;
+        let top = y + 5;
         
-        // Adjust if overflowing right
+        // Adjust if overflowing
         if (left + rect.width > viewportW - 20) {
-            left = x - rect.width - 10;
+            left = x - rect.width - 5;
         }
-        // Adjust if overflowing bottom
         if (top + rect.height > viewportH - 20) {
-            top = y - rect.height - 10;
+            top = y - rect.height - 5;
         }
-        // Keep within bounds
         if (left < 10) left = 10;
         if (top < 10) top = 10;
         
         popup.style.left = left + 'px';
         popup.style.top = top + 'px';
-        popup.style.opacity = '1';
-    });
+        
+        console.log('Popup positioned at:', left, top);
+        console.log('Popup display style:', popup.style.display);
+        console.log('Popup in DOM:', document.body.contains(popup));
+    }, 10);
     
     // Fetch definition
     fetchDefinition(currentWord);
@@ -103,16 +193,21 @@ function hidePopup() {
 
 /* ===== FETCH DEFINITION ===== */
 async function fetchDefinition(word) {
+    console.log('Fetching definition for:', word);
+    
     const contentEl = popupEl.querySelector('.wlp-content');
     const phoneticEl = popupEl.querySelector('.wlp-phonetic');
     const addBtn = popupEl.querySelector('.wlp-add-btn');
     
     try {
-        // Handle phrases - take first word for lookup
-        const lookupWord = word.split(/\s+/)[0];
+        // Take first word if phrase
+        const lookupWord = word.split(/\s+/)[0].toLowerCase();
         
         const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`;
+        console.log('API URL:', url);
+        
         const resp = await fetch(url);
+        console.log('API response status:', resp.status);
         
         if (!resp.ok) {
             contentEl.innerHTML = '<div class="wlp-not-found"><i class="fas fa-search"></i> Không tìm thấy từ này</div>';
@@ -121,6 +216,8 @@ async function fetchDefinition(word) {
         }
         
         const data = await resp.json();
+        console.log('API data:', data);
+        
         if (!data || !data[0]) {
             contentEl.innerHTML = '<div class="wlp-not-found"><i class="fas fa-search"></i> Không tìm thấy từ này</div>';
             cachedData = null;
@@ -130,11 +227,11 @@ async function fetchDefinition(word) {
         const entry = data[0];
         cachedData = entry;
         
-        // Update word display to actual looked up word
+        // Update word
         popupEl.querySelector('.wlp-word').textContent = entry.word || lookupWord;
         currentWord = entry.word || lookupWord;
         
-        // Phonetic - try multiple sources
+        // Phonetic
         let phonetic = entry.phonetic || '';
         if (!phonetic && entry.phonetics?.length) {
             for (const p of entry.phonetics) {
@@ -167,6 +264,8 @@ async function fetchDefinition(word) {
         contentEl.innerHTML = html || '<div class="wlp-not-found">Không có định nghĩa</div>';
         addBtn.disabled = false;
         
+        console.log('Definition loaded successfully');
+        
     } catch (err) {
         console.error('Word Lookup error:', err);
         contentEl.innerHTML = '<div class="wlp-not-found"><i class="fas fa-exclamation-circle"></i> Lỗi khi tra từ</div>';
@@ -177,21 +276,18 @@ async function fetchDefinition(word) {
 /* ===== SPEAK WORD ===== */
 function speakWord(word) {
     if (!word) return;
-    
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
-    
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = 'en-US';
     utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
+    console.log('Speaking:', word);
 }
 
 /* ===== ADD TO VOCABULARY ===== */
 function handleAddWord() {
     if (!currentWord || !cachedData) return;
     
-    // Check if word exists
     const existing = appData.vocabulary?.find(w => 
         w.word?.toLowerCase() === currentWord.toLowerCase()
     );
@@ -201,7 +297,6 @@ function handleAddWord() {
         return;
     }
     
-    // Build meanings array from API data
     const entry = cachedData;
     const meanings = [];
     
@@ -215,7 +310,7 @@ function handleAddWord() {
                 phoneticUK: entry.phonetics?.find(p => p.audio?.includes('uk'))?.text || '',
                 pos: pos,
                 defEn: def.definition || '',
-                defVi: '', // User can add later
+                defVi: '',
                 example: def.example || '',
                 synonyms: meaning.synonyms?.slice(0, 5)?.join(', ') || '',
                 antonyms: meaning.antonyms?.slice(0, 5)?.join(', ') || ''
@@ -223,7 +318,6 @@ function handleAddWord() {
         }
     }
     
-    // Fallback if no meanings parsed
     if (meanings.length === 0) {
         meanings.push({
             phoneticUS: entry.phonetic || '',
@@ -254,7 +348,6 @@ function handleAddWord() {
         streak: 0
     };
     
-    // Add to vocabulary
     if (!appData.vocabulary) appData.vocabulary = [];
     appData.vocabulary.push(wordObj);
     
@@ -263,12 +356,11 @@ function handleAddWord() {
     showToast(`Đã thêm "${currentWord}" vào từ điển!`, 'success');
     hidePopup();
     
-    // Dispatch events for other modules to update
     window.dispatchEvent(new CustomEvent('volearn:wordSaved', { detail: wordObj }));
     document.dispatchEvent(new CustomEvent('volearn:wordSaved', { detail: wordObj }));
 }
 
-/* ===== ESCAPE HTML ===== */
+/* ===== HELPERS ===== */
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -278,141 +370,101 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-/* ===== GET SELECTED TEXT ===== */
-function getSelectedWord() {
+function getSelectedText() {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return null;
+    if (!selection || selection.rangeCount === 0) return '';
     
     let text = selection.toString().trim();
-    if (!text) return null;
+    if (!text) return '';
     
-    // Basic validation - letters, spaces, hyphens, apostrophes
-    if (!/^[a-zA-Z\s'-]+$/.test(text)) return null;
-    if (text.length < 2 || text.length > 50) return null;
+    // Basic validation
+    if (!/^[a-zA-Z\s'-]+$/.test(text)) return '';
+    if (text.length < 2 || text.length > 50) return '';
     
     return text;
 }
 
-/* ===== CHECK IF IN NEWS CONTENT ===== */
-function isInNewsContent(element) {
+function isInNewsSection(element) {
     if (!element) return false;
-    
-    // Must be in news section
     const newsSection = document.getElementById('news-section');
-    if (!newsSection || !newsSection.contains(element)) return false;
-    
-    // Check if in valid content areas (using IDs from HTML)
-    const validSelectors = [
-        '#news-reader',           // Main article content
-        '#news-trail-text',       // Article summary/trail
-        '#news-title',            // Article title
-        '.news-card-title',       // Card titles in list
-        '.news-card-summary',     // Card summaries in list
-        '.news-article'           // Whole article container
-    ];
-    
-    for (const selector of validSelectors) {
-        const container = document.querySelector(selector);
-        if (container && container.contains(element)) {
-            return true;
-        }
-    }
-    
-    // Also check by closest
-    if (element.closest('#news-reader') || 
-        element.closest('#news-trail-text') ||
-        element.closest('.news-article') ||
-        element.closest('.news-card')) {
-        return true;
-    }
-    
-    return false;
+    return newsSection && newsSection.contains(element);
 }
 
 /* ===== INIT ===== */
 export function initWordLookup() {
-    // Prevent double initialization
     if (isInitialized) {
         console.log('Word Lookup already initialized');
         return;
     }
     isInitialized = true;
     
-    console.log('Initializing Word Lookup...');
+    console.log('🚀 Initializing Word Lookup...');
     
-    // Double-click to translate
+    // Pre-create elements
+    createPopup();
+    createContextMenu();
+    
+    // ===== DOUBLE-CLICK =====
     document.addEventListener('dblclick', (e) => {
-        console.log('Double click detected', e.target);
+        if (popupEl?.contains(e.target)) return;
+        if (contextMenuEl?.contains(e.target)) return;
+        if (!isInNewsSection(e.target)) return;
         
-        // Check if inside popup
-        if (popupEl && popupEl.contains(e.target)) {
-            console.log('Click inside popup, ignoring');
-            return;
-        }
+        const text = getSelectedText();
+        console.log('Double-click detected, selected text:', text);
         
-        // Check if in news content
-        if (!isInNewsContent(e.target)) {
-            console.log('Not in news content');
-            return;
-        }
-        
-        const word = getSelectedWord();
-        console.log('Selected word:', word);
-        
-        if (!word) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        showPopup(e.clientX, e.clientY, word);
-    }, true); // Use capture phase
-    
-    // Select text and show translate button after delay
-    let selectionTimeout = null;
-    
-    document.addEventListener('mouseup', (e) => {
-        // Ignore if clicking inside popup
-        if (popupEl && popupEl.contains(e.target)) return;
-        
-        // Clear previous timeout
-        if (selectionTimeout) {
-            clearTimeout(selectionTimeout);
-            selectionTimeout = null;
-        }
-        
-        // Check if in news content
-        if (!isInNewsContent(e.target)) return;
-        
-        // Wait for selection to stabilize
-        selectionTimeout = setTimeout(() => {
-            const text = getSelectedWord();
-            if (!text) return;
-            
-            // Only for multi-word selections (single words handled by dblclick)
-            const wordCount = text.split(/\s+/).length;
-            if (wordCount <= 1) return;
-            
-            console.log('Selected phrase:', text);
+        if (text) {
+            e.preventDefault();
+            hideContextMenu();
             showPopup(e.clientX, e.clientY, text);
-        }, 600);
-    });
+        }
+    }, true);
     
-    // Click outside to close popup
-    document.addEventListener('click', (e) => {
-        if (!popupEl) return;
-        if (popupEl.style.display === 'none') return;
-        if (popupEl.contains(e.target)) return;
+    // ===== RIGHT-CLICK (Context Menu) =====
+    document.addEventListener('contextmenu', (e) => {
+        if (popupEl?.contains(e.target)) return;
+        if (contextMenuEl?.contains(e.target)) return;
+        if (!isInNewsSection(e.target)) return;
         
-        hidePopup();
-    });
+        const text = getSelectedText();
+        console.log('Right-click detected, selected text:', text);
+        
+        if (text) {
+            e.preventDefault();
+            hidePopup();
+            showContextMenu(e.clientX, e.clientY, text);
+        }
+    }, true);
     
-    // ESC to close
+    // ===== CLICK OUTSIDE TO CLOSE =====
+    document.addEventListener('click', (e) => {
+        // Close context menu
+        if (contextMenuEl && contextMenuEl.style.display !== 'none') {
+            if (!contextMenuEl.contains(e.target)) {
+                hideContextMenu();
+            }
+        }
+        
+        // Close popup
+        if (popupEl && popupEl.style.display !== 'none') {
+            if (!popupEl.contains(e.target)) {
+                hidePopup();
+            }
+        }
+    }, true);
+    
+    // ===== ESC TO CLOSE =====
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') hidePopup();
+        if (e.key === 'Escape') {
+            hidePopup();
+            hideContextMenu();
+        }
     });
     
-    console.log('✅ Word Lookup initialized (double-click & select)');
+    console.log('✅ Word Lookup initialized (double-click + right-click)');
 }
 
 // Global access
 window.initWordLookup = initWordLookup;
 window.hideWordLookup = hidePopup;
+window.showWordLookupPopup = showPopup; // For testing
