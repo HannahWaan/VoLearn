@@ -9,8 +9,7 @@ let charts = {
   accuracyDonut: null,
   performanceRadar: null,
   studyTimeLine: null,
-  vocabPie: null,
-  statusDonut: null
+  vocabPie: null
 };
 
 let homeState = {
@@ -33,36 +32,17 @@ function toDayKey(d) {
   return dt.toISOString().split('T')[0];
 }
 
-/**
- * Duration parser that tolerates:
- * - seconds (number)
- * - milliseconds (number)
- * - accidental Unix timestamp seconds (number) -> treated as NOT a duration (0)
- * - "HH:MM:SS" or "MM:SS" (string)
- */
 function parseDurationToSeconds(dur) {
   if (dur == null) return 0;
 
-  // Number case
   if (typeof dur === 'number' && Number.isFinite(dur)) {
     const n = dur;
-
-    // If looks like Unix timestamp seconds (e.g. 1,769,709,737 around 2026)
-    // treat as invalid duration.
     if (n >= 1_000_000_000 && n <= 2_000_000_000) return 0;
-
-    // If looks like epoch ms timestamp (very large)
     if (n > 1_000_000_000_000) return 0;
-
-    // If too large to be a realistic duration in seconds, assume milliseconds.
-    // 10,000,000 seconds ~ 115 days
     if (n > 10_000_000) return Math.round(n / 1000);
-
-    // Else assume seconds
     return Math.max(0, Math.round(n));
   }
 
-  // String case
   if (typeof dur === 'string') {
     const s = dur.trim();
     if (!s) return 0;
@@ -127,11 +107,6 @@ function getAllWords() {
   return uniqWordsById(all);
 }
 
-/**
- * Practice sessions:
- * - New schema: { type:'practice', duration, wordsCount, accuracy, timestamp/date }
- * - Fallback old schema: { date, reviewed:[...] } -> pseudo sessions (duration=0)
- */
 function getPracticeHistory() {
   const hist = Array.isArray(appData.history) ? appData.history : [];
 
@@ -310,11 +285,10 @@ function computeTimeSeries(practiceSessions, range) {
 }
 
 function computeVocabDistribution(words) {
-  // Việt hoá (Title Case)
   const buckets = {
     'Chưa Nhớ': 0,
     'Nhớ Yếu': 0,
-    'Gợi Nhớ Chủ Động': 0,
+    'Ghi Nhớ Chủ Động': 0,
     'Nhớ Vững': 0,
     'Ghi Nhớ Dài Hạn': 0
   };
@@ -339,7 +313,7 @@ function computeVocabDistribution(words) {
       else buckets['Nhớ Vững']++;
       continue;
     }
-    if (acc >= 0.7) buckets['Gợi Nhớ Chủ Động']++;
+    if (acc >= 0.7) buckets['Ghi Nhớ Chủ Động']++;
     else buckets['Nhớ Yếu']++;
   }
 
@@ -428,11 +402,10 @@ function renderNumbers(words, practiceSessions) {
   setText('home-accuracy', Math.round(avgAcc));
   setText('home-score-10', score10.toFixed(1));
 
-  // Score label (VN)
   let label = 'Chưa Nhớ';
   if (avgAcc >= 85) label = 'Ghi Nhớ Dài Hạn';
   else if (avgAcc >= 75) label = 'Nhớ Vững';
-  else if (avgAcc >= 60) label = 'Gợi Nhớ Chủ Động';
+  else if (avgAcc >= 60) label = 'Ghi Nhớ Chủ Động';
   else if (avgAcc >= 40) label = 'Nhớ Yếu';
   setText('home-score-label', label);
 
@@ -607,7 +580,7 @@ function buildCharts(words, practiceSessions) {
     });
   }
 
-  // 5) Vocab distribution
+  // 5) Vocab distribution pie
   const dist = computeVocabDistribution(words);
   const distLabels = Object.keys(dist);
   const distValues = distLabels.map(k => dist[k]);
@@ -636,42 +609,6 @@ function buildCharts(words, practiceSessions) {
       value: distValues[idx],
       color: distColors[idx],
       total: sum(distValues)
-    }))
-  );
-
-  // 6) Status donut
-  const status = computeWordStatusExclusive(words);
-  const stLabels = Object.keys(status);
-  const stValues = stLabels.map(k => status[k]);
-  const stColors = ['#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'];
-
-  const stCtx = $('chart-status-donut')?.getContext?.('2d');
-  if (stCtx) {
-    charts.statusDonut = new Chart(stCtx, {
-      type: 'doughnut',
-      data: {
-        labels: stLabels,
-        datasets: [{
-          data: stValues,
-          backgroundColor: stColors,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        cutout: '68%',
-        plugins: { legend: { display: false } }
-      }
-    });
-  }
-
-  renderLegend(
-    'home-status-legend',
-    stLabels.map((label, idx) => ({
-      label,
-      value: stValues[idx],
-      color: stColors[idx],
-      total: sum(stValues)
     }))
   );
 }
