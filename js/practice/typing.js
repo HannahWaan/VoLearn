@@ -309,10 +309,10 @@ function showCurrentTyping() {
 
   answered = false;
 
-  // === Random chọn 1 meaning cho câu hỏi này ===
   const meanings = word.meanings || [];
   if (meanings.length > 1) {
     currentMeaningIndex = Math.floor(Math.random() * meanings.length);
+    console.log(`[Typing] Word: ${word.word}, Random meaning index: ${currentMeaningIndex}/${meanings.length}`);
   } else {
     currentMeaningIndex = 0;
   }
