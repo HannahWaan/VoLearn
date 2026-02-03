@@ -8,6 +8,7 @@ import { showToast } from './toast.js';
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
 const DEFAULT_SECTION = 'world';
 const ITEMS_PER_PAGE = 5;
+const FONT_KEY = 'volearn_news_reader_font_px';
 
 const state = {
   section: DEFAULT_SECTION,
@@ -25,7 +26,6 @@ function setStatus(text) {
   if (el) el.textContent = text;
 }
 
-// Format time ago (17m ago, 2h ago, etc.)
 function timeAgo(iso) {
   if (!iso) return '';
   try {
@@ -40,11 +40,7 @@ function timeAgo(iso) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
     return iso;
   }
@@ -54,9 +50,7 @@ function formatTime(iso) {
   if (!iso) return '';
   try {
     return new Date(iso).toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      hour: '2-digit', minute: '2-digit', hour12: false
     }) + ' GMT';
   } catch {
     return '';
@@ -66,13 +60,9 @@ function formatTime(iso) {
 function formatDate(iso) {
   if (!iso) return '';
   try {
-    const date = new Date(iso);
-    return date.toLocaleString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+    return new Date(iso).toLocaleString('vi-VN', {
+      hour: '2-digit', minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric',
       hour12: false
     });
   } catch {
@@ -100,18 +90,17 @@ function sanitizeHtml(html) {
     return DOMPurify.sanitize(html || '', {
       USE_PROFILES: { html: true },
       ALLOWED_TAGS: [
-        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'blockquote', 'q', 'cite',
-        'ul', 'ol', 'li',
-        'a', 'img', 'figure', 'figcaption',
-        'table', 'thead', 'tbody', 'tr', 'th', 'td',
-        'pre', 'code', 'span', 'div',
-        'sub', 'sup', 'hr'
+        'p','br','strong','b','em','i','u','s','strike','del',
+        'h1','h2','h3','h4','h5','h6',
+        'blockquote','q','cite',
+        'ul','ol','li',
+        'a','img','figure','figcaption',
+        'table','thead','tbody','tr','th','td',
+        'pre','code','span','div','sub','sup','hr'
       ],
       ALLOWED_ATTR: [
-        'href', 'src', 'alt', 'title', 'target', 'rel',
-        'class', 'id', 'style', 'colspan', 'rowspan'
+        'href','src','alt','title','target','rel',
+        'class','id','style','colspan','rowspan'
       ]
     });
   }
@@ -124,37 +113,25 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-// ==================== Paragraph heuristic (PATCH) ====================
-// Guardian bodyText often comes as one large block with few/no blank lines.
-// This splits into readable paragraphs.
+/* --------- PATCH: paragraph heuristic for bodyText --------- */
 function textToParagraphsHeuristic(text) {
   const raw = String(text || '').trim();
   if (!raw) return [];
 
-  let t = raw
-    .replace(/\r\n/g, '\n')
-    .replace(/[ \t]+\n/g, '\n')
-    .trim();
+  let t = raw.replace(/\r\n/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
 
-  // If already has blank lines, use them.
   if (/\n{2,}/.test(t)) {
     return t.split(/\n{2,}/g).map(p => p.trim()).filter(Boolean);
   }
 
-  // Sentence splitting heuristic: break into paragraphs of ~3 sentences.
-  // Also handle quotes/parenthesis starts roughly.
   const sentences = t.split(/(?<=[.!?])\s+(?=[A-Z“‘(])/g);
-
   const paras = [];
   let buf = [];
 
   for (const s of sentences) {
     const ss = s.trim();
     if (!ss) continue;
-
     buf.push(ss);
-
-    // Paragraph size target
     if (buf.length >= 3) {
       paras.push(buf.join(' '));
       buf = [];
@@ -162,7 +139,6 @@ function textToParagraphsHeuristic(text) {
   }
   if (buf.length) paras.push(buf.join(' '));
 
-  // Fallback: if splitting failed (e.g. no punctuation), chunk by length.
   if (paras.length <= 1 && t.length > 900) {
     const out = [];
     let i = 0;
@@ -180,13 +156,33 @@ function textToParagraphsHeuristic(text) {
 function textToHtml(text) {
   const paras = textToParagraphsHeuristic(text);
   if (!paras.length) return '';
-
-  return paras
-    .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
-    .join('');
+  return paras.map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
 
-// ==================== UI Helpers ====================
+/* --------- Inject lead figure if contentHtml has no images --------- */
+function injectLeadFigureIfMissing(html, item) {
+  const content = String(html || '');
+  const hasImg = /<img\b/i.test(content) || /<figure\b/i.test(content);
+  if (hasImg) return content;
+
+  const img = item?.images?.[0];
+  const url = (img?.url || item?.image || '').trim();
+  if (!url) return content;
+
+  const caption = (img?.caption || item?.imageCaption || '').trim();
+  const credit = (img?.credit || item?.imageCredit || '').trim();
+  const cap = [caption, credit ? `Photograph: ${credit}` : ''].filter(Boolean).join(' ');
+
+  const fig = `
+    <figure class="news-figure">
+      <img src="${escapeHtml(url)}" alt="${escapeHtml(img?.alt || '')}">
+      ${cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : ''}
+    </figure>
+  `;
+  return fig + content;
+}
+
+/* ==================== UI Helpers ==================== */
 
 function setActiveTab(section) {
   document.querySelectorAll('#news-section .news-tab').forEach(btn => {
@@ -204,18 +200,15 @@ function toggleMoreTabs() {
 }
 
 function showListView() {
-  const listView = $('news-list-view');
-  const readerView = $('news-reader-view');
-  if (listView) listView.style.display = 'flex';
-  if (readerView) readerView.style.display = 'none';
+  $('news-list-view')?.style && ($('news-list-view').style.display = 'flex');
+  $('news-reader-view')?.style && ($('news-reader-view').style.display = 'none');
 }
 
 function showReaderView() {
-  const listView = $('news-list-view');
-  const readerView = $('news-reader-view');
-  if (listView) listView.style.display = 'none';
-  if (readerView) readerView.style.display = 'block';
-  readerView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('news-list-view')?.style && ($('news-list-view').style.display = 'none');
+  const rv = $('news-reader-view');
+  if (rv?.style) rv.style.display = 'block';
+  rv?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
 
 function updatePagination() {
@@ -228,7 +221,7 @@ function updatePagination() {
   if (pageInfo) pageInfo.textContent = `Trang ${state.currentPage} / ${state.totalPages}`;
 }
 
-// ==================== Render Functions ====================
+/* ==================== Render ==================== */
 
 function renderList() {
   const list = $('news-list');
@@ -243,11 +236,9 @@ function renderList() {
   pageItems.forEach(item => {
     const card = document.createElement('div');
     card.className = 'news-card';
-    card.dataset.guardianId = item.guardianId || '';
 
     const title = item.title || '(Không có tiêu đề)';
-    const summaryRaw = item.summaryHtml || item.summary || '';
-    const summary = stripHtml(summaryRaw);
+    const summary = stripHtml(item.summaryHtml || item.summary || '');
     const author = item.author || 'The Guardian';
     const date = formatDate(item.publishedAt);
     const thumb = item.image || '';
@@ -277,18 +268,12 @@ function renderReader(item) {
   const coverEl = $('news-cover');
   const readerEl = $('news-reader');
 
-  // Title
-  if (titleEl) {
-    titleEl.textContent = item?.title || '(Không có tiêu đề)';
-  }
+  if (titleEl) titleEl.textContent = item?.title || '(Không có tiêu đề)';
 
-  // Meta
   if (metaEl) {
     const ago = timeAgo(item?.publishedAt);
     const time = formatTime(item?.publishedAt);
     const author = item?.author || 'The Guardian';
-
-    // Keep it simple & consistent
     metaEl.innerHTML = `
       <span class="news-time-ago">${escapeHtml(ago)}</span>
       <span>•</span>
@@ -298,13 +283,12 @@ function renderReader(item) {
     `;
   }
 
-  // Cover image + caption
+  // Cover image area (lead image)
   if (coverEl) {
     if (item?.image) {
-      const caption = item?.imageCaption || '';
-      const credit = item?.imageCredit || '';
-      const captionText = caption + (credit ? ` Photograph: ${credit}` : '');
-
+      const caption = (item?.imageCaption || '').trim();
+      const credit = (item?.imageCredit || '').trim();
+      const captionText = [caption, credit ? `Photograph: ${credit}` : ''].filter(Boolean).join(' ');
       coverEl.innerHTML = `
         <figure class="news-figure">
           <img src="${escapeHtml(item.image)}" alt="">
@@ -316,18 +300,16 @@ function renderReader(item) {
     }
   }
 
-  // Content (PATCH: prefer HTML; otherwise heuristic paragraphs)
   if (readerEl) {
-    let html = '';
-
     const contentHtml = String(item?.contentHtml || '').trim();
     const text = String(item?.text || '').trim();
     const summaryHtml = String(item?.summaryHtml || '').trim();
 
+    let html = '';
     if (contentHtml) {
-      html = contentHtml; // keep Guardian formatting (bold/italic/underline/etc.)
+      html = injectLeadFigureIfMissing(contentHtml, item);
     } else if (text) {
-      html = textToHtml(text); // heuristic split => paragraphs
+      html = textToHtml(text);
     } else if (summaryHtml) {
       html = `<p>${summaryHtml}</p>`;
     } else {
@@ -340,7 +322,7 @@ function renderReader(item) {
   showReaderView();
 }
 
-// ==================== Data Loading ====================
+/* ==================== Data ==================== */
 
 async function openItem(guardianId) {
   if (!guardianId) return;
@@ -392,7 +374,7 @@ async function loadFeed(section) {
   }
 }
 
-// ==================== Event Bindings ====================
+/* ==================== Events ==================== */
 
 function bindNewsUI() {
   if (state.bound) return;
@@ -432,27 +414,19 @@ function bindNewsUI() {
     }
   });
 
-  // Font size controls (persist)
-  let fontSize = parseInt(localStorage.getItem('volearn_news_reader_font_px') || '18', 10);
+  // Font controls (persist)
+  let fontSize = parseInt(localStorage.getItem(FONT_KEY) || '18', 10);
   if (!Number.isFinite(fontSize)) fontSize = 18;
 
   const applyFont = () => {
     fontSize = Math.max(14, Math.min(28, fontSize));
-    localStorage.setItem('volearn_news_reader_font_px', String(fontSize));
-
+    localStorage.setItem(FONT_KEY, String(fontSize));
     const reader = $('news-reader');
     if (reader) reader.style.fontSize = `${fontSize}px`;
   };
 
-  $('news-font-inc')?.addEventListener('click', () => {
-    fontSize = Math.min(fontSize + 2, 28);
-    applyFont();
-  });
-
-  $('news-font-dec')?.addEventListener('click', () => {
-    fontSize = Math.max(fontSize - 2, 14);
-    applyFont();
-  });
+  $('news-font-inc')?.addEventListener('click', () => { fontSize += 2; applyFont(); });
+  $('news-font-dec')?.addEventListener('click', () => { fontSize -= 2; applyFont(); });
 
   applyFont();
 }
