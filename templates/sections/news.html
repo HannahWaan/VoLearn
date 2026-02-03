@@ -1,0 +1,85 @@
+<section id="news-section" class="section">
+  <div class="container">
+    <div class="card">
+      <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div>
+          <h2 style="margin:0;">Tin Tức</h2>
+          <p style="margin:4px 0 0; opacity:.8;">Đọc báo trong app (Guardian)</p>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="news-refresh" class="btn-secondary" type="button" title="Làm mới">
+            <i class="fas fa-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- Tabs -->
+        <div class="news-tabs" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px;">
+          <!-- Primary tabs (World first, Science second) -->
+          <button class="btn-secondary news-tab active" type="button" data-guardian-section="world">World</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="science">Science</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="technology">Technology</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="environment">Environment</button>
+
+          <!-- More toggle -->
+          <button id="news-more-toggle" class="btn-secondary" type="button" aria-expanded="false">
+            More…
+          </button>
+        </div>
+
+        <!-- More tabs (hidden by default) -->
+        <div id="news-more-tabs" class="news-tabs-more" style="display:none; flex-wrap:wrap; gap:8px; margin:0 0 12px;">
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="business">Business</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="sport">Sport</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="culture">Culture</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="opinion">Opinion</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="lifeandstyle">Life &amp; Style</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="society">Society</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="education">Education</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="music">Music</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="film">Film</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="books">Books</button>
+          <button class="btn-secondary news-tab" type="button" data-guardian-section="politics">Politics</button>
+        </div>
+
+        <!-- Status line -->
+        <div id="news-status" style="opacity:.8; margin:0 0 12px;">
+          Chọn tab để xem tin.
+        </div>
+
+        <!-- Content layout -->
+        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:16px;">
+          <!-- List -->
+          <div>
+            <div id="news-list" class="list" style="display:flex; flex-direction:column; gap:10px;">
+              <!-- items injected by JS later -->
+            </div>
+          </div>
+
+          <!-- Reader -->
+          <div>
+            <article class="card" style="margin:0;">
+              <div class="card-header">
+                <h3 id="news-title" style="margin:0;">Chưa chọn bài</h3>
+                <div id="news-meta" style="opacity:.8; margin-top:6px;"></div>
+              </div>
+              <div class="card-body">
+                <!-- We will sanitize and inject HTML here later -->
+                <div id="news-reader" class="prose"></div>
+
+                <div id="news-open-source-wrap" style="margin-top:12px; display:none;">
+                  <a id="news-open-source" class="btn-primary" href="#" target="_blank" rel="noopener noreferrer">
+                    Mở bài gốc
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
