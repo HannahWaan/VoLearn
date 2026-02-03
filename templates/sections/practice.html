@@ -1,0 +1,91 @@
+<!-- ==================== PRACTICE SECTION ==================== -->
+<section id="practice-section" class="section">
+    <div id="practice-modes" class="practice-modes">
+        <!-- WEAK WORDS / MISTAKE REVIEW Card (replaces SRS) -->
+        <div class="srs-card">
+            <div class="srs-icon">
+                <i class="fas fa-bullseye"></i>
+            </div>
+            <div class="srs-info">
+                <h3>Ôn từ yếu (Mistake Review)</h3>
+                <p>Tập trung vào những từ bạn hay sai/đang yếu để cải thiện nhanh.</p>
+                <div class="srs-count-wrapper">
+                    <span class="srs-count-label">Từ nên ôn:</span>
+                    <span id="srs-count" class="srs-count">0</span>
+                </div>
+            </div>
+            <button id="btn-start-srs" class="btn-primary btn-srs-start">
+                <i class="fas fa-play"></i> Bắt đầu ôn từ yếu
+            </button>
+        </div>
+
+        <div class="practice-divider">
+            <span>Các chế độ luyện tập</span>
+        </div>
+
+        <!-- Practice Grid 2x2 -->
+        <div class="practice-grid">
+            <div class="practice-mode-card">
+                <div class="mode-icon flashcard-icon">
+                    <i class="fas fa-clone"></i>
+                </div>
+                <h3>Flashcard</h3>
+                <p>Lật thẻ để học từ vựng</p>
+                <button class="btn-secondary" onclick="openFlashcardSettings()">
+                    <i class="fas fa-play"></i> Bắt đầu
+                </button>
+            </div>
+            
+            <div class="practice-mode-card">
+                <div class="mode-icon quiz-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3>Trắc nghiệm</h3>
+                <p>Chọn đáp án đúng</p>
+                <button class="btn-secondary" onclick="openQuizSettings()">
+                    <i class="fas fa-play"></i> Bắt đầu
+                </button>
+            </div>
+            
+            <div class="practice-mode-card">
+                <div class="mode-icon dictation-icon">
+                    <i class="fas fa-headphones"></i>
+                </div>
+                <h3>Nghe - Viết</h3>
+                <p>Nghe và viết lại từ</p>
+                <button class="btn-secondary" onclick="openDictationSettings()">
+                    <i class="fas fa-play"></i> Bắt đầu
+                </button>
+            </div>
+            
+            <div class="practice-mode-card">
+                <div class="mode-icon typing-icon">
+                    <i class="fas fa-keyboard"></i>
+                </div>
+                <h3>Gõ từ</h3>
+                <p>Nhìn nghĩa, gõ từ tiếng Anh</p>
+                <button class="btn-secondary" onclick="openTypingSettings()">
+                    <i class="fas fa-play"></i> Bắt đầu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Area (ẩn khi chưa bắt đầu) -->
+    <div id="practice-area" class="practice-area" style="display: none;">
+        <div class="practice-header">
+            <button class="btn-back" onclick="handlePracticeBack()">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </button>
+            <div class="practice-progress">
+                <div class="progress-bar">
+                    <div id="practice-progress-bar" class="progress-fill"></div>
+                </div>
+                <span id="practice-progress-text">0/0</span>
+            </div>
+        </div>
+        <div id="practice-content" class="practice-content">
+        </div>
+    </div>
+</section>
+

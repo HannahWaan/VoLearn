@@ -1,0 +1,35 @@
+<!-- ==================== WORD DETAIL MODAL ==================== -->
+<div id="word-detail-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <div class="word-detail-header">
+                <h3 id="modal-detail-word">Word</h3>
+                <span id="modal-detail-phonetic" class="detail-phonetic"></span>
+            </div>
+            <button class="modal-close" data-modal="word-detail-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="modal-detail-meanings" class="detail-meanings">
+                <!-- Meanings will be dynamically loaded -->
+            </div>
+            <div class="detail-srs-box">
+                <div class="srs-stat">
+                    <span id="modal-detail-srs-level">Cấp độ: 0/7</span>
+                </div>
+                <div class="srs-stat">
+                    <span id="modal-detail-next-review">Ôn tập tiếp: Hôm nay</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="btn-edit-word">
+                <i class="fas fa-edit"></i> Chỉnh sửa
+            </button>
+            <button class="btn-danger" id="btn-delete-word">
+                <i class="fas fa-trash"></i> Xóa
+            </button>
+        </div>
+    </div>
+</div>

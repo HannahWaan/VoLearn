@@ -1,0 +1,25 @@
+<!-- Confirm Modal! -->
+<div id="confirm-modal" class="modal">
+    <div class="modal-content modal-confirm">
+        <div class="modal-header">
+            <h3 id="confirm-modal-title">
+                <i class="fas fa-exclamation-triangle"></i> Xác nhận
+            </h3>
+            <button class="modal-close" onclick="window.closeConfirmModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-modal-message">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <p id="confirm-modal-submessage" class="confirm-submessage"></p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button id="confirm-modal-cancel" class="btn-secondary" onclick="window.closeConfirmModal()">
+                <i class="fas fa-times"></i> Hủy
+            </button>
+            <button id="confirm-modal-ok" class="btn-danger" onclick="window.executeConfirmAction()">
+                <i class="fas fa-check"></i> Xác nhận
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+<!-- ==================== CREATE SET MODAL ==================== -->
+<div id="create-set-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-folder-plus"></i> Tạo bộ từ mới</h3>
+            <button class="modal-close" data-modal="create-set-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="set-name-input">Tên bộ từ <span class="required">*</span></label>
+                <input type="text" id="set-name-input" placeholder="Nhập tên bộ từ...">
+            </div>
+            <div class="form-group">
+                <label for="set-color-input">Màu sắc</label>
+                <input type="color" id="set-color-input" value="#e91e8c">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary modal-cancel" data-modal="create-set-modal">Hủy</button>
+            <button id="btn-save-set" class="btn-primary">
+                <i class="fas fa-check"></i> Tạo bộ từ
+            </button>
+        </div>
+    </div>
+</div>

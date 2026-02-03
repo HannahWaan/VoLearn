@@ -1,0 +1,217 @@
+<!-- Flashcard Settings Modal -->
+<div id="flashcard-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-clone"></i> Flashcard</h3>
+            <button class="modal-close" onclick="closeFlashcardSettings()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body flashcard-settings-body">
+            <!-- Tabs -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="target" onclick="switchFlashcardTab('target', this)">
+                    Mục tiêu
+                </button>
+                <button class="settings-tab" data-tab="view" onclick="switchFlashcardTab('view', this)">
+                    Xem
+                </button>
+            </div>
+
+            <!-- Tab Content: Mục tiêu -->
+            <div id="fc-tab-target" class="settings-tab-content active">
+                <div class="setting-section">
+                    <div class="setting-row">
+                        <span class="setting-label">Giới hạn số lượng thẻ</span>
+                        <div class="setting-value">
+                            <button class="btn-circle" onclick="adjustCardLimit(-5)"><i class="fas fa-minus"></i></button>
+                            <span id="card-limit-value">Không giới hạn</span>
+                            <button class="btn-circle" onclick="adjustCardLimit(5)"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <input type="range" id="card-limit-slider" min="0" max="100" value="0" 
+                           oninput="updateCardLimit(this.value)" class="full-slider">
+                </div>
+
+                <div class="setting-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-crosshairs"></i> Phạm Vi Kiểm Tra</h4>
+                        <button class="btn-refresh" onclick="refreshScope()" title="Đặt lại"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                    <p class="section-desc">Bạn có thể chọn bộ từ vựng hoặc ngày cụ thể</p>
+                    
+                    <div class="scope-option" onclick="openScopeSelector('set')">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="selected-set-name">Tất Cả Từ Vựng</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="scope-option" onclick="openScopeSelector('date')">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="selected-date-range">Tất Cả Ngày</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-unmarked" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Chưa đánh dấu (<span id="count-unmarked">0</span>)</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-mastered" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Đã thuộc (<span id="count-mastered">0</span>)</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-learning" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Chưa thuộc (<span id="count-learning">0</span>)</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-bookmarked" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Đã đánh dấu sao (<span id="count-bookmarked">0</span>)</span>
+                    </label>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-sort"></i> Sắp Xếp Theo</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="fc-sort" value="newest">
+                            <span class="radio-mark"></span>
+                            <span>Mới nhất</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-sort" value="oldest">
+                            <span class="radio-mark"></span>
+                            <span>Cũ nhất</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-sort" value="az">
+                            <span class="radio-mark"></span>
+                            <span>A-Z</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-sort" value="za">
+                            <span class="radio-mark"></span>
+                            <span>Z-A</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-sort" value="random" checked>
+                            <span class="radio-mark"></span>
+                            <span>Ngẫu nhiên</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Xem - VIẾT SẴN NỘI DUNG -->
+            <div id="fc-tab-view" class="settings-tab-content">
+                <!-- Mặt trước thẻ -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-eye"></i> Mặt Trước Thẻ (Câu hỏi)</h4>
+                    <p class="section-desc">Chọn các mục hiển thị ở mặt trước. Các mục không được chọn sẽ bị ẩn.</p>
+                    
+                    <div class="field-selector" id="front-fields">
+                        <label class="field-item selected" data-field="word">
+                            <span class="field-order">1</span>
+                            <input type="checkbox" checked onchange="window.toggleFrontField && window.toggleFrontField('word', this.checked)">
+                            <span class="field-name">Từ vựng</span>
+                        </label>
+                        <label class="field-item selected" data-field="phonetic">
+                            <span class="field-order">2</span>
+                            <input type="checkbox" checked onchange="window.toggleFrontField && window.toggleFrontField('phonetic', this.checked)">
+                            <span class="field-name">Phát âm</span>
+                        </label>
+                        <label class="field-item" data-field="pos">
+                            <span class="field-order">3</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('pos', this.checked)">
+                            <span class="field-name">Loại từ</span>
+                        </label>
+                        <label class="field-item" data-field="defEn">
+                            <span class="field-order">4</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('defEn', this.checked)">
+                            <span class="field-name">Định nghĩa (EN)</span>
+                        </label>
+                        <label class="field-item" data-field="defVi">
+                            <span class="field-order">5</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('defVi', this.checked)">
+                            <span class="field-name">Nghĩa (VI)</span>
+                        </label>
+                        <label class="field-item" data-field="example">
+                            <span class="field-order">6</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('example', this.checked)">
+                            <span class="field-name">Ví dụ</span>
+                        </label>
+                        <label class="field-item" data-field="synonyms">
+                            <span class="field-order">7</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('synonyms', this.checked)">
+                            <span class="field-name">Từ đồng nghĩa</span>
+                        </label>
+                        <label class="field-item" data-field="antonyms">
+                            <span class="field-order">8</span>
+                            <input type="checkbox" onchange="window.toggleFrontField && window.toggleFrontField('antonyms', this.checked)">
+                            <span class="field-name">Từ trái nghĩa</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Mặt sau thẻ -->
+                <div class="setting-section">
+                    <h4><i class="fas fa-eye-slash"></i> Mặt Sau Thẻ (Đáp án)</h4>
+                    <p class="section-desc">Chọn các mục hiển thị ở mặt sau khi lật thẻ.</p>
+                    
+                    <div class="field-selector" id="back-fields">
+                        <label class="field-item" data-field="word">
+                            <span class="field-order">1</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('word', this.checked)">
+                            <span class="field-name">Từ vựng</span>
+                        </label>
+                        <label class="field-item" data-field="phonetic">
+                            <span class="field-order">2</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('phonetic', this.checked)">
+                            <span class="field-name">Phát âm</span>
+                        </label>
+                        <label class="field-item selected" data-field="pos">
+                            <span class="field-order">3</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('pos', this.checked)">
+                            <span class="field-name">Loại từ</span>
+                        </label>
+                        <label class="field-item" data-field="defEn">
+                            <span class="field-order">4</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('defEn', this.checked)">
+                            <span class="field-name">Định nghĩa (EN)</span>
+                        </label>
+                        <label class="field-item selected" data-field="defVi">
+                            <span class="field-order">5</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('defVi', this.checked)">
+                            <span class="field-name">Nghĩa (VI)</span>
+                        </label>
+                        <label class="field-item selected" data-field="example">
+                            <span class="field-order">6</span>
+                            <input type="checkbox" checked onchange="window.toggleBackField && window.toggleBackField('example', this.checked)">
+                            <span class="field-name">Ví dụ</span>
+                        </label>
+                        <label class="field-item" data-field="synonyms">
+                            <span class="field-order">7</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('synonyms', this.checked)">
+                            <span class="field-name">Từ đồng nghĩa</span>
+                        </label>
+                        <label class="field-item" data-field="antonyms">
+                            <span class="field-order">8</span>
+                            <input type="checkbox" onchange="window.toggleBackField && window.toggleBackField('antonyms', this.checked)">
+                            <span class="field-name">Từ trái nghĩa</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn-start-practice" onclick="startFlashcardWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu học
+            </button>
+        </div>
+    </div>
+</div>

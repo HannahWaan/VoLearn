@@ -1,0 +1,40 @@
+<!-- ==================== CAMBRIDGE DICTIONARY WIDGET ==================== -->
+<div id="cambridge-widget" class="cambridge-widget">
+    <div class="cambridge-widget-header">
+        <span><i class="fas fa-book"></i> Cambridge Dictionary</span>
+        <button id="cambridge-close" class="cambridge-close-btn" title="Đóng">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="cambridge-widget-body">
+        <form action='https://dictionary.cambridge.org/search/english/direct/' method='get' target='_blank' class="cambridge-form">
+            <input type='hidden' name='utm_source' value='widget_searchbox_source'/>
+            <input type='hidden' name='utm_medium' value='widget_searchbox'/>
+            <input type='hidden' name='utm_campaign' value='widget_tracking'/>
+            <div class="cambridge-search-row">
+                <input name='q' placeholder='Search English' type='search' title='search' dir='auto' autocomplete='off' class="cambridge-input"/>
+                <button type='submit' title='Search' class="cambridge-submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+        <div class="cambridge-links">
+            <a href="https://dictionary.cambridge.org/dictionary/english/" target="_blank">
+                <i class="fas fa-globe"></i> English
+            </a>
+            <a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/" target="_blank">
+                <i class="fas fa-language"></i> Anh-Việt
+            </a>
+            <a href="https://dictionary.cambridge.org/grammar/british-grammar/" target="_blank">
+                <i class="fas fa-spell-check"></i> Grammar
+            </a>
+        </div>
+        <a href="https://dictionary.cambridge.org/" target="_blank" class="cambridge-brand">
+            <img src="https://dictionary.cambridge.org/external/images/freesearch/sbl.png?version=6.0.71" alt="Cambridge Dictionary"/>
+        </a>
+    </div>
+</div>
+
+<button id="cambridge-btn" class="cambridge-toggle-btn" title="Cambridge Dictionary">
+    <i class="fas fa-book"></i>
+</button>

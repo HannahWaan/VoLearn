@@ -1,0 +1,319 @@
+<!-- ==================== FLASHCARD SETTINGS MODAL ==================== -->
+<div id="flashcard-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-clone" style="color: #667eea;"></i> Cài đặt Flashcard</h3>
+            <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body practice-settings-body">
+            <!-- Tabs -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="target">Mục tiêu</button>
+                <button class="settings-tab" data-tab="display">Hiển thị</button>
+            </div>
+
+            <!-- Tab: Mục tiêu -->
+            <div id="fc-tab-target" class="settings-tab-content active">
+                <div class="setting-section">
+                    <h4><i class="fas fa-list-ol"></i> Số lượng thẻ</h4>
+                    <div class="limit-control">
+                        <button class="btn-adjust" onclick="adjustLimit('flashcard', -5)"><i class="fas fa-minus"></i></button>
+                        <span id="fc-limit-value" class="limit-value">Không giới hạn</span>
+                        <button class="btn-adjust" onclick="adjustLimit('flashcard', 5)"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <input type="range" id="fc-limit-slider" min="0" max="100" value="0" class="limit-slider">
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-folder"></i> Bộ từ vựng</h4>
+                    <select id="fc-set-select" class="setting-select-full">
+                        <option value="all">Tất cả từ vựng</option>
+                    </select>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-filter"></i> Lọc từ</h4>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-learning" checked>
+                        <span class="checkmark"></span>
+                        <span>Chưa thuộc</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-mastered">
+                        <span class="checkmark"></span>
+                        <span>Đã thuộc</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="fc-include-bookmarked">
+                        <span class="checkmark"></span>
+                        <span>Đã đánh dấu sao</span>
+                    </label>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-random"></i> Thứ tự</h4>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="fc-order" value="random" checked>
+                            <span class="radio-mark"></span>
+                            <span>Ngẫu nhiên</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-order" value="newest">
+                            <span class="radio-mark"></span>
+                            <span>Mới nhất</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-order" value="oldest">
+                            <span class="radio-mark"></span>
+                            <span>Cũ nhất</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fc-order" value="az">
+                            <span class="radio-mark"></span>
+                            <span>A → Z</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Hiển thị -->
+            <div id="fc-tab-display" class="settings-tab-content">
+                <div class="setting-section">
+                    <h4><i class="fas fa-eye"></i> Mặt trước (Câu hỏi)</h4>
+                    <div class="field-checkboxes">
+                        <label class="checkbox-item"><input type="checkbox" id="fc-front-word" checked><span class="checkmark"></span><span>Từ vựng</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-front-phonetic" checked><span class="checkmark"></span><span>Phiên âm</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-front-pos"><span class="checkmark"></span><span>Loại từ</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-front-example"><span class="checkmark"></span><span>Ví dụ</span></label>
+                    </div>
+                </div>
+
+                <div class="setting-section">
+                    <h4><i class="fas fa-eye-slash"></i> Mặt sau (Đáp án)</h4>
+                    <div class="field-checkboxes">
+                        <label class="checkbox-item"><input type="checkbox" id="fc-back-defVi" checked><span class="checkmark"></span><span>Nghĩa tiếng Việt</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-back-defEn"><span class="checkmark"></span><span>Định nghĩa tiếng Anh</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-back-example" checked><span class="checkmark"></span><span>Ví dụ</span></label>
+                        <label class="checkbox-item"><input type="checkbox" id="fc-back-synonyms"><span class="checkmark"></span><span>Từ đồng nghĩa</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="fc-word-count" class="word-count-badge">0 từ</span>
+            <button class="btn-primary btn-start-practice" onclick="startFlashcardWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu học
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== QUIZ SETTINGS MODAL ==================== -->
+<div id="quiz-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-question-circle" style="color: #10b981;"></i> Cài đặt Trắc nghiệm</h3>
+            <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body practice-settings-body">
+            <div class="setting-section">
+                <h4><i class="fas fa-list-ol"></i> Số câu hỏi</h4>
+                <div class="limit-control">
+                    <button class="btn-adjust" onclick="adjustLimit('quiz', -5)"><i class="fas fa-minus"></i></button>
+                    <span id="quiz-limit-value" class="limit-value">Không giới hạn</span>
+                    <button class="btn-adjust" onclick="adjustLimit('quiz', 5)"><i class="fas fa-plus"></i></button>
+                </div>
+                <input type="range" id="quiz-limit-slider" min="0" max="100" value="0" class="limit-slider">
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-folder"></i> Bộ từ vựng</h4>
+                <select id="quiz-set-select" class="setting-select-full">
+                    <option value="all">Tất cả từ vựng</option>
+                </select>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-exchange-alt"></i> Dạng câu hỏi</h4>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-type" value="en-vi" checked>
+                        <span class="radio-mark"></span>
+                        <span>Từ tiếng Anh → Nghĩa tiếng Việt</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-type" value="vi-en">
+                        <span class="radio-mark"></span>
+                        <span>Nghĩa tiếng Việt → Từ tiếng Anh</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-type" value="mixed">
+                        <span class="radio-mark"></span>
+                        <span>Trộn cả hai</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-clock"></i> Giới hạn thời gian</h4>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-timer" value="0" checked>
+                        <span class="radio-mark"></span>
+                        <span>Không giới hạn</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-timer" value="10">
+                        <span class="radio-mark"></span>
+                        <span>10 giây/câu</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-timer" value="15">
+                        <span class="radio-mark"></span>
+                        <span>15 giây/câu</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="quiz-timer" value="30">
+                        <span class="radio-mark"></span>
+                        <span>30 giây/câu</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="quiz-word-count" class="word-count-badge">0 từ</span>
+            <button class="btn-primary btn-start-practice" onclick="startQuizWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DICTATION SETTINGS MODAL ==================== -->
+<div id="dictation-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-headphones" style="color: #f59e0b;"></i> Cài đặt Nghe - Viết</h3>
+            <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body practice-settings-body">
+            <div class="setting-section">
+                <h4><i class="fas fa-list-ol"></i> Số từ</h4>
+                <div class="limit-control">
+                    <button class="btn-adjust" onclick="adjustLimit('dictation', -5)"><i class="fas fa-minus"></i></button>
+                    <span id="dictation-limit-value" class="limit-value">Không giới hạn</span>
+                    <button class="btn-adjust" onclick="adjustLimit('dictation', 5)"><i class="fas fa-plus"></i></button>
+                </div>
+                <input type="range" id="dictation-limit-slider" min="0" max="100" value="0" class="limit-slider">
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-folder"></i> Bộ từ vựng</h4>
+                <select id="dictation-set-select" class="setting-select-full">
+                    <option value="all">Tất cả từ vựng</option>
+                </select>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-volume-up"></i> Giọng đọc</h4>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="dictation-voice" value="en-US" checked>
+                        <span class="radio-mark"></span>
+                        <span>🇺🇸 US English</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dictation-voice" value="en-GB">
+                        <span class="radio-mark"></span>
+                        <span>🇬🇧 UK English</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-redo"></i> Số lần nghe lại tối đa</h4>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="dictation-replay" value="3" checked>
+                        <span class="radio-mark"></span>
+                        <span>3 lần</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dictation-replay" value="5">
+                        <span class="radio-mark"></span>
+                        <span>5 lần</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="dictation-replay" value="0">
+                        <span class="radio-mark"></span>
+                        <span>Không giới hạn</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="dictation-word-count" class="word-count-badge">0 từ</span>
+            <button class="btn-primary btn-start-practice" onclick="startDictationWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TYPING SETTINGS MODAL ==================== -->
+<div id="typing-settings-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-keyboard" style="color: #3b82f6;"></i> Cài đặt Gõ từ</h3>
+            <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body practice-settings-body">
+            <div class="setting-section">
+                <h4><i class="fas fa-list-ol"></i> Số từ</h4>
+                <div class="limit-control">
+                    <button class="btn-adjust" onclick="adjustLimit('typing', -5)"><i class="fas fa-minus"></i></button>
+                    <span id="typing-limit-value" class="limit-value">Không giới hạn</span>
+                    <button class="btn-adjust" onclick="adjustLimit('typing', 5)"><i class="fas fa-plus"></i></button>
+                </div>
+                <input type="range" id="typing-limit-slider" min="0" max="100" value="0" class="limit-slider">
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-folder"></i> Bộ từ vựng</h4>
+                <select id="typing-set-select" class="setting-select-full">
+                    <option value="all">Tất cả từ vựng</option>
+                </select>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-lightbulb"></i> Gợi ý</h4>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="typing-show-hint" checked>
+                    <span class="checkmark"></span>
+                    <span>Hiện chữ cái đầu tiên</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="typing-show-length" checked>
+                    <span class="checkmark"></span>
+                    <span>Hiện số ký tự</span>
+                </label>
+            </div>
+
+            <div class="setting-section">
+                <h4><i class="fas fa-check-double"></i> Kiểm tra</h4>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="typing-case-sensitive">
+                    <span class="checkmark"></span>
+                    <span>Phân biệt chữ hoa/thường</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <span id="typing-word-count" class="word-count-badge">0 từ</span>
+            <button class="btn-primary btn-start-practice" onclick="startTypingWithSettings()">
+                <i class="fas fa-play"></i> Bắt đầu
+            </button>
+        </div>
+    </div>
+</div>

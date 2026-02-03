@@ -1,0 +1,47 @@
+<!-- ==================== SET VIEW SECTION (Split View) ==================== -->
+<section id="set-view-section" class="section">
+    <div class="set-view-header">
+        <button class="btn-back-set" id="btn-back-bookshelf">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </button>
+        <h2 id="set-view-title" class="set-view-title">
+            <i class="fas fa-book"></i>
+            <span>Tất cả từ vựng</span>
+        </h2>
+        <div class="set-view-actions">
+            <span id="set-view-count" class="set-view-count">0 từ</span>
+        </div>
+    </div>
+    
+    <div class="split-view-container">
+        <!-- Left Panel - Word List -->
+        <div class="split-panel split-left" id="split-left">
+            <div class="split-panel-header">
+                <div class="set-view-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="set-view-search-input" placeholder="Tìm từ vựng...">
+                </div>
+            </div>
+            <div id="set-view-words" class="set-view-words">
+                <!-- Word cards will be dynamically added here -->
+                <p class="empty-message">Không có từ vựng nào.</p>
+            </div>
+        </div>
+        
+        <!-- Resizer -->
+        <div class="split-resizer" id="split-resizer">
+            <div class="resizer-handle"></div>
+        </div>
+        
+        <!-- Right Panel - Word Detail -->
+        <div class="split-panel split-right" id="split-right">
+            <div id="word-detail-panel" class="word-detail-panel">
+                <div class="word-detail-placeholder">
+                    <i class="fas fa-hand-pointer"></i>
+                    <h3>Chọn một từ vựng</h3>
+                    <p>Nhấn vào từ vựng bên trái để xem chi tiết</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

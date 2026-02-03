@@ -1,0 +1,206 @@
+<!-- ==================== HOME SECTION (DASHBOARD) ==================== -->
+<section id="home-section" class="section active">
+    <div class="home-dashboard">
+
+        <!-- TỔNG QUAN -->
+        <div class="dashboard-card dashboard-overview">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-line"></i> Tổng quan</h2>
+            </div>
+
+            <div class="overview-grid">
+                <div class="overview-metric">
+                    <div class="metric-icon yellow"><i class="fas fa-star"></i></div>
+                    <div class="metric-info">
+                        <div class="metric-label">Điểm trung bình</div>
+                        <div class="metric-value"><span id="home-avg-score">0.0</span><span class="metric-sub">/10</span></div>
+                    </div>
+                </div>
+
+                <div class="overview-metric">
+                    <div class="metric-icon purple"><i class="fas fa-signal"></i></div>
+                    <div class="metric-info">
+                        <div class="metric-label">Tỷ lệ thành thạo</div>
+                        <div class="metric-value"><span id="home-mastery-rate">0.0</span><span class="metric-sub">%</span></div>
+                    </div>
+                </div>
+
+                <div class="overview-metric">
+                    <div class="metric-icon teal"><i class="fas fa-clock"></i></div>
+                    <div class="metric-info">
+                        <div class="metric-label">Thời gian/từ thành thạo</div>
+                        <div class="metric-value"><span id="home-time-per-master">0.0</span><span class="metric-sub">m</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-total">
+                <div class="total-left">
+                    <div class="total-icon blue"><i class="fas fa-book"></i></div>
+                    <div class="total-info">
+                        <div class="total-label">Tổng số từ</div>
+                        <div class="total-value" id="home-total-words">0</div>
+                    </div>
+                </div>
+
+                <div class="total-breakdown">
+                    <div class="pill"><span class="pill-label">Đang học</span><span class="pill-value" id="home-count-learning">0</span></div>
+                    <div class="pill"><span class="pill-label">Học sau</span><span class="pill-value" id="home-count-later">0</span></div>
+                    <div class="pill"><span class="pill-label">Tự động</span><span class="pill-value" id="home-count-auto">0</span></div>
+                    <div class="pill"><span class="pill-label">Đã xong</span><span class="pill-value" id="home-count-done">0</span></div>
+                    <div class="pill pill-good"><span class="pill-label">Thành thạo</span><span class="pill-value" id="home-count-mastered">0</span></div>
+                    <div class="pill pill-warn"><span class="pill-label">Cần ôn</span><span class="pill-value" id="home-count-review">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THỐNG KÊ HỌC TẬP -->
+        <div class="dashboard-card dashboard-study">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-pie"></i> Thống kê học tập</h2>
+            </div>
+
+            <div class="study-grid">
+                <div class="study-box">
+                    <div class="box-title">Điểm số</div>
+                    <canvas id="chart-score-gauge" height="140"></canvas>
+                    <div class="box-kpi"><span id="home-score-10">0.0</span><span class="box-sub">/10</span></div>
+                    <div class="box-chip" id="home-score-label">Active Recall</div>
+                </div>
+
+                <div class="study-box">
+                    <div class="box-title">Độ chính xác</div>
+                    <canvas id="chart-accuracy-donut" height="140"></canvas>
+                    <div class="box-kpi"><span id="home-accuracy">0</span><span class="box-sub">%</span></div>
+                </div>
+
+                <div class="study-radar">
+                    <div class="radar-title"><i class="fas fa-chart-area"></i> Phân tích hiệu suất</div>
+                    <div class="radar-wrap">
+                        <canvas id="chart-performance-radar" height="200"></canvas>
+                    </div>
+
+                    <div class="radar-metrics">
+                        <div class="metric-row"><span>Điểm số</span><strong id="home-metric-score">0%</strong></div>
+                        <div class="metric-row"><span>Độ chính xác</span><strong id="home-metric-accuracy">0%</strong></div>
+                        <div class="metric-row"><span>Khối lượng</span><strong id="home-metric-volume">0%</strong></div>
+                        <div class="metric-row"><span>Độ đều đặn</span><strong id="home-metric-consistency">0%</strong></div>
+                        <div class="metric-row"><span>Hiệu suất</span><strong id="home-metric-time">0%</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THỜI GIAN HỌC + PHÂN BỐ -->
+        <div class="dashboard-row">
+            <div class="dashboard-card dashboard-time">
+                <div class="card-header header-row">
+                    <h2><i class="fas fa-clock"></i> Thời gian học</h2>
+
+                    <div class="segmented" id="home-time-range">
+                        <button type="button" class="seg-btn active" data-range="day">Ngày</button>
+                        <button type="button" class="seg-btn" data-range="week">Tuần</button>
+                        <button type="button" class="seg-btn" data-range="month">Tháng</button>
+                    </div>
+                </div>
+
+                <div class="time-summary">
+                    <div class="time-stat">
+                        <div class="time-label">Tổng thời gian</div>
+                        <div class="time-value" id="home-total-time">0m</div>
+                    </div>
+                    <div class="time-stat">
+                        <div class="time-label">Số phiên</div>
+                        <div class="time-value" id="home-sessions">0</div>
+                    </div>
+                    <div class="time-stat">
+                        <div class="time-label">TB/phiên</div>
+                        <div class="time-value" id="home-avg-session">0m</div>
+                    </div>
+                </div>
+
+                <div class="chart-wrap">
+                    <canvas id="chart-study-time-line" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="dashboard-card dashboard-distribution">
+                <div class="card-header">
+                  <h2><i class="fas fa-chart-pie"></i> Phân bố từ vựng</h2>
+                </div>
+                <div class="dist-grid">
+                    <div class="chart-wrap">
+                        <canvas id="chart-vocab-pie" height="220"></canvas>
+                    </div>
+                    <div class="dist-legend" id="home-dist-legend"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRUNG BÌNH HỌC HÀNG NGÀY -->
+        <div class="dashboard-card dashboard-daily">
+            <div class="card-header header-row">
+                <h2><i class="fas fa-calendar-alt"></i> Trung bình hằng ngày</h2>
+                <div class="daily-meta">
+                    <span id="home-last-updated">Cập nhật: --</span>
+                    <button type="button" class="btn-secondary btn-refresh-small" id="home-refresh">
+                        <i class="fas fa-sync-alt"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+
+            <div class="daily-grid">
+                <div class="daily-box">
+                    <div class="daily-title">7 ngày qua</div>
+                    <div class="daily-kpis">
+                        <div class="kpi">
+                            <div class="kpi-label">Số từ</div>
+                            <div class="kpi-value"><span id="home-7d-words">0</span><small>từ/ngày</small></div>
+                        </div>
+                        <div class="kpi">
+                            <div class="kpi-label">Thời gian</div>
+                            <div class="kpi-value"><span id="home-7d-minutes">0</span><small>phút/ngày</small></div>
+                        </div>
+                        <div class="kpi">
+                            <div class="kpi-label">Số phiên</div>
+                            <div class="kpi-value"><span id="home-7d-sessions">0</span><small>phiên/ngày</small></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="daily-box">
+                    <div class="daily-title">30 ngày qua</div>
+                    <div class="daily-kpis">
+                        <div class="kpi">
+                            <div class="kpi-label">Số từ</div>
+                            <div class="kpi-value"><span id="home-30d-words">0</span><small>từ/ngày</small></div>
+                        </div>
+                        <div class="kpi">
+                            <div class="kpi-label">Thời gian</div>
+                            <div class="kpi-value"><span id="home-30d-minutes">0</span><small>phút/ngày</small></div>
+                        </div>
+                        <div class="kpi">
+                            <div class="kpi-label">Số phiên</div>
+                            <div class="kpi-value"><span id="home-30d-sessions">0</span><small>phiên/ngày</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THEO TRẠNG THÁI TỪ -->
+        <div class="dashboard-card dashboard-status">
+            <div class="card-header">
+                <h2><i class="fas fa-layer-group"></i> Trạng thái từ vựng</h2>
+            </div>
+
+            <div class="status-grid">
+                <div class="chart-wrap">
+                    <canvas id="chart-status-donut" height="220"></canvas>
+                </div>
+                <div class="dist-legend" id="home-status-legend"></div>
+            </div>
+        </div>
+
+    </div>
+</section>

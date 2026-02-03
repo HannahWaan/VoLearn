@@ -1,0 +1,209 @@
+<!-- Quiz Settings Modal (Upgraded to match legacy quizSettings code) -->
+<div id="quiz-settings-modal" class="modal">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-question-circle" style="color: var(--success-color);"></i> Trắc nghiệm</h3>
+      <button class="modal-close" data-action="quiz-close" aria-label="Đóng">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body flashcard-settings-body">
+      <!-- Tabs -->
+      <div class="settings-tabs">
+        <button class="settings-tab active" data-quiz-tab="target">Mục tiêu</button>
+        <button class="settings-tab" data-quiz-tab="view">Xem</button>
+        <button class="settings-tab" data-quiz-tab="other">Khác</button>
+      </div>
+
+      <!-- TAB: TARGET -->
+      <div id="quiz-tab-target" class="settings-tab-content active">
+
+        <!-- Limit -->
+        <div class="setting-section">
+          <div class="setting-row">
+            <span class="setting-label">Giới hạn số câu hỏi</span>
+            <div class="setting-value">
+              <button class="btn-circle" type="button" data-action="quiz-limit-minus"><i class="fas fa-minus"></i></button>
+              <span id="quiz-limit-value">Không giới hạn</span>
+              <button class="btn-circle" type="button" data-action="quiz-limit-plus"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+          <input type="range" id="quiz-limit-slider" min="0" max="100" value="0" class="full-slider">
+        </div>
+
+        <!-- Scope -->
+        <div class="setting-section">
+          <div class="section-header">
+            <h4><i class="fas fa-crosshairs"></i> Phạm Vi Kiểm Tra</h4>
+            <button class="btn-refresh" type="button" data-action="quiz-scope-refresh" title="Đặt lại">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+
+          <p class="section-desc">Chọn bộ từ vựng hoặc phạm vi ngày.</p>
+
+          <div class="scope-option" data-action="quiz-scope-open" data-scope-type="set">
+            <i class="fas fa-layer-group"></i>
+            <span id="quiz-selected-set-name">Tất Cả Từ Vựng</span>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+
+          <div class="scope-option" data-action="quiz-scope-open" data-scope-type="date">
+            <i class="fas fa-calendar-alt"></i>
+            <span id="quiz-selected-date-range">Tất Cả Ngày</span>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+
+        <!-- Include -->
+        <div class="setting-section">
+          <h4><i class="fas fa-bookmark"></i> Đánh dấu từ</h4>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-include-unmarked" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Chưa đánh dấu (<span id="quiz-count-unmarked">0</span>)</span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-include-mastered" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Đã thuộc (<span id="quiz-count-mastered">0</span>)</span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-include-learning" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Chưa thuộc (<span id="quiz-count-learning">0</span>)</span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-include-bookmarked" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Đã đánh dấu sao (<span id="quiz-count-bookmarked">0</span>)</span>
+          </label>
+        </div>
+
+        <!-- Sort -->
+        <div class="setting-section">
+          <h4><i class="fas fa-sort"></i> Sắp Xếp Theo</h4>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="quiz-sort" value="newest">
+              <span class="radio-mark"></span>
+              <span>Mới nhất</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="quiz-sort" value="oldest">
+              <span class="radio-mark"></span>
+              <span>Cũ nhất</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="quiz-sort" value="az">
+              <span class="radio-mark"></span>
+              <span>A-Z</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="quiz-sort" value="za">
+              <span class="radio-mark"></span>
+              <span>Z-A</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="quiz-sort" value="random" checked>
+              <span class="radio-mark"></span>
+              <span>Ngẫu nhiên</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB: VIEW -->
+      <div id="quiz-tab-view" class="settings-tab-content">
+
+        <div class="setting-section">
+          <h4><i class="fas fa-eye"></i> Câu hỏi hiển thị (Question Fields)</h4>
+          <p class="section-desc">Chọn các mục có thể dùng làm câu hỏi. Mỗi câu sẽ random 1 mục trong danh sách này.</p>
+          <div class="field-selector" id="quiz-question-fields"></div>
+        </div>
+
+        <div class="setting-section">
+          <h4><i class="fas fa-eye-slash"></i> Đáp án hiển thị (Answer Fields)</h4>
+          <p class="section-desc">Chọn các mục có thể dùng làm đáp án. Đáp án sẽ random từ danh sách này.</p>
+          <div class="field-selector" id="quiz-answer-fields"></div>
+        </div>
+
+      </div>
+
+      <!-- TAB: OTHER -->
+      <div id="quiz-tab-other" class="settings-tab-content">
+
+        <!-- Timer -->
+        <div class="setting-section">
+          <div class="setting-row">
+            <span class="setting-label"><i class="fas fa-clock"></i> Giới hạn thời gian</span>
+            <div class="setting-value">
+              <button class="btn-circle" type="button" data-action="quiz-timer-minus"><i class="fas fa-minus"></i></button>
+              <span id="quiz-timer-value">Không giới hạn</span>
+              <button class="btn-circle" type="button" data-action="quiz-timer-plus"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+          <input type="range" id="quiz-timer-slider" min="0" max="60" value="0" class="full-slider">
+          <p class="setting-hint">0 = không giới hạn</p>
+        </div>
+
+        <!-- Options Count -->
+        <div class="setting-section">
+          <h4><i class="fas fa-list-ol"></i> Số đáp án</h4>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="quiz-option-count" value="4" checked>
+              <span class="radio-mark"></span>
+              <span>4 đáp án</span>
+            </label>
+        
+            <label class="radio-item">
+              <input type="radio" name="quiz-option-count" value="6">
+              <span class="radio-mark"></span>
+              <span>6 đáp án</span>
+            </label>
+        
+            <label class="radio-item">
+              <input type="radio" name="quiz-option-count" value="8">
+              <span class="radio-mark"></span>
+              <span>8 đáp án</span>
+            </label>
+          </div>
+        
+          <p class="setting-hint">Số đáp án cho mỗi câu trắc nghiệm</p>
+        </div>
+
+        <!-- Auto -->
+        <div class="setting-section">
+          <h4><i class="fas fa-magic"></i> Tự động</h4>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-auto-skip">
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Tự động bỏ qua khi hết giờ</span>
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="quiz-auto-next" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Tự động sang câu tiếp theo sau khi chọn</span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-start-practice" type="button" data-action="quiz-start">
+        <i class="fas fa-play"></i> Bắt đầu làm bài
+      </button>
+    </div>
+  </div>
+</div>
+
