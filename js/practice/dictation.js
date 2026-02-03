@@ -230,6 +230,8 @@ function renderDictationUI() {
   const container = document.getElementById('practice-content');
   if (!container) return;
 
+  const currentSpeed = settings.speed || 1;
+
   container.innerHTML = `
     <div class="dictation-card" data-render="dictation-ui">
       <div class="dictation-main">
@@ -242,6 +244,21 @@ function renderDictationUI() {
             <i class="fas fa-volume-up"></i>
           </button>
           <span class="play-count" id="play-count"></span>
+        </div>
+
+        <div class="dictation-speed">
+          <label for="dictation-speed-slider">
+            <i class="fas fa-tachometer-alt"></i> Tốc độ: <span id="speed-value">${currentSpeed}x</span>
+          </label>
+          <input 
+            type="range" 
+            id="dictation-speed-slider" 
+            min="0.5" 
+            max="1.5" 
+            step="0.1" 
+            value="${currentSpeed}"
+            data-action="dictation-speed"
+          >
         </div>
 
         <div class="dictation-hint" id="dictation-hint" style="display:none;"></div>
@@ -290,6 +307,15 @@ function bindDictationUIEvents() {
     if (action === 'dictation-hint') showDictationHint();
     if (action === 'dictation-check') checkDictationAnswer();
     if (action === 'dictation-skip') skipDictationAction();
+  });
+
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'dictation-speed-slider') {
+      const newSpeed = parseFloat(e.target.value) || 1;
+      settings.speed = newSpeed;
+      const speedValue = document.getElementById('speed-value');
+      if (speedValue) speedValue.textContent = `${newSpeed}x`;
+    }
   });
 
   document.addEventListener('keydown', (e) => {
@@ -461,9 +487,8 @@ export function checkDictationAnswer() {
   } else {
     const suggestion = autoCorrectSuggestion(userAnswer, lastCorrectText);
 
-    const answerBlock = settings.showAnswer
-      ? `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`
-      : '';
+    // LUÔN hiện đáp án khi sai
+    const answerBlock = `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`;
 
     const suggestBlock = suggestion
       ? `<div class="feedback-suggest"><small>Gợi ý sửa: <strong>${escapeHtml(suggestion)}</strong></small></div>`
@@ -492,7 +517,7 @@ function skipDictationAction() {
     return;
   }
 
-  // Chưa trả lời → đánh dấu skip, hiển thị feedback, ĐỢI rồi mới chuyển
+  // Chưa trả lời → đánh dấu skip, hiển thị feedback
   skipWord();
   answered = true;
 
@@ -505,22 +530,19 @@ function skipDictationAction() {
     input.classList.add('wrong');
   }
 
-  const answerLine = settings.showAnswer
-    ? `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`
-    : '';
+  // LUÔN hiện đáp án khi bỏ qua
+  const answerLine = `<div class="feedback-answer"><small>Đáp án: <strong>${escapeHtml(lastCorrectText)}</strong></small></div>`;
 
   if (feedback) {
     feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>${answerLine}`;
   }
 
-  // Đổi nút thành "Tiếp theo"
   if (skipBtn) {
     skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
   }
 
   updateCommonHeaderProgress();
 
-  // Đếm ngược rồi mới chuyển (KHÔNG chuyển ngay)
   if (settings.autoNext) {
     startAutoNext(5);
   }
