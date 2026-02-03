@@ -1,7 +1,5 @@
 /* ================================================
    VoLearn - News (Guardian Reader)
-   - Không tự đóng more tabs khi chọn
-   - Giữ nguyên HTML formatting từ Guardian
    ================================================ */
 
 import { onNavigate } from '../core/router.js';
@@ -33,12 +31,13 @@ function formatDate(iso) {
   if (!iso) return '';
   try {
     const date = new Date(iso);
-    return date.toLocaleDateString('vi-VN', {
+    return date.toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      hour12: false
     });
   } catch {
     return iso;
@@ -54,10 +53,15 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// GIỮ NGUYÊN HTML formatting - chỉ sanitize XSS
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html || '';
+  return div.textContent || div.innerText || '';
+}
+
+// Sanitize nhưng GIỮ NGUYÊN formatting gốc
 function sanitizeHtml(html) {
   if (window.DOMPurify) {
-    // Cho phép tất cả tags formatting
     return DOMPurify.sanitize(html || '', {
       USE_PROFILES: { html: true },
       ALLOWED_TAGS: [
@@ -77,17 +81,12 @@ function sanitizeHtml(html) {
       ]
     });
   }
-  // Fallback: escape tất cả
-  const div = document.createElement('div');
-  div.textContent = html || '';
-  return div.innerHTML;
+  return html || '';
 }
 
 async function fetchJSON(url) {
   const res = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
@@ -99,7 +98,6 @@ function setActiveTab(section) {
   });
 }
 
-// Toggle more tabs - CHỈ khi user nhấn nút ...
 function toggleMoreTabs() {
   const more = $('news-more-tabs');
   const toggle = $('news-more-toggle');
@@ -122,6 +120,9 @@ function showReaderView() {
   const readerView = $('news-reader-view');
   if (listView) listView.style.display = 'none';
   if (readerView) readerView.style.display = 'block';
+  
+  // Scroll to top of reader
+  readerView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updatePagination() {
@@ -152,7 +153,8 @@ function renderList() {
     card.dataset.guardianId = item.guardianId || '';
 
     const title = item.title || '(Không có tiêu đề)';
-    const summary = item.summary || item.trailText || item.description || '';
+    const summaryRaw = item.summaryHtml || item.summary || item.trailText || '';
+    const summary = stripHtml(summaryRaw);
     const author = item.author || 'The Guardian';
     const date = formatDate(item.publishedAt);
     const thumb = item.image || '';
@@ -187,7 +189,7 @@ function renderReader(item) {
     titleEl.textContent = item?.title || '(Không có tiêu đề)';
   }
 
-  // Meta info
+  // Meta
   if (metaEl) {
     const author = item?.author || 'The Guardian';
     const date = formatDate(item?.publishedAt);
@@ -198,14 +200,13 @@ function renderReader(item) {
     `;
   }
 
-  // Cover image với caption
+  // Cover image
   if (coverEl) {
     if (item?.image) {
-      const caption = item?.imageCaption || '';
       coverEl.innerHTML = `
         <figure>
-          <img src="${escapeHtml(item.image)}" alt="" loading="lazy">
-          ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+          <img src="${escapeHtml(item.image)}" alt="">
+          ${item.imageCaption ? `<figcaption>${escapeHtml(item.imageCaption)}</figcaption>` : ''}
         </figure>
       `;
     } else {
@@ -213,28 +214,25 @@ function renderReader(item) {
     }
   }
 
-  // Content - GIỮ NGUYÊN HTML formatting
+  // Content - ƯU TIÊN contentHtml (HTML gốc từ Guardian)
   if (readerEl) {
     let html = '';
     
     if (item?.contentHtml) {
-      // Đã có HTML sẵn -> giữ nguyên
+      // Dùng HTML gốc từ Guardian - giữ nguyên formatting
       html = item.contentHtml;
     } else if (item?.text) {
-      // Plain text -> convert sang HTML paragraphs
-      // Nhưng vẫn giữ line breaks
+      // Fallback: plain text -> convert to paragraphs
       html = item.text
         .trim()
         .split(/\n\n+/)
-        .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+        .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
         .join('');
     } else if (item?.summaryHtml) {
-      html = item.summaryHtml;
-    } else if (item?.summary) {
-      html = `<p>${escapeHtml(item.summary)}</p>`;
+      html = `<p>${item.summaryHtml}</p>`;
     }
     
-    // Sanitize nhưng giữ formatting
+    // Sanitize để bảo mật nhưng giữ formatting
     readerEl.innerHTML = sanitizeHtml(html);
   }
 
@@ -278,8 +276,8 @@ async function loadFeed(section) {
 
     if (!items.length) {
       setStatus('Không có bài viết.');
-      const list = $('news-list');
-      if (list) list.innerHTML = '<p style="text-align:center;opacity:0.6;padding:20px;">Không tìm thấy tin nào.</p>';
+      const listEl = $('news-list');
+      if (listEl) listEl.innerHTML = '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Không tìm thấy tin nào.</p>';
       return;
     }
 
@@ -302,22 +300,17 @@ function bindNewsUI() {
   const root = $('news-section');
   if (!root) return;
 
-  // More toggle - CHỈ toggle khi nhấn nút này
-  $('news-more-toggle')?.addEventListener('click', () => {
-    toggleMoreTabs();
-  });
+  // More toggle - CHỈ đóng/mở khi nhấn nút này
+  $('news-more-toggle')?.addEventListener('click', () => toggleMoreTabs());
 
   // Refresh
-  $('news-refresh')?.addEventListener('click', () => {
-    loadFeed(state.section);
-  });
+  $('news-refresh')?.addEventListener('click', () => loadFeed(state.section));
 
   // Tab clicks - KHÔNG tự đóng more tabs
   root.querySelectorAll('.news-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const section = btn.dataset.guardianSection;
-      if (!section) return;
-      loadFeed(section);
+      if (section) loadFeed(section);
     });
   });
 
