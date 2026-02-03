@@ -18,13 +18,49 @@ const state = {
   bound: false
 };
 
-// ==================== Utilities ====================
-
 const $ = (id) => document.getElementById(id);
 
 function setStatus(text) {
   const el = $('news-status');
   if (el) el.textContent = text;
+}
+
+// Format time ago (17m ago, 2h ago, etc.)
+function timeAgo(iso) {
+  if (!iso) return '';
+  try {
+    const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) + ' GMT';
+  } catch {
+    return '';
+  }
 }
 
 function formatDate(iso) {
@@ -59,7 +95,6 @@ function stripHtml(html) {
   return div.textContent || div.innerText || '';
 }
 
-// Sanitize nhưng GIỮ NGUYÊN formatting gốc
 function sanitizeHtml(html) {
   if (window.DOMPurify) {
     return DOMPurify.sanitize(html || '', {
@@ -76,8 +111,7 @@ function sanitizeHtml(html) {
       ],
       ALLOWED_ATTR: [
         'href', 'src', 'alt', 'title', 'target', 'rel',
-        'class', 'id', 'style',
-        'colspan', 'rowspan'
+        'class', 'id', 'style', 'colspan', 'rowspan'
       ]
     });
   }
@@ -102,7 +136,6 @@ function toggleMoreTabs() {
   const more = $('news-more-tabs');
   const toggle = $('news-more-toggle');
   if (!more || !toggle) return;
-
   const isOpen = more.classList.contains('open');
   more.classList.toggle('open', !isOpen);
   toggle.classList.toggle('active', !isOpen);
@@ -120,8 +153,6 @@ function showReaderView() {
   const readerView = $('news-reader-view');
   if (listView) listView.style.display = 'none';
   if (readerView) readerView.style.display = 'block';
-  
-  // Scroll to top of reader
   readerView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -153,7 +184,7 @@ function renderList() {
     card.dataset.guardianId = item.guardianId || '';
 
     const title = item.title || '(Không có tiêu đề)';
-    const summaryRaw = item.summaryHtml || item.summary || item.trailText || '';
+    const summaryRaw = item.summaryHtml || item.summary || '';
     const summary = stripHtml(summaryRaw);
     const author = item.author || 'The Guardian';
     const date = formatDate(item.publishedAt);
@@ -189,24 +220,29 @@ function renderReader(item) {
     titleEl.textContent = item?.title || '(Không có tiêu đề)';
   }
 
-  // Meta
+  // Meta với time ago
   if (metaEl) {
+    const ago = timeAgo(item?.publishedAt);
+    const time = formatTime(item?.publishedAt);
     const author = item?.author || 'The Guardian';
-    const date = formatDate(item?.publishedAt);
+    
     metaEl.innerHTML = `
-      <span><i class="fas fa-newspaper"></i> The Guardian</span>
-      <span><i class="fas fa-user"></i> ${escapeHtml(author)}</span>
-      <span><i class="fas fa-clock"></i> ${escapeHtml(date)}</span>
+      <span class="news-time-ago">${escapeHtml(ago)}</span>
+      <span class="news-time-full">${escapeHtml(time)}</span>
     `;
   }
 
-  // Cover image
+  // Cover image với caption
   if (coverEl) {
     if (item?.image) {
+      const caption = item?.imageCaption || '';
+      const credit = item?.imageCredit || '';
+      const captionText = caption + (credit ? ` Photograph: ${credit}` : '');
+      
       coverEl.innerHTML = `
-        <figure>
+        <figure class="news-figure">
           <img src="${escapeHtml(item.image)}" alt="">
-          ${item.imageCaption ? `<figcaption>${escapeHtml(item.imageCaption)}</figcaption>` : ''}
+          ${captionText ? `<figcaption>${escapeHtml(captionText)}</figcaption>` : ''}
         </figure>
       `;
     } else {
@@ -214,26 +250,27 @@ function renderReader(item) {
     }
   }
 
-  // Content - ƯU TIÊN contentHtml (HTML gốc từ Guardian)
+  // Content
   if (readerEl) {
     let html = '';
     
     if (item?.contentHtml) {
-      // Dùng HTML gốc từ Guardian - giữ nguyên formatting
       html = item.contentHtml;
     } else if (item?.text) {
-      // Fallback: plain text -> convert to paragraphs
-      html = item.text
-        .trim()
-        .split(/\n\n+/)
+      html = item.text.trim().split(/\n\n+/)
         .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
         .join('');
     } else if (item?.summaryHtml) {
       html = `<p>${item.summaryHtml}</p>`;
     }
     
-    // Sanitize để bảo mật nhưng giữ formatting
     readerEl.innerHTML = sanitizeHtml(html);
+  }
+
+  // Author ở cuối bài
+  const authorEl = $('news-author');
+  if (authorEl) {
+    authorEl.textContent = item?.author || '';
   }
 
   showReaderView();
@@ -277,7 +314,7 @@ async function loadFeed(section) {
     if (!items.length) {
       setStatus('Không có bài viết.');
       const listEl = $('news-list');
-      if (listEl) listEl.innerHTML = '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Không tìm thấy tin nào.</p>';
+      if (listEl) listEl.innerHTML = '<p style="text-align:center;opacity:0.6;padding:40px;">Không tìm thấy tin nào.</p>';
       return;
     }
 
@@ -300,13 +337,9 @@ function bindNewsUI() {
   const root = $('news-section');
   if (!root) return;
 
-  // More toggle - CHỈ đóng/mở khi nhấn nút này
   $('news-more-toggle')?.addEventListener('click', () => toggleMoreTabs());
-
-  // Refresh
   $('news-refresh')?.addEventListener('click', () => loadFeed(state.section));
 
-  // Tab clicks - KHÔNG tự đóng more tabs
   root.querySelectorAll('.news-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const section = btn.dataset.guardianSection;
@@ -314,13 +347,11 @@ function bindNewsUI() {
     });
   });
 
-  // Back button
   $('news-reader-back')?.addEventListener('click', () => {
     showListView();
     setStatus(`${state.items.length} bài viết • The Guardian`);
   });
 
-  // Pagination
   $('news-prev')?.addEventListener('click', () => {
     if (state.currentPage > 1) {
       state.currentPage--;
@@ -337,9 +368,7 @@ function bindNewsUI() {
     }
   });
 
-  // Font size controls
   let fontSize = 18;
-  
   $('news-font-inc')?.addEventListener('click', () => {
     fontSize = Math.min(fontSize + 2, 28);
     const reader = $('news-reader');
@@ -352,8 +381,6 @@ function bindNewsUI() {
     if (reader) reader.style.fontSize = `${fontSize}px`;
   });
 }
-
-// ==================== Export ====================
 
 export function initNews() {
   onNavigate('news', () => {
