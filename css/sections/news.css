@@ -1,14 +1,5 @@
 /* ================================================
-   VoLearn - News Section (Guardian Reader)
-   Scoped to: #news-section
-   Works with current HTML IDs/classes:
-   - #news-refresh.btn-icon
-   - .news-tabs-container / .news-tabs-main / .news-tab
-   - #news-more-toggle.news-more-btn, #news-more-tabs.news-tabs-extra
-   - #news-list-view, #news-list.news-list, .news-card...
-   - #news-pagination, #news-prev/#news-next.btn-page, #news-page-info
-   - #news-reader-view, #news-reader-back.btn-back, #news-font-dec/#news-font-inc.btn-font
-   - article.news-article, #news-title, #news-meta.news-article-meta, #news-cover, #news-reader.news-reader-content
+   VoLearn - News Section
    ================================================ */
 
 #news-section {
@@ -18,302 +9,332 @@
   --news-muted: rgba(255, 255, 255, 0.62);
   --news-bg-card: rgba(0, 0, 0, 0.15);
   --news-reader-font: 18px;
+
+  /* Prevent weird inherited text settings */
+  color: inherit;
 }
 
 /* -----------------------
-   Header (matches templates)
+   Header (matches news.html)
 ------------------------ */
-#news-section .news-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+#news-section .news-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
 }
 
-#news-section .news-header-row h2 {
-  margin: 0;
-  font-size: 1.4rem;
+#news-section .news-header h2 {
+  margin: 0 !important;
+  font-size: 1.4rem !important;
+}
+
+#news-section .news-header-text {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 #news-section .news-subtitle {
-  margin: 4px 0 0;
-  font-size: 0.9rem;
-  opacity: 0.7;
+  margin: 4px 0 0 !important;
+  font-size: 0.9rem !important;
+  opacity: 0.7 !important;
 }
 
-/* Refresh icon button (.btn-icon in your HTML) */
-#news-section .btn-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+/* Refresh */
+#news-section #news-refresh.news-refresh-btn {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--news-border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
 }
 
-#news-section .btn-icon:hover {
-  background: var(--news-accent-light);
-  border-color: var(--news-accent);
+#news-section #news-refresh.news-refresh-btn:hover {
+  background: var(--news-accent-light) !important;
+  border-color: var(--news-accent) !important;
+  color: var(--news-accent) !important;
 }
 
 /* -----------------------
    Tabs
 ------------------------ */
 #news-section .news-tabs-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--news-border);
-  flex-wrap: wrap;
+  margin-bottom: 16px !important;
 }
 
 #news-section .news-tabs-main {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
+  display: flex !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--news-border) !important;
 }
 
+/* HARDEN button look */
 #news-section .news-tab {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--news-border) !important;
+  background: transparent !important;
+  color: inherit !important;
+
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
 }
 
 #news-section .news-tab i {
-  font-size: 0.75rem;
-  opacity: 0.75;
+  font-size: 0.75rem !important;
+  opacity: 0.75 !important;
 }
 
 #news-section .news-tab:hover {
-  background: var(--news-accent-light);
-  border-color: var(--news-accent);
+  background: var(--news-accent-light) !important;
+  border-color: var(--news-accent) !important;
 }
 
 #news-section .news-tab.active {
-  background: var(--news-accent);
-  border-color: var(--news-accent);
-  color: #fff;
+  background: var(--news-accent) !important;
+  border-color: var(--news-accent) !important;
+  color: #fff !important;
 }
 
-#news-section .news-more-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
+#news-section .news-tab.active i {
+  opacity: 1 !important;
 }
 
-#news-section .news-more-btn:hover,
-#news-section .news-more-btn.active {
-  background: var(--news-accent-light);
-  border-color: var(--news-accent);
+/* More toggle is also a .news-tab in your HTML */
+#news-section #news-more-toggle.news-more-toggle {
+  width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  justify-content: center !important;
 }
 
+/* Extra tabs panel */
 #news-section .news-tabs-extra {
-  display: none;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 12px;
-  margin-bottom: 16px;
-  background: var(--news-bg-card);
-  border-radius: 12px;
+  display: none !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 12px !important;
+  margin-top: 12px !important;
+  background: var(--news-bg-card) !important;
+  border-radius: 12px !important;
 }
 
 #news-section .news-tabs-extra.open {
-  display: flex;
+  display: flex !important;
 }
 
 /* -----------------------
    Status
 ------------------------ */
-#news-section .news-status {
-  font-size: 0.9rem;
-  opacity: 0.7;
-  margin-bottom: 16px;
+#news-section #news-status.news-status {
+  font-size: 0.9rem !important;
+  opacity: 0.7 !important;
+  margin-bottom: 16px !important;
 }
 
 /* -----------------------
-   List View
+   List View + Cards
 ------------------------ */
-#news-section .news-list-view {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+#news-section #news-list-view.news-list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
 }
 
-#news-section .news-list {
-  display: flex;
-  flex-direction: column;
+#news-section #news-list.news-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
 }
 
-/* -----------------------
-   News Card (Preview) - matches JS markup
------------------------- */
+/* Card */
 #news-section .news-card {
-  display: flex;
-  gap: 16px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--news-border);
-  cursor: pointer;
-  transition: background 0.15s, margin 0.15s, padding 0.15s;
+  display: flex !important;
+  gap: 16px !important;
+  padding: 16px 0 !important;
+  border-bottom: 1px solid var(--news-border) !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  background: transparent !important;
 }
 
 #news-section .news-card:first-child {
-  padding-top: 0;
+  padding-top: 0 !important;
 }
 
 #news-section .news-card:last-child {
-  border-bottom: none;
+  border-bottom: none !important;
 }
 
 #news-section .news-card:hover {
-  background: var(--news-accent-light);
-  margin-left: -12px;
-  margin-right: -12px;
-  padding-left: 12px;
-  padding-right: 12px;
-  border-radius: 10px;
+  background: var(--news-accent-light) !important;
+  margin-left: -12px !important;
+  margin-right: -12px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  border-radius: 10px !important;
 }
 
+/* Thumb image (prevent global img rules) */
 #news-section .news-card-thumb {
-  width: 140px;
-  height: 95px;
-  border-radius: 8px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: var(--news-bg-card);
+  width: 140px !important;
+  height: 95px !important;
+  border-radius: 8px !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+  background: var(--news-bg-card) !important;
+  display: block !important;
 }
 
-#news-section .news-card-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+#news-section .news-card-body {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
 }
 
 #news-section .news-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1.25;
-  margin: 0;
-  color: inherit;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  color: inherit !important;
 
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
 }
 
 #news-section .news-card-summary {
-  font-size: 0.9rem;
-  line-height: 1.45;
-  color: var(--news-muted);
-  margin: 0;
+  font-size: 0.9rem !important;
+  line-height: 1.45 !important;
+  color: var(--news-muted) !important;
+  margin: 0 !important;
 
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
 }
 
 #news-section .news-card-meta {
-  font-size: 0.8rem;
-  color: var(--news-muted);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-  margin-top: auto;
+  font-size: 0.8rem !important;
+  color: var(--news-muted) !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 4px 12px !important;
+  margin-top: auto !important;
 }
 
 #news-section .news-card-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 
 #news-section .news-card-meta i {
-  font-size: 0.75rem;
-  opacity: 0.65;
+  font-size: 0.75rem !important;
+  opacity: 0.65 !important;
+}
+
+#news-section .news-card-author,
+#news-section .news-card-date {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 240px !important;
+}
+
+/* Loading/empty */
+#news-section .news-loading,
+#news-section .news-empty {
+  text-align: center !important;
+  padding: 40px 20px !important;
+  opacity: 0.7 !important;
 }
 
 /* -----------------------
-   Pagination - matches HTML IDs + .btn-page
+   Pagination (matches .news-page-btn)
 ------------------------ */
-#news-section #news-pagination.news-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 16px 0 0;
-  border-top: 1px solid var(--news-border);
+#news-section .news-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  padding: 20px 0 0 !important;
+  border-top: 1px solid var(--news-border) !important;
 }
 
-#news-section .btn-page {
-  padding: 10px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
+#news-section .news-page-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  padding: 10px 18px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--news-border) !important;
+  background: transparent !important;
+  color: inherit !important;
+
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+
+  transition: all 0.2s !important;
 }
 
-#news-section .btn-page:hover:not(:disabled) {
-  background: var(--news-accent);
-  border-color: var(--news-accent);
-  color: #fff;
+#news-section .news-page-btn:hover:not(:disabled) {
+  background: var(--news-accent) !important;
+  border-color: var(--news-accent) !important;
+  color: #fff !important;
 }
 
-#news-section .btn-page:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+#news-section .news-page-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
 }
 
 #news-section #news-page-info {
-  font-size: 0.9rem;
-  font-weight: 700;
-  min-width: 110px;
-  text-align: center;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  min-width: 110px !important;
+  text-align: center !important;
 }
 
 /* -----------------------
    Reader View
 ------------------------ */
 #news-section .news-reader-view {
-  animation: newsReaderFadeIn 0.2s ease;
+  animation: newsReaderFadeIn 0.2s ease !important;
 }
 
 @keyframes newsReaderFadeIn {
@@ -322,204 +343,216 @@
 }
 
 #news-section .news-reader-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 16px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--news-border);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid var(--news-border) !important;
 }
 
-#news-section .btn-back {
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
+#news-section .news-back-btn {
+  padding: 10px 16px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--news-border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s !important;
 }
 
-#news-section .btn-back:hover {
-  background: var(--news-accent-light);
-  border-color: var(--news-accent);
+#news-section .news-back-btn:hover {
+  background: var(--news-accent-light) !important;
+  border-color: var(--news-accent) !important;
 }
 
-#news-section .news-reader-controls {
-  display: flex;
-  gap: 8px;
+#news-section .news-font-controls {
+  display: flex !important;
+  gap: 8px !important;
 }
 
-#news-section .btn-font {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid var(--news-border);
-  background: transparent;
-  color: inherit;
-  font-size: 0.9rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s;
+#news-section .news-font-controls button {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--news-border) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
 }
 
-#news-section .btn-font:hover {
-  background: var(--news-accent-light);
-  border-color: var(--news-accent);
+#news-section .news-font-controls button:hover {
+  background: var(--news-accent-light) !important;
+  border-color: var(--news-accent) !important;
 }
 
-/* Article container */
+/* Article */
 #news-section .news-article {
-  max-width: 760px;
-  margin: 0 auto;
+  max-width: 760px !important;
+  margin: 0 auto !important;
 }
 
 #news-section #news-title {
-  font-size: 1.85rem;
-  font-weight: 800;
-  line-height: 1.12;
-  margin: 0 0 12px;
-  font-family: Georgia, 'Times New Roman', serif;
-  letter-spacing: -0.2px;
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  line-height: 1.12 !important;
+  margin: 0 0 12px !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.2px !important;
 }
 
 #news-section .news-article-meta {
-  font-size: 0.9rem;
-  color: var(--news-muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 0.9rem !important;
+  color: var(--news-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+  flex-wrap: wrap !important;
 }
 
 #news-section .news-time-ago {
-  font-weight: 800;
-  color: var(--news-accent);
+  font-weight: 800 !important;
+  color: var(--news-accent) !important;
 }
 
-/* Cover */
+/* Cover image */
 #news-section .news-cover {
-  margin: 12px 0 18px;
+  margin: 12px 0 18px !important;
 }
 
 #news-section .news-figure {
-  margin: 0;
+  margin: 0 !important;
 }
 
 #news-section .news-figure img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 8px;
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  border-radius: 8px !important;
 }
 
 #news-section .news-figure figcaption {
-  font-size: 0.85rem;
-  color: var(--news-muted);
-  padding: 10px 0 0;
-  line-height: 1.4;
-  border-bottom: 1px solid var(--news-border);
-  font-style: italic;
+  font-size: 0.85rem !important;
+  color: var(--news-muted) !important;
+  padding: 10px 0 0 !important;
+  line-height: 1.4 !important;
+  border-bottom: 1px solid var(--news-border) !important;
+  font-style: italic !important;
 }
 
-/* Body (HTML + fallback paragraphs) */
+#news-section .img-credit {
+  display: block !important;
+  font-size: 0.8rem !important;
+  margin-top: 4px !important;
+  opacity: 0.85 !important;
+}
+
+/* Reader content */
 #news-section .news-reader-content {
-  font-size: var(--news-reader-font);
-  line-height: 1.78;
-  text-align: left;
-  font-family: Georgia, 'Times New Roman', serif;
-  color: rgba(255, 255, 255, 0.92);
+  font-size: var(--news-reader-font) !important;
+  line-height: 1.78 !important;
+  text-align: left !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  color: rgba(255, 255, 255, 0.92) !important;
 }
 
 #news-section .news-reader-content p {
-  margin: 0 0 1.15em;
+  margin: 0 0 1.15em !important;
 }
 
 #news-section .news-reader-content strong,
-#news-section .news-reader-content b {
-  font-weight: 800;
-}
+#news-section .news-reader-content b { font-weight: 800 !important; }
 
 #news-section .news-reader-content em,
-#news-section .news-reader-content i {
-  font-style: italic;
-}
+#news-section .news-reader-content i { font-style: italic !important; }
 
-#news-section .news-reader-content u {
-  text-decoration: underline;
-}
+#news-section .news-reader-content u { text-decoration: underline !important; }
 
 #news-section .news-reader-content a {
-  color: var(--news-accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 2px;
+  color: var(--news-accent) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  text-decoration-thickness: 2px !important;
 }
 
 #news-section .news-reader-content a:hover {
-  text-decoration-thickness: 3px;
+  text-decoration-thickness: 3px !important;
 }
 
-/* Lists */
-#news-section .news-reader-content ul,
-#news-section .news-reader-content ol {
-  margin: 0 0 1.2em 1.2em;
-  padding: 0;
-}
-
-#news-section .news-reader-content li {
-  margin: 0.4em 0;
-}
-
-/* Figures inside contentHtml */
+/* Inside-body figures */
 #news-section .news-reader-content figure {
-  margin: 20px 0;
+  margin: 20px 0 !important;
 }
 
 #news-section .news-reader-content figure img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 8px;
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  border-radius: 8px !important;
 }
 
 #news-section .news-reader-content figcaption {
-  font-size: 0.85rem;
-  color: var(--news-muted);
-  font-style: italic;
-  padding: 10px 0 0;
-  border-bottom: 1px solid var(--news-border);
-  line-height: 1.4;
+  font-size: 0.85rem !important;
+  color: var(--news-muted) !important;
+  font-style: italic !important;
+  padding: 10px 0 0 !important;
+  border-bottom: 1px solid var(--news-border) !important;
+  line-height: 1.4 !important;
 }
 
-/* Quotes & headings */
 #news-section .news-reader-content blockquote {
-  margin: 1.2em 0;
-  padding: 0.25em 0 0.25em 16px;
-  border-left: 4px solid var(--news-accent);
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.9);
+  margin: 1.2em 0 !important;
+  padding: 0.25em 0 0.25em 16px !important;
+  border-left: 4px solid var(--news-accent) !important;
+  font-style: italic !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 #news-section .news-reader-content h2,
 #news-section .news-reader-content h3 {
-  font-family: Georgia, 'Times New Roman', serif;
-  margin: 1.6em 0 0.6em;
-  line-height: 1.2;
-  font-weight: 800;
+  font-family: Georgia, "Times New Roman", serif !important;
+  margin: 1.6em 0 0.6em !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
 }
 
 #news-section .news-reader-content hr {
-  border: none;
-  border-top: 1px solid var(--news-border);
-  margin: 24px 0;
+  border: none !important;
+  border-top: 1px solid var(--news-border) !important;
+  margin: 24px 0 !important;
+}
+
+/* Floating back */
+#news-section .news-floating-back {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  background: var(--news-accent) !important;
+  color: #fff !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.2rem !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+  z-index: 1000 !important;
+}
+
+#news-section.reader-mode .news-floating-back {
+  display: flex !important;
 }
 
 /* -----------------------
@@ -527,109 +560,36 @@
 ------------------------ */
 @media (max-width: 768px) {
   #news-section .news-tab {
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
   }
 
   #news-section .news-tab i {
-    display: none;
+    display: none !important;
   }
 
   #news-section .news-card {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: column !important;
+    gap: 12px !important;
   }
 
   #news-section .news-card-thumb {
-    width: 100%;
-    height: 180px;
+    width: 100% !important;
+    height: 180px !important;
   }
 
   #news-section #news-title {
-    font-size: 1.5rem;
+    font-size: 1.5rem !important;
   }
 
   #news-section .news-reader-content {
-    font-size: 16px;
+    font-size: 16px !important;
   }
-}
 
-/* =========================================================
-   Hotfix: prevent main.css/global button styles overriding News UI
-   Put this at the VERY END of css/sections/news.css
-   ========================================================= */
-
-/* Ensure header spacing is visible */
-#news-section .news-header {
-  margin-bottom: 16px !important;
-}
-
-/* Tabs: force pill look even if global button styles exist */
-#news-section .news-tab {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--news-border) !important;
-  background: transparent !important;
-  color: inherit !important;
-  padding: 8px 14px !important;
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  line-height: 1 !important;
-}
-
-#news-section .news-tab:hover {
-  background: var(--news-accent-light) !important;
-  border-color: var(--news-accent) !important;
-}
-
-#news-section .news-tab.active {
-  background: var(--news-accent) !important;
-  border-color: var(--news-accent) !important;
-  color: #fff !important;
-}
-
-/* More toggle stays round */
-#news-section #news-more-toggle.news-more-toggle {
-  width: 38px !important;
-  height: 38px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-}
-
-/* List cards: make sure they don't inherit weird layout */
-#news-section .news-card {
-  display: flex !important;
-  gap: 16px !important;
-  padding: 16px 0 !important;
-  border-bottom: 1px solid var(--news-border) !important;
-  background: transparent !important;
-}
-
-#news-section .news-card:hover {
-  background: var(--news-accent-light) !important;
-}
-
-/* Ensure card body class matches JS */
-#news-section .news-card-body {
-  flex: 1 !important;
-  min-width: 0 !important;
-}
-
-/* Pagination buttons: force consistent look */
-#news-section .news-page-btn {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  border-radius: 10px !important;
-  border: 1px solid var(--news-border) !important;
-  background: transparent !important;
-  color: inherit !important;
-  padding: 10px 18px !important;
-  font-weight: 600 !important;
-}
-
-#news-section .news-page-btn:hover:not(:disabled) {
-  background: var(--news-accent) !important;
-  border-color: var(--news-accent) !important;
-  color: #fff !important;
+  #news-section .news-floating-back {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 46px !important;
+    height: 46px !important;
+  }
 }
