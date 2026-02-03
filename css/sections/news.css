@@ -666,3 +666,145 @@
     font-size: 1.05rem;
   }
 }
+
+/* ===== WORD LOOKUP POPUP ===== */
+.word-lookup-popup {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  width: 320px;
+  max-width: 90vw;
+  max-height: 400px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.word-lookup-popup .wlp-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--primary-color, #c70000);
+  color: #fff;
+}
+
+.word-lookup-popup .wlp-word {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.word-lookup-popup .wlp-speak,
+.word-lookup-popup .wlp-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.word-lookup-popup .wlp-speak:hover,
+.word-lookup-popup .wlp-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.word-lookup-popup .wlp-phonetic {
+  padding: 4px 16px 8px;
+  font-size: 0.9rem;
+  color: var(--text-muted, #666);
+  font-style: italic;
+}
+
+.word-lookup-popup .wlp-content {
+  padding: 0 16px 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.word-lookup-popup .wlp-loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted, #666);
+}
+
+.word-lookup-popup .wlp-not-found {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted, #888);
+}
+
+.word-lookup-popup .wlp-pos {
+  font-weight: 600;
+  color: var(--primary-color, #c70000);
+  font-size: 0.85rem;
+  margin-top: 10px;
+  text-transform: capitalize;
+}
+
+.word-lookup-popup .wlp-def {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 4px 0;
+  color: var(--text-color, #333);
+}
+
+.word-lookup-popup .wlp-example {
+  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+  font-style: italic;
+  margin: 2px 0 8px 12px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-color, #ddd);
+}
+
+.word-lookup-popup .wlp-actions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color, #eee);
+  background: var(--bg-secondary, #f9f9f9);
+}
+
+.word-lookup-popup .wlp-add-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--primary-color, #c70000);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.word-lookup-popup .wlp-add-btn:hover:not(:disabled) {
+  background: #a00;
+  transform: translateY(-1px);
+}
+
+.word-lookup-popup .wlp-add-btn:disabled {
+  background: var(--text-muted, #999);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Dark mode */
+[data-theme="dark"] .word-lookup-popup {
+  background: #1e1e1e;
+  border-color: #444;
+}
+
+[data-theme="dark"] .word-lookup-popup .wlp-actions {
+  background: #252525;
+  border-color: #333;
+}
