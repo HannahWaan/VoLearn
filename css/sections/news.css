@@ -613,7 +613,7 @@
 #news-section .news-scroll-top {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  left: 24px;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -656,10 +656,11 @@
 @media (max-width: 640px) {
   #news-section .news-scroll-top {
     bottom: 16px;
-    right: 16px;
+    left: 16px;
     width: 44px;
     height: 44px;
   }
+}
   
   #news-section .news-trail-text {
     font-size: 1.05rem;
