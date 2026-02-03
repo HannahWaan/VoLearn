@@ -1,5 +1,5 @@
 /* ===== BOOKSHELF MODULE ===== */
-/* VoLearn v2.1.0 - Quản lý tủ sách */
+/* VoLearn v2.2.0 - Quản lý tủ sách */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
@@ -11,6 +11,7 @@ import { navigate } from '../core/router.js';
 /* ===== STATE ===== */
 let searchQuery = '';
 let editingSetId = null;
+let eventsBound = false;
 
 /* ===== INIT ===== */
 export function initBookshelf() {
@@ -18,38 +19,54 @@ export function initBookshelf() {
     renderShelves();
     populateSetSelect();
     
-    // Listen for vocabulary changes
-    window.addEventListener('volearn:wordSaved', () => {
-        renderShelves();
-        updateAllWordsCount();
-    });
-    
-    window.addEventListener('volearn:wordDeleted', () => {
-        renderShelves();
-        updateAllWordsCount();
-    });
-    
-    window.addEventListener('volearn:dataChanged', () => {
-        renderShelves();
-        populateSetSelect();
-        updateAllWordsCount();
-    });
+    // Listen for vocabulary changes from any source
+    if (!eventsBound) {
+        eventsBound = true;
+        
+        // Word saved (from Add Word, News Reader, etc.)
+        window.addEventListener('volearn:wordSaved', handleDataChange);
+        document.addEventListener('volearn:wordSaved', handleDataChange);
+        
+        // Word deleted
+        window.addEventListener('volearn:wordDeleted', handleDataChange);
+        document.addEventListener('volearn:wordDeleted', handleDataChange);
+        
+        // General data change
+        window.addEventListener('volearn:dataSaved', handleDataChange);
+        window.addEventListener('volearn:dataImported', handleDataChange);
+        
+        // Storage event (from other tabs)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'volearn_data') {
+                handleDataChange();
+            }
+        });
+    }
     
     console.log('✅ Bookshelf initialized');
 }
 
+/* ===== HANDLE DATA CHANGE ===== */
+function handleDataChange() {
+    renderShelves();
+    populateSetSelect();
+    updateAllWordsCount();
+}
+
 /* ===== UPDATE ALL WORDS COUNT ===== */
 function updateAllWordsCount() {
+    const count = appData.vocabulary?.length || 0;
+    
+    // Update in set card
     const countEl = document.querySelector('.set-card.all-words .set-count');
     if (countEl) {
-        const count = appData.vocabulary?.length || 0;
         countEl.textContent = `${count} từ`;
     }
     
     // Also update in header if exists
     const allWordsCountEl = document.getElementById('all-words-count');
     if (allWordsCountEl) {
-        allWordsCountEl.textContent = appData.vocabulary?.length || 0;
+        allWordsCountEl.textContent = count;
     }
 }
 
