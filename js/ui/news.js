@@ -4,6 +4,7 @@
 
 import { onNavigate } from '../core/router.js';
 import { showToast } from './toast.js';
+import { initWordLookup } from './wordLookup.js';
 
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
 const DEFAULT_SECTION = 'world';
@@ -463,5 +464,7 @@ export function initNews() {
     if (state.items.length === 0) {
       loadFeed(DEFAULT_SECTION);
     }
+    initWordLookup();
   });
 }
+
