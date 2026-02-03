@@ -39,7 +39,7 @@ function timeAgo(iso) {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
@@ -85,7 +85,7 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
 
@@ -122,6 +122,68 @@ async function fetchJSON(url) {
   const res = await fetch(url, { headers: { accept: 'application/json' } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+// ==================== Paragraph heuristic (PATCH) ====================
+// Guardian bodyText often comes as one large block with few/no blank lines.
+// This splits into readable paragraphs.
+function textToParagraphsHeuristic(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+
+  let t = raw
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+
+  // If already has blank lines, use them.
+  if (/\n{2,}/.test(t)) {
+    return t.split(/\n{2,}/g).map(p => p.trim()).filter(Boolean);
+  }
+
+  // Sentence splitting heuristic: break into paragraphs of ~3 sentences.
+  // Also handle quotes/parenthesis starts roughly.
+  const sentences = t.split(/(?<=[.!?])\s+(?=[A-Z“‘(])/g);
+
+  const paras = [];
+  let buf = [];
+
+  for (const s of sentences) {
+    const ss = s.trim();
+    if (!ss) continue;
+
+    buf.push(ss);
+
+    // Paragraph size target
+    if (buf.length >= 3) {
+      paras.push(buf.join(' '));
+      buf = [];
+    }
+  }
+  if (buf.length) paras.push(buf.join(' '));
+
+  // Fallback: if splitting failed (e.g. no punctuation), chunk by length.
+  if (paras.length <= 1 && t.length > 900) {
+    const out = [];
+    let i = 0;
+    const step = 420;
+    while (i < t.length) {
+      out.push(t.slice(i, i + step).trim());
+      i += step;
+    }
+    return out.filter(Boolean);
+  }
+
+  return paras;
+}
+
+function textToHtml(text) {
+  const paras = textToParagraphsHeuristic(text);
+  if (!paras.length) return '';
+
+  return paras
+    .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
+    .join('');
 }
 
 // ==================== UI Helpers ====================
@@ -220,25 +282,29 @@ function renderReader(item) {
     titleEl.textContent = item?.title || '(Không có tiêu đề)';
   }
 
-  // Meta với time ago
+  // Meta
   if (metaEl) {
     const ago = timeAgo(item?.publishedAt);
     const time = formatTime(item?.publishedAt);
     const author = item?.author || 'The Guardian';
-    
+
+    // Keep it simple & consistent
     metaEl.innerHTML = `
       <span class="news-time-ago">${escapeHtml(ago)}</span>
+      <span>•</span>
+      <span>${escapeHtml(author)}</span>
+      <span>•</span>
       <span class="news-time-full">${escapeHtml(time)}</span>
     `;
   }
 
-  // Cover image với caption
+  // Cover image + caption
   if (coverEl) {
     if (item?.image) {
       const caption = item?.imageCaption || '';
       const credit = item?.imageCredit || '';
       const captionText = caption + (credit ? ` Photograph: ${credit}` : '');
-      
+
       coverEl.innerHTML = `
         <figure class="news-figure">
           <img src="${escapeHtml(item.image)}" alt="">
@@ -250,27 +316,25 @@ function renderReader(item) {
     }
   }
 
-  // Content
+  // Content (PATCH: prefer HTML; otherwise heuristic paragraphs)
   if (readerEl) {
     let html = '';
-    
-    if (item?.contentHtml) {
-      html = item.contentHtml;
-    } else if (item?.text) {
-      html = item.text.trim().split(/\n\n+/)
-        .map(para => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
-        .join('');
-    } else if (item?.summaryHtml) {
-      html = `<p>${item.summaryHtml}</p>`;
-    }
-    
-    readerEl.innerHTML = sanitizeHtml(html);
-  }
 
-  // Author ở cuối bài
-  const authorEl = $('news-author');
-  if (authorEl) {
-    authorEl.textContent = item?.author || '';
+    const contentHtml = String(item?.contentHtml || '').trim();
+    const text = String(item?.text || '').trim();
+    const summaryHtml = String(item?.summaryHtml || '').trim();
+
+    if (contentHtml) {
+      html = contentHtml; // keep Guardian formatting (bold/italic/underline/etc.)
+    } else if (text) {
+      html = textToHtml(text); // heuristic split => paragraphs
+    } else if (summaryHtml) {
+      html = `<p>${summaryHtml}</p>`;
+    } else {
+      html = `<p>(Không có nội dung)</p>`;
+    }
+
+    readerEl.innerHTML = sanitizeHtml(html);
   }
 
   showReaderView();
@@ -306,7 +370,7 @@ async function loadFeed(section) {
     const url = `${NEWS_API_BASE}/guardian/feed?section=${encodeURIComponent(section)}&pageSize=30`;
     const data = await fetchJSON(url);
     const items = Array.isArray(data?.items) ? data.items : [];
-    
+
     state.items = items;
     state.totalPages = Math.ceil(items.length / ITEMS_PER_PAGE) || 1;
     state.loading = false;
@@ -368,18 +432,29 @@ function bindNewsUI() {
     }
   });
 
-  let fontSize = 18;
-  $('news-font-inc')?.addEventListener('click', () => {
-    fontSize = Math.min(fontSize + 2, 28);
+  // Font size controls (persist)
+  let fontSize = parseInt(localStorage.getItem('volearn_news_reader_font_px') || '18', 10);
+  if (!Number.isFinite(fontSize)) fontSize = 18;
+
+  const applyFont = () => {
+    fontSize = Math.max(14, Math.min(28, fontSize));
+    localStorage.setItem('volearn_news_reader_font_px', String(fontSize));
+
     const reader = $('news-reader');
     if (reader) reader.style.fontSize = `${fontSize}px`;
+  };
+
+  $('news-font-inc')?.addEventListener('click', () => {
+    fontSize = Math.min(fontSize + 2, 28);
+    applyFont();
   });
 
   $('news-font-dec')?.addEventListener('click', () => {
     fontSize = Math.max(fontSize - 2, 14);
-    const reader = $('news-reader');
-    if (reader) reader.style.fontSize = `${fontSize}px`;
+    applyFont();
   });
+
+  applyFont();
 }
 
 export function initNews() {
