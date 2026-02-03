@@ -1,5 +1,9 @@
 /* ================================================
    VoLearn - News Section
+   - Giữ nguyên formatting gốc từ Guardian
+   - Spacing: 6pt before/after
+   - Line spacing: single
+   - Alignment: justified
    ================================================ */
 
 #news-section {
@@ -336,7 +340,9 @@
   border-color: var(--news-accent);
 }
 
-/* Article */
+/* -----------------------
+   Article Header
+------------------------ */
 .news-article {
   max-width: 800px;
   margin: 0 auto;
@@ -362,35 +368,195 @@
   margin-bottom: 16px;
 }
 
-.news-cover img {
-  width: 100%;
-  max-height: 400px;
-  object-fit: cover;
-  border-radius: 14px;
+/* Cover image với caption */
+.news-cover {
+  margin-bottom: 20px;
 }
 
+.news-cover img {
+  width: 100%;
+  max-height: 450px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.news-cover figcaption,
+.news-cover .caption {
+  font-size: 0.85rem;
+  color: var(--news-muted);
+  font-style: italic;
+  margin-top: 8px;
+  padding: 0 4px;
+  text-align: center;
+}
+
+/* -----------------------
+   Reader Content - GIỮ NGUYÊN FORMATTING GỐC
+   - Spacing: 6pt = 8px (before & after)
+   - Line spacing: single (1.0 ~ 1.2 cho web)
+   - Alignment: justified
+------------------------ */
 .news-reader-content {
   font-size: var(--news-reader-font);
-  line-height: 1.85;
+  line-height: 1.2; /* Single spacing */
+  text-align: justify; /* Justified alignment */
   color: inherit;
 }
 
+/* Paragraphs với spacing 6pt = 8px */
 .news-reader-content p {
-  margin: 0 0 1.2em;
+  margin: 8px 0; /* 6pt before & after */
 }
 
+/* GIỮ NGUYÊN tất cả formatting từ nguồn */
+.news-reader-content strong,
+.news-reader-content b {
+  font-weight: bold;
+}
+
+.news-reader-content em,
+.news-reader-content i {
+  font-style: italic;
+}
+
+.news-reader-content u {
+  text-decoration: underline;
+}
+
+.news-reader-content s,
+.news-reader-content strike,
+.news-reader-content del {
+  text-decoration: line-through;
+}
+
+.news-reader-content sub {
+  vertical-align: sub;
+  font-size: 0.8em;
+}
+
+.news-reader-content sup {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+
+/* Links - giữ màu gốc hoặc dùng accent */
 .news-reader-content a {
   color: var(--news-accent);
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: 2px;
 }
 
+.news-reader-content a:hover {
+  opacity: 0.8;
+}
+
+/* Headings trong bài */
+.news-reader-content h1,
+.news-reader-content h2,
+.news-reader-content h3,
+.news-reader-content h4,
+.news-reader-content h5,
+.news-reader-content h6 {
+  line-height: 1.25;
+  margin: 16px 0 8px;
+  font-weight: 700;
+}
+
+.news-reader-content h1 { font-size: 1.5em; }
+.news-reader-content h2 { font-size: 1.3em; }
+.news-reader-content h3 { font-size: 1.15em; }
+.news-reader-content h4 { font-size: 1.05em; }
+
+/* Blockquote */
 .news-reader-content blockquote {
-  margin: 1.2em 0;
-  padding: 16px 20px;
+  margin: 12px 0;
+  padding: 12px 16px;
   border-left: 4px solid var(--news-accent);
   background: rgba(109, 94, 252, 0.08);
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 10px 10px 0;
+  font-style: italic;
+}
+
+/* Lists */
+.news-reader-content ul,
+.news-reader-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.news-reader-content li {
+  margin: 4px 0;
+}
+
+/* Images trong bài với caption */
+.news-reader-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+  margin: 12px auto;
+}
+
+.news-reader-content figure {
+  margin: 12px 0;
+  text-align: center;
+}
+
+.news-reader-content figcaption {
+  font-size: 0.85rem;
+  color: var(--news-muted);
+  font-style: italic;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Code */
+.news-reader-content code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.news-reader-content pre {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.news-reader-content pre code {
+  background: none;
+  padding: 0;
+}
+
+/* Tables */
+.news-reader-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.news-reader-content th,
+.news-reader-content td {
+  border: 1px solid var(--news-border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.news-reader-content th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+}
+
+/* Horizontal rule */
+.news-reader-content hr {
+  border: none;
+  border-top: 1px solid var(--news-border);
+  margin: 16px 0;
 }
 
 /* -----------------------
