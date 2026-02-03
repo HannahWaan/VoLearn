@@ -1,4 +1,4 @@
-/* ===== DICTATION MODE (Settings-driven, schema-aware, common header) ===== */
+/* ===== DICTATION MODE ===== */
 
 import {
   initPractice,
@@ -48,6 +48,9 @@ let lastCorrectText = '';
 let autoNextTimer = null;
 let uiBound = false;
 
+// Random meaning index cho mỗi câu hỏi
+let currentMeaningIndex = 0;
+
 /* ===== FIELD LABELS ===== */
 const FIELD_LABEL = {
   1: 'Từ vựng',
@@ -76,7 +79,8 @@ const POS_MAPPING = {
 
 /* ===== SCHEMA HELPERS ===== */
 function primaryMeaning(word) {
-  return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
+  const meanings = word?.meanings || [];
+  return meanings[currentMeaningIndex] || meanings[0] || {};
 }
 
 function norm(v) {
@@ -314,6 +318,14 @@ function showCurrentDictation() {
   playCount = 0;
   hintIndex = 0;
 
+  // === Random chọn 1 meaning cho câu hỏi này ===
+  const wordMeanings = word.meanings || [];
+  if (wordMeanings.length > 1) {
+    currentMeaningIndex = Math.floor(Math.random() * wordMeanings.length);
+  } else {
+    currentMeaningIndex = 0;
+  }
+
   currentListenFieldId = pickListenFieldId();
   lastCorrectText = getFieldText(word, currentListenFieldId);
 
@@ -474,11 +486,13 @@ export function checkDictationAnswer() {
 
 /* ===== SKIP ===== */
 function skipDictationAction() {
+  // Nếu đã trả lời rồi → chuyển câu tiếp
   if (answered) {
     showCurrentDictation();
     return;
   }
 
+  // Chưa trả lời → đánh dấu skip, hiển thị feedback, ĐỢI rồi mới chuyển
   skipWord();
   answered = true;
 
@@ -499,12 +513,14 @@ function skipDictationAction() {
     feedback.innerHTML = `<div class="feedback-skipped"><i class="fas fa-forward"></i><span>Đã bỏ qua.</span></div>${answerLine}`;
   }
 
+  // Đổi nút thành "Tiếp theo"
   if (skipBtn) {
     skipBtn.innerHTML = `Tiếp theo <i class="fas fa-arrow-right"></i>`;
   }
 
   updateCommonHeaderProgress();
 
+  // Đếm ngược rồi mới chuyển (KHÔNG chuyển ngay)
   if (settings.autoNext) {
     startAutoNext(5);
   }
