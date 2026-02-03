@@ -1,22 +1,24 @@
 // js/ui/news.js
-// Guardian News reader for VoLearn (in-app). Uses Worker endpoints:
-//   GET https://volearn.asstrayca.workers.dev/guardian/feed?section=world&pageSize=10
+// Guardian News reader for VoLearn (in-app).
+// Worker endpoints:
+//   GET https://volearn.asstrayca.workers.dev/guardian/feed?section=world&pageSize=12
 //   GET https://volearn.asstrayca.workers.dev/guardian/item?id=<guardianId>
 //
-// Requirements implemented:
-// - Tabs (World default, Science next) + "More..." toggle
-// - Split view: list + quick view
-// - Reader mode (fullscreen inside section, NOT new browser tab)
-// - Font size controls A-/A+ (localStorage persisted)
-// - Dark/Light reader theme (scoped to news section only; does not change global app theme)
-// - Uses DOMPurify if present; otherwise safely escapes
+// Features:
+// - Tabs (World default, Science next) + More… toggle
+// - Split view: list (left) + quick reader (right)
+// - Reader mode (fullscreen INSIDE news section) via "Đọc" button
+// - A-/A+ font size for reader (localStorage, scoped)
+// - Dark/Light for reader only (scoped, does not change global app theme)
+// - HTML sanitized with DOMPurify if available
+// - If contentHtml empty: render cover image + bodyText paragraphs
 
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
 
 const DEFAULT_SECTION = 'world';
 const DEFAULT_PAGE_SIZE = 12;
 
-// Reader settings (scoped to News reader only)
+// Reader-only settings (scoped to News reader)
 const READER_FONT_KEY = 'volearn_news_reader_font_px';
 const READER_THEME_KEY = 'volearn_news_reader_theme'; // 'light' | 'dark'
 const READER_FONT_MIN = 14;
@@ -70,18 +72,15 @@ function escapeHtml(str) {
 function sanitizeHtml(html) {
   const raw = String(html ?? '');
   if (!raw) return '';
-  // Prefer DOMPurify if available (you added in index.html earlier)
   if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
     return window.DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
   }
-  // Fallback: escape everything
   return `<pre style="white-space:pre-wrap">${escapeHtml(raw)}</pre>`;
 }
 
 function textToHtmlParagraphs(text) {
   const safe = escapeHtml((text || '').trim());
   if (!safe) return '';
-  // Split paragraphs by blank lines; keep single newlines as <br>
   const blocks = safe
     .split(/\n{2,}/g)
     .map(p => p.replace(/\n/g, '<br>'))
@@ -133,40 +132,36 @@ function updateReaderControlsUI() {
 function setMode(mode) {
   state.mode = mode === 'reader' ? 'reader' : 'split';
 
-  const section = $('news-section');
-  if (section) {
-    section.classList.toggle('news-reader-mode', state.mode === 'reader');
-  }
+  const toolbar = $('news-reader-toolbar');
+  if (toolbar) toolbar.style.display = state.mode === 'reader' ? 'flex' : 'none';
 
-  const backBtn = $('news-reader-back');
-  if (backBtn) backBtn.style.display = state.mode === 'reader' ? '' : 'none';
+  // Hide tabs + list when reader mode
+  const tabsPrimary = document.querySelector('#news-section .news-tabs');
+  if (tabsPrimary) tabsPrimary.style.display = state.mode === 'reader' ? 'none' : 'flex';
 
-  // Optional: if your template includes a wrapper for list area
-  const listWrap = $('news-list-wrap');
-  if (listWrap) listWrap.style.display = state.mode === 'reader' ? 'none' : '';
-
-  // Fallback: hide list + tabs when in reader mode (if IDs exist)
-  const tabs = $('news-tabs');
-  if (tabs) tabs.style.display = state.mode === 'reader' ? 'none' : '';
   const moreTabs = $('news-more-tabs');
-  if (moreTabs) moreTabs.style.display = state.mode === 'reader' ? 'none' : moreTabs.style.display;
+  if (moreTabs) moreTabs.style.display = state.mode === 'reader' ? 'none' : (moreTabs.classList.contains('open') ? 'flex' : 'none');
 
   const list = $('news-list');
-  if (list) list.style.display = state.mode === 'reader' ? 'none' : '';
+  if (list) list.style.display = state.mode === 'reader' ? 'none' : 'flex';
+
+  // Hide "Mở bài gốc" (you said you don’t want jump to original)
+  const openWrap = $('news-open-source-wrap');
+  if (openWrap) openWrap.style.display = 'none';
 }
 
 function toggleMoreTabs(forceOpen) {
   const more = $('news-more-tabs');
   const btn = $('news-more-toggle');
-  if (!more) return;
+  if (!more || !btn) return;
 
   const currentlyOpen = more.classList.contains('open');
   const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
 
   more.classList.toggle('open', nextOpen);
-  more.style.display = nextOpen ? '' : 'none';
-
-  if (btn) btn.textContent = nextOpen ? 'Less…' : 'More…';
+  more.style.display = nextOpen ? 'flex' : 'none';
+  btn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  btn.textContent = nextOpen ? 'Less…' : 'More…';
 }
 
 function setActiveTab(sectionId) {
@@ -178,15 +173,24 @@ function setActiveTab(sectionId) {
 }
 
 async function fetchJson(url) {
-  const r = await fetch(url, {
-    method: 'GET',
-    headers: { 'Accept': 'application/json' },
-  });
+  const r = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
   if (!r.ok) {
     const txt = await r.text().catch(() => '');
-    throw new Error(`HTTP ${r.status}: ${txt.slice(0, 200)}`);
+    throw new Error(`HTTP ${r.status}: ${txt.slice(0, 250)}`);
   }
   return r.json();
+}
+
+function excerptFromText(text, max = 180) {
+  const t = (text || '').trim().replace(/\s+/g, ' ');
+  if (!t) return '';
+  return t.length > max ? `${t.slice(0, max)}…` : t;
+}
+
+function stripHtmlToText(html) {
+  const s = String(html || '');
+  if (!s) return '';
+  return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function renderList(items) {
@@ -198,36 +202,55 @@ function renderList(items) {
     return;
   }
 
-  list.innerHTML = items.map(item => {
-    const title = escapeHtml(item.title || '');
-    const meta = [
-      escapeHtml(item.source?.name || 'The Guardian'),
-      item.sectionName ? escapeHtml(item.sectionName) : null,
-      item.publishedAt ? escapeHtml(formatDate(item.publishedAt)) : null,
-      item.wordCount ? `${escapeHtml(String(item.wordCount))} words` : null,
-    ].filter(Boolean).join(' • ');
+  list.innerHTML = items
+    .map(item => {
+      const title = escapeHtml(item.title || '');
+      const meta = [
+        escapeHtml(item.source?.name || 'The Guardian'),
+        item.sectionName ? escapeHtml(item.sectionName) : null,
+        item.publishedAt ? escapeHtml(formatDate(item.publishedAt)) : null,
+        item.wordCount ? `${escapeHtml(String(item.wordCount))} words` : null,
+      ]
+        .filter(Boolean)
+        .join(' • ');
 
-    const summary = item.summaryHtml
-      ? sanitizeHtml(item.summaryHtml)
-      : (item.text ? `<div class="news-item-summary">${escapeHtml(item.text.slice(0, 180))}…</div>` : '');
+      // Keep list short: show plain text excerpt (not full HTML)
+      const summaryText = item.summaryHtml
+        ? stripHtmlToText(item.summaryHtml)
+        : (item.text ? excerptFromText(item.text, 180) : '');
 
-    const selected = state.selectedId === item.guardianId ? 'selected' : '';
+      const selected = state.selectedId === item.guardianId ? 'selected' : '';
 
-    return `
-      <article class="news-item ${selected}" data-guardian-id="${escapeHtml(item.guardianId)}">
-        <div class="news-item-main">
-          <h3 class="news-item-title">${title}</h3>
-          <div class="news-item-meta">${meta}</div>
-          <div class="news-item-summary">${summary}</div>
-        </div>
+      return `
+        <article class="news-item ${selected}" data-guardian-id="${escapeHtml(item.guardianId)}">
+          <div class="news-item-main">
+            <h3 class="news-item-title">${title}</h3>
+            <div class="news-item-meta">${meta}</div>
+            ${summaryText ? `<div class="news-item-summary">${escapeHtml(summaryText)}</div>` : ''}
+          </div>
 
-        <div class="news-item-actions">
-          <button class="btn btn-secondary news-quick-btn" type="button" data-action="quick" data-guardian-id="${escapeHtml(item.guardianId)}">Xem nhanh</button>
-          <button class="btn btn-primary news-read-btn" type="button" data-action="read" data-guardian-id="${escapeHtml(item.guardianId)}">Đọc</button>
-        </div>
-      </article>
-    `;
-  }).join('');
+          <div class="news-item-actions">
+            <button class="btn btn-secondary news-quick-btn" type="button"
+              data-action="quick" data-guardian-id="${escapeHtml(item.guardianId)}">Xem nhanh</button>
+            <button class="btn btn-primary news-read-btn" type="button"
+              data-action="read" data-guardian-id="${escapeHtml(item.guardianId)}">Đọc</button>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+}
+
+function buildCoverHtml(imageUrl, title) {
+  const url = (imageUrl || '').trim();
+  if (!url) return '';
+  const alt = escapeHtml(title || 'Cover image');
+  // Use <figure> for nicer spacing (your CSS can style it)
+  return `
+    <figure class="news-cover" style="margin:0 0 14px;">
+      <img src="${escapeHtml(url)}" alt="${alt}" style="width:100%; height:auto; border-radius:12px; display:block;">
+    </figure>
+  `;
 }
 
 function renderReaderFromItemData(data) {
@@ -235,42 +258,50 @@ function renderReaderFromItemData(data) {
   const metaEl = $('news-meta');
   const readerEl = $('news-reader');
 
-  if (titleEl) titleEl.textContent = data?.title || '';
+  const title = data?.title || '';
+  if (titleEl) titleEl.textContent = title;
+
   if (metaEl) {
     const bits = [
       data?.source?.name || 'The Guardian',
       data?.author ? `by ${data.author}` : null,
       data?.publishedAt ? formatDate(data.publishedAt) : null,
       data?.wordCount ? `${data.wordCount} words` : null,
-    ].filter(Boolean);
-    metaEl.textContent = bits.join(' • ');
+    ]
+      .filter(Boolean)
+      .join(' • ');
+    metaEl.textContent = bits;
   }
 
   if (!readerEl) return;
 
-  // Priority:
-  // 1) contentHtml (if Worker later provides fields.body)
-  // 2) text (bodyText) -> convert to paragraphs
-  // 3) summaryHtml (trailText)
-  let html = '';
-  if (data?.contentHtml) {
-    html = sanitizeHtml(data.contentHtml);
-  } else if (data?.text) {
-    html = textToHtmlParagraphs(data.text);
-  } else if (data?.summaryHtml) {
-    html = sanitizeHtml(data.summaryHtml);
+  // Cover image (always OK even if only bodyText exists)
+  const cover = buildCoverHtml(data?.image, title);
+
+  // Priority for body:
+  // 1) contentHtml (Guardian fields.body) -> sanitize
+  // 2) text (bodyText) -> paragraphs
+  // 3) summaryHtml (trailText) -> sanitize (short)
+  let bodyHtml = '';
+  if (data?.contentHtml && String(data.contentHtml).trim().length > 0) {
+    bodyHtml = sanitizeHtml(data.contentHtml);
+  } else if (data?.text && String(data.text).trim().length > 0) {
+    bodyHtml = textToHtmlParagraphs(data.text);
+  } else if (data?.summaryHtml && String(data.summaryHtml).trim().length > 0) {
+    bodyHtml = sanitizeHtml(data.summaryHtml);
   } else {
-    html = `<div class="empty-state">Không có nội dung.</div>`;
+    bodyHtml = `<div class="empty-state">Không có nội dung.</div>`;
   }
 
-  readerEl.innerHTML = html;
+  readerEl.innerHTML = `${cover}${bodyHtml}`;
 }
 
 async function openItem(guardianId, mode) {
   if (!guardianId) return;
+
   state.selectedId = guardianId;
 
-  // update list selection highlight
+  // Highlight selected
   const list = $('news-list');
   if (list) {
     list.querySelectorAll('.news-item').forEach(el => {
@@ -297,7 +328,7 @@ async function openItem(guardianId, mode) {
 }
 
 async function loadFeed(sectionId) {
-  state.section = sectionId || DEFAULT_SECTION;
+  state.section = (sectionId || DEFAULT_SECTION).trim() || DEFAULT_SECTION;
   state.loadingFeed = true;
 
   setActiveTab(state.section);
@@ -312,11 +343,11 @@ async function loadFeed(sectionId) {
 
     renderList(items);
 
-    // Auto-open first item in split mode for quick view
+    // Auto open first item in split mode
     if (items.length > 0) {
       await openItem(items[0].guardianId, 'split');
     } else {
-      renderReaderFromItemData({ title: '', text: '', summaryHtml: '' });
+      renderReaderFromItemData({ title: 'Chưa có bài', text: '', summaryHtml: '' });
     }
 
     setStatus('');
@@ -351,7 +382,7 @@ function bindNewsUIOnce() {
   const backBtn = $('news-reader-back');
   if (backBtn) backBtn.addEventListener('click', () => setMode('split'));
 
-  // Refresh button
+  // Refresh
   const refreshBtn = $('news-refresh');
   if (refreshBtn) refreshBtn.addEventListener('click', () => loadFeed(state.section));
 
@@ -359,10 +390,11 @@ function bindNewsUIOnce() {
   const moreBtn = $('news-more-toggle');
   if (moreBtn) moreBtn.addEventListener('click', () => toggleMoreTabs());
 
-  // Tabs click (both primary and more tabs should have .news-tab)
+  // Click delegation: tabs + list actions
   const sectionEl = $('news-section');
   if (sectionEl) {
     sectionEl.addEventListener('click', (ev) => {
+      // Tabs
       const tab = ev.target?.closest?.('.news-tab');
       if (tab) {
         const s = tab.getAttribute('data-guardian-section');
@@ -373,22 +405,19 @@ function bindNewsUIOnce() {
         return;
       }
 
-      // List actions
+      // Buttons: quick/read
       const btn = ev.target?.closest?.('button[data-action]');
       if (btn) {
         const action = btn.getAttribute('data-action');
         const gid = btn.getAttribute('data-guardian-id');
         if (!gid) return;
 
-        if (action === 'quick') {
-          openItem(gid, 'split');
-        } else if (action === 'read') {
-          openItem(gid, 'reader');
-        }
+        if (action === 'quick') openItem(gid, 'split');
+        if (action === 'read') openItem(gid, 'reader');
         return;
       }
 
-      // Click on item card also quick-opens
+      // Clicking item card quick-opens
       const itemEl = ev.target?.closest?.('.news-item');
       if (itemEl) {
         const gid = itemEl.getAttribute('data-guardian-id');
@@ -402,36 +431,22 @@ function ensureNewsSectionExists() {
   return !!$('news-section');
 }
 
-/**
- * initNews()
- * Call this once after templates are loaded.
- * It is safe to call multiple times.
- */
 export function initNews() {
-  if (!ensureNewsSectionExists()) {
-    // Template not loaded yet (templateLoader loads async)
-    return;
-  }
+  if (!ensureNewsSectionExists()) return;
 
   bindNewsUIOnce();
 
-  // Initial load only when entering News (if router supports onNavigate)
+  // Use router hook if available
   if (window.onNavigate && typeof window.onNavigate === 'function') {
     window.onNavigate('news', () => {
-      // When entering News, load current section if list is empty
-      if (!state.items || state.items.length === 0) {
-        loadFeed(DEFAULT_SECTION);
-      }
-      // Default mode is split
       setMode('split');
       updateReaderControlsUI();
+      if (!state.items || state.items.length === 0) loadFeed(DEFAULT_SECTION);
     });
   } else {
     // Fallback: load immediately
-    if (!state.items || state.items.length === 0) {
-      loadFeed(DEFAULT_SECTION);
-    }
     setMode('split');
     updateReaderControlsUI();
+    if (!state.items || state.items.length === 0) loadFeed(DEFAULT_SECTION);
   }
 }
