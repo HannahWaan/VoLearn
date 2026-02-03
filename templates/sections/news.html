@@ -15,15 +15,14 @@
       </div>
 
       <div class="card-body">
+
         <!-- Tabs -->
         <div class="news-tabs" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px;">
-          <!-- Primary tabs (World first, Science second) -->
           <button class="btn-secondary news-tab active" type="button" data-guardian-section="world">World</button>
           <button class="btn-secondary news-tab" type="button" data-guardian-section="science">Science</button>
           <button class="btn-secondary news-tab" type="button" data-guardian-section="technology">Technology</button>
           <button class="btn-secondary news-tab" type="button" data-guardian-section="environment">Environment</button>
 
-          <!-- More toggle -->
           <button id="news-more-toggle" class="btn-secondary" type="button" aria-expanded="false">
             More…
           </button>
@@ -44,56 +43,41 @@
           <button class="btn-secondary news-tab" type="button" data-guardian-section="politics">Politics</button>
         </div>
 
-        <!-- Status line -->
-        <div id="news-status" style="opacity:.8; margin:0 0 12px;">
-          Chọn tab để xem tin.
-        </div>
+        <!-- Status -->
+        <div id="news-status" style="opacity:.8; margin:0 0 12px;">Chọn tab để xem tin.</div>
 
-        <!-- Reader toolbar (used in new-tab reader mode) -->
-        <div id="news-reader-toolbar" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px;">
+        <!-- Reader toolbar (only in reader-mode) -->
+        <div id="news-reader-toolbar" class="news-reader-toolbar" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px;">
           <button id="news-reader-back" class="btn-secondary" type="button">
             <i class="fas fa-arrow-left"></i> Quay lại danh sách
           </button>
-        
-          <div style="opacity:.8;">
-            Nguồn: The Guardian
-          </div>
+          <div style="opacity:.8;">Nguồn: The Guardian</div>
         </div>
-        
-        <!-- Reader controls (scoped for News reader only) -->
+
+        <!-- Reader controls -->
         <div id="news-reader-controls" class="news-reader-controls">
-          <button id="news-font-dec" class="btn btn-secondary" type="button" title="Giảm cỡ chữ">A-</button>
-          <button id="news-font-inc" class="btn btn-secondary" type="button" title="Tăng cỡ chữ">A+</button>
-        
-          <button id="news-reader-theme-toggle" class="btn btn-secondary" type="button" title="Đổi Dark/Light (chỉ Reader)">
-            Dark
-          </button>
+          <button id="news-font-dec" class="btn-secondary" type="button" title="Giảm cỡ chữ">A-</button>
+          <button id="news-font-inc" class="btn-secondary" type="button" title="Tăng cỡ chữ">A+</button>
         </div>
-        
-        <!-- Content layout -->
-        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:16px;">
+
+        <!-- Layout -->
+        <div class="news-layout">
           <!-- List -->
-          <div>
-            <div id="news-list" class="list" style="display:flex; flex-direction:column; gap:10px;">
-              <!-- items injected by JS later -->
-            </div>
+          <div class="news-list-col">
+            <div id="news-list" class="list"></div>
           </div>
 
           <!-- Reader -->
-          <div>
+          <div class="news-reader-col">
             <article class="card" style="margin:0;">
               <div class="card-header">
                 <h3 id="news-title" style="margin:0;">Chưa chọn bài</h3>
                 <div id="news-meta" style="opacity:.8; margin-top:6px;"></div>
               </div>
               <div class="card-body">
-                <!-- We will sanitize and inject HTML here later -->
                 <div id="news-reader" class="prose"></div>
-
                 <div id="news-open-source-wrap" style="margin-top:12px; display:none;">
-                  <a id="news-open-source" class="btn-primary" href="#" target="_blank" rel="noopener noreferrer">
-                    Mở bài gốc
-                  </a>
+                  <a id="news-open-source" class="btn-primary" href="#" target="_blank" rel="noopener noreferrer">Mở bài gốc</a>
                 </div>
               </div>
             </article>
