@@ -21,6 +21,7 @@ const pageTitles = {
     'bookshelf': 'Tủ sách',
     'set-view': 'Chi tiết bộ từ',
     'practice': 'Luyện tập',
+    'news': 'Tin Tức',
     'calendar': 'Lịch học',
     'news': 'Tin Tức',
     'settings': 'Cài đặt'
@@ -153,6 +154,7 @@ function closeMobileSidebar() {
 
 window.navigate = navigate;
 window.goBack = goBack;
+
 
 
 
