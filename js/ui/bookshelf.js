@@ -17,7 +17,40 @@ export function initBookshelf() {
     bindBookshelfEvents();
     renderShelves();
     populateSetSelect();
+    
+    // Listen for vocabulary changes
+    window.addEventListener('volearn:wordSaved', () => {
+        renderShelves();
+        updateAllWordsCount();
+    });
+    
+    window.addEventListener('volearn:wordDeleted', () => {
+        renderShelves();
+        updateAllWordsCount();
+    });
+    
+    window.addEventListener('volearn:dataChanged', () => {
+        renderShelves();
+        populateSetSelect();
+        updateAllWordsCount();
+    });
+    
     console.log('✅ Bookshelf initialized');
+}
+
+/* ===== UPDATE ALL WORDS COUNT ===== */
+function updateAllWordsCount() {
+    const countEl = document.querySelector('.set-card.all-words .set-count');
+    if (countEl) {
+        const count = appData.vocabulary?.length || 0;
+        countEl.textContent = `${count} từ`;
+    }
+    
+    // Also update in header if exists
+    const allWordsCountEl = document.getElementById('all-words-count');
+    if (allWordsCountEl) {
+        allWordsCountEl.textContent = appData.vocabulary?.length || 0;
+    }
 }
 
 /* ===== RENDER SHELVES ===== */
