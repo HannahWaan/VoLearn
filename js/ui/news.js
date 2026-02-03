@@ -128,25 +128,20 @@ function toggleMoreTabs() {
 }
 
 function showListView() {
-  const section = $('news-section');
   const listView = $('news-list-view');
   const readerView = $('news-reader-view');
   
   if (listView) listView.style.display = 'flex';
   if (readerView) readerView.style.display = 'none';
-  if (section) section.classList.remove('reader-mode');
 }
 
 function showReaderView() {
-  const section = $('news-section');
   const listView = $('news-list-view');
   const readerView = $('news-reader-view');
   
   if (listView) listView.style.display = 'none';
   if (readerView) readerView.style.display = 'block';
-  if (section) section.classList.add('reader-mode');
   
-  // Scroll to top of reader
   readerView?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
 }
 
@@ -213,12 +208,10 @@ function renderReader(item) {
   const readerEl = $('news-reader');
   const sourceLinkEl = $('news-source-link');
 
-  // Title
   if (titleEl) {
     titleEl.textContent = item?.title || '(Không có tiêu đề)';
   }
 
-  // Meta
   if (metaEl) {
     const ago = timeAgo(item?.publishedAt);
     const author = item?.author || 'The Guardian';
@@ -229,7 +222,6 @@ function renderReader(item) {
     `;
   }
 
-  // Cover image
   if (coverEl) {
     if (item?.image) {
       const caption = item?.imageCaption || '';
@@ -254,14 +246,12 @@ function renderReader(item) {
     }
   }
 
-  // Content
   if (readerEl) {
     let html = '';
     
     if (item?.contentHtml) {
       html = item.contentHtml;
     } else if (item?.text) {
-      // Convert plain text to paragraphs
       html = item.text
         .trim()
         .split(/\n\n+/)
@@ -274,7 +264,6 @@ function renderReader(item) {
     readerEl.innerHTML = sanitizeHtml(html);
   }
 
-  // Source link
   if (sourceLinkEl && item?.url) {
     sourceLinkEl.href = item.url;
   }
@@ -293,7 +282,6 @@ async function openItem(guardianId, originalUrl) {
     const url = `${NEWS_API_BASE}/guardian/item?id=${encodeURIComponent(guardianId)}`;
     const item = await fetchJSON(url);
     
-    // Keep original URL if not returned
     if (!item.url && originalUrl) {
       item.url = originalUrl;
     }
@@ -356,18 +344,15 @@ function bindNewsUI() {
   const root = $('news-section');
   if (!root) return;
 
-  // More tabs toggle (only close when clicking toggle button again)
   $('news-more-toggle')?.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleMoreTabs();
   });
 
-  // Refresh
   $('news-refresh')?.addEventListener('click', () => {
     if (!state.loading) loadFeed(state.section);
   });
 
-  // Tab clicks
   root.querySelectorAll('.news-tab[data-guardian-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const section = btn.dataset.guardianSection;
@@ -377,19 +362,11 @@ function bindNewsUI() {
     });
   });
 
-  // Back button (toolbar)
   $('news-reader-back')?.addEventListener('click', () => {
     showListView();
     setStatus(`${state.items.length} bài viết`);
   });
 
-  // Floating back button
-  $('news-floating-back')?.addEventListener('click', () => {
-    showListView();
-    setStatus(`${state.items.length} bài viết`);
-  });
-
-  // Pagination
   $('news-prev')?.addEventListener('click', () => {
     if (state.currentPage > 1) {
       state.currentPage--;
@@ -406,7 +383,6 @@ function bindNewsUI() {
     }
   });
 
-  // Font size controls
   let fontSize = parseInt(localStorage.getItem(FONT_KEY) || '18', 10);
   if (!Number.isFinite(fontSize) || fontSize < 14 || fontSize > 28) {
     fontSize = 18;
@@ -429,7 +405,6 @@ function bindNewsUI() {
     applyFont();
   });
 
-  // Apply saved font size
   applyFont();
 }
 
@@ -440,7 +415,6 @@ export function initNews() {
     bindNewsUI();
     showListView();
     
-    // Load default section if no items loaded yet
     if (state.items.length === 0) {
       loadFeed(DEFAULT_SECTION);
     }
