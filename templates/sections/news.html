@@ -1,102 +1,125 @@
-<section id="news-section" class="section">
-  <div class="container">
-    <div class="card">
-      <div class="card-header">
-        <div class="news-header-row">
-          <div>
-            <h2>Tin Tức</h2>
-            <p class="news-subtitle">Đọc báo tiếng Anh • The Guardian</p>
-          </div>
-          <button id="news-refresh" class="btn-icon" type="button" title="Làm mới">
-            <i class="fas fa-sync-alt"></i>
-          </button>
-        </div>
-      </div>
+<section id="news-section" class="content-section">
+  <!-- Header -->
+  <div class="news-header">
+    <div class="news-header-text">
+      <h2>Tin Tức</h2>
+      <p class="news-subtitle">Đọc báo tiếng Anh • The Guardian</p>
+    </div>
+    <button id="news-refresh" class="news-refresh-btn" title="Làm mới">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+  </div>
 
-      <div class="card-body">
-
-        <!-- Tabs chính -->
-        <div class="news-tabs-container">
-          <div class="news-tabs-main">
-            <button class="news-tab active" data-guardian-section="world">
-              <i class="fas fa-globe"></i> World
-            </button>
-            <button class="news-tab" data-guardian-section="science">
-              <i class="fas fa-flask"></i> Science
-            </button>
-            <button class="news-tab" data-guardian-section="technology">
-              <i class="fas fa-microchip"></i> Tech
-            </button>
-            <button class="news-tab" data-guardian-section="environment">
-              <i class="fas fa-leaf"></i> Environment
-            </button>
-            <button class="news-tab" data-guardian-section="business">
-              <i class="fas fa-briefcase"></i> Business
-            </button>
-          </div>
-          
-          <button id="news-more-toggle" class="news-more-btn" type="button">
-            <i class="fas fa-ellipsis-h"></i>
-          </button>
-        </div>
-
-        <!-- Tabs phụ (ẩn mặc định) -->
-        <div id="news-more-tabs" class="news-tabs-extra">
-          <button class="news-tab" data-guardian-section="sport">Sport</button>
-          <button class="news-tab" data-guardian-section="culture">Culture</button>
-          <button class="news-tab" data-guardian-section="opinion">Opinion</button>
-          <button class="news-tab" data-guardian-section="lifeandstyle">Life & Style</button>
-          <button class="news-tab" data-guardian-section="education">Education</button>
-          <button class="news-tab" data-guardian-section="music">Music</button>
-          <button class="news-tab" data-guardian-section="film">Film</button>
-          <button class="news-tab" data-guardian-section="books">Books</button>
-          <button class="news-tab" data-guardian-section="politics">Politics</button>
-        </div>
-
-        <!-- Status -->
-        <div id="news-status" class="news-status">Chọn chủ đề để xem tin.</div>
-
-        <!-- ========== CHẾ ĐỘ DANH SÁCH (mặc định) ========== -->
-        <div id="news-list-view" class="news-list-view">
-          <div id="news-list" class="news-list"></div>
-          
-          <!-- Pagination -->
-          <div id="news-pagination" class="news-pagination">
-            <button id="news-prev" class="btn-page" disabled>
-              <i class="fas fa-chevron-left"></i> Trước
-            </button>
-            <span id="news-page-info" class="news-page-info">Trang 1</span>
-            <button id="news-next" class="btn-page">
-              Sau <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- ========== CHẾ ĐỘ ĐỌC BÀI (ẩn mặc định) ========== -->
-        <div id="news-reader-view" class="news-reader-view" style="display:none;">
-          <!-- Toolbar -->
-          <div class="news-reader-toolbar">
-            <button id="news-reader-back" class="btn-back">
-              <i class="fas fa-arrow-left"></i> Quay lại
-            </button>
-            <div class="news-reader-controls">
-              <button id="news-font-dec" class="btn-font" title="Giảm cỡ chữ">A−</button>
-              <button id="news-font-inc" class="btn-font" title="Tăng cỡ chữ">A+</button>
-            </div>
-          </div>
-
-          <!-- Article -->
-          <article class="news-article">
-            <header class="news-article-header">
-              <h1 id="news-title">Tiêu đề bài viết</h1>
-              <div id="news-meta" class="news-article-meta"></div>
-              <div id="news-cover" class="news-cover"></div>
-            </header>
-            <div id="news-reader" class="news-reader-content"></div>
-          </article>
-        </div>
-
-      </div>
+  <!-- Tabs -->
+  <div class="news-tabs-container">
+    <div class="news-tabs-main">
+      <button class="news-tab active" data-guardian-section="world">
+        <i class="fas fa-globe"></i> World
+      </button>
+      <button class="news-tab" data-guardian-section="science">
+        <i class="fas fa-flask"></i> Science
+      </button>
+      <button class="news-tab" data-guardian-section="technology">
+        <i class="fas fa-microchip"></i> Tech
+      </button>
+      <button class="news-tab" data-guardian-section="environment">
+        <i class="fas fa-leaf"></i> Environment
+      </button>
+      <button class="news-tab" data-guardian-section="business">
+        <i class="fas fa-briefcase"></i> Business
+      </button>
+      <button class="news-tab news-more-toggle" id="news-more-toggle" title="Thêm chủ đề">
+        <i class="fas fa-ellipsis-h"></i>
+      </button>
+    </div>
+    
+    <div class="news-tabs-extra" id="news-more-tabs">
+      <button class="news-tab" data-guardian-section="sport">
+        <i class="fas fa-futbol"></i> Sport
+      </button>
+      <button class="news-tab" data-guardian-section="culture">
+        <i class="fas fa-theater-masks"></i> Culture
+      </button>
+      <button class="news-tab" data-guardian-section="commentisfree">
+        <i class="fas fa-comment"></i> Opinion
+      </button>
+      <button class="news-tab" data-guardian-section="lifeandstyle">
+        <i class="fas fa-heart"></i> Life & Style
+      </button>
+      <button class="news-tab" data-guardian-section="education">
+        <i class="fas fa-graduation-cap"></i> Education
+      </button>
+      <button class="news-tab" data-guardian-section="music">
+        <i class="fas fa-music"></i> Music
+      </button>
+      <button class="news-tab" data-guardian-section="film">
+        <i class="fas fa-film"></i> Film
+      </button>
+      <button class="news-tab" data-guardian-section="books">
+        <i class="fas fa-book"></i> Books
+      </button>
+      <button class="news-tab" data-guardian-section="politics">
+        <i class="fas fa-landmark"></i> Politics
+      </button>
     </div>
   </div>
+
+  <!-- Status -->
+  <div class="news-status" id="news-status">Chọn chủ đề để xem tin.</div>
+
+  <!-- List View -->
+  <div class="news-list-view" id="news-list-view">
+    <div class="news-list" id="news-list">
+      <!-- Cards will be rendered here -->
+    </div>
+    
+    <!-- Pagination -->
+    <div class="news-pagination">
+      <button id="news-prev" class="news-page-btn" disabled>
+        <i class="fas fa-chevron-left"></i> Trước
+      </button>
+      <span id="news-page-info">Trang 1</span>
+      <button id="news-next" class="news-page-btn">
+        Sau <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Reader View -->
+  <div class="news-reader-view" id="news-reader-view" style="display: none;">
+    <!-- Reader Toolbar -->
+    <div class="news-reader-toolbar">
+      <button id="news-reader-back" class="news-back-btn">
+        <i class="fas fa-arrow-left"></i> Quay lại
+      </button>
+      <div class="news-font-controls">
+        <button id="news-font-dec" title="Giảm cỡ chữ">A−</button>
+        <button id="news-font-inc" title="Tăng cỡ chữ">A+</button>
+      </div>
+    </div>
+
+    <!-- Article -->
+    <article class="news-article">
+      <h1 id="news-title">Tiêu đề bài viết</h1>
+      <div class="news-article-meta" id="news-meta">
+        <!-- Time ago, author -->
+      </div>
+      <div class="news-cover" id="news-cover">
+        <!-- Cover image with caption -->
+      </div>
+      <div class="news-reader-content" id="news-reader">
+        <!-- Article content -->
+      </div>
+      <div class="news-article-footer">
+        <a id="news-source-link" href="#" target="_blank" rel="noopener noreferrer" class="news-source-btn">
+          <i class="fas fa-external-link-alt"></i> Đọc trên The Guardian
+        </a>
+      </div>
+    </article>
+  </div>
+
+  <!-- Floating back button -->
+  <button class="news-floating-back" id="news-floating-back" title="Quay lại danh sách">
+    <i class="fas fa-arrow-left"></i>
+  </button>
 </section>
