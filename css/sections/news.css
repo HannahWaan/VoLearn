@@ -624,3 +624,44 @@
   margin-top: 4px;
   opacity: 0.8;
 }
+
+/* Floating back button */
+.news-floating-back {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--news-accent, #c70000);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1000;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.news-floating-back:hover {
+  transform: scale(1.1);
+  background: #a00;
+}
+
+/* Show floating button only in reader view */
+#news-section.reader-mode .news-floating-back {
+  display: flex;
+}
+
+/* Mobile adjustment */
+@media (max-width: 640px) {
+  .news-floating-back {
+    bottom: 16px;
+    right: 16px;
+    width: 46px;
+    height: 46px;
+  }
+}
