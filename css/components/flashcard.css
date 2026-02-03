@@ -1,17 +1,14 @@
 /* =============================================
    FLASHCARD UI - VoLearn
-   Chỉ chứa CSS cho Flashcard mode
-   FIX: practice-area was capped at 900px -> uncap to 1100px for Flashcard
    ============================================= */
 
-/* ===== UNCAP PRACTICE AREA WIDTH (root cause: max-width 900px) ===== */
+/* ===== UNCAP PRACTICE AREA WIDTH ===== */
 #practice-section.in-session #practice-area{
     width: 100%;
-    max-width: 1100px;   /* allow 1100px flashcard */
+    max-width: 1100px;
     margin: 0 auto;
 }
 
-/* keep content full inside */
 #practice-section.in-session #practice-area #practice-content{
     width: 100%;
     max-width: none;
@@ -23,23 +20,22 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     width: 100%;
-    max-width: 1100px;   /* match card */
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 12px;       /* smaller padding so card feels larger */
+    padding: 12px;
 }
 
-/* ===== FLASHCARD CARD (exact size) ===== */
+/* ===== FLASHCARD CARD ===== */
 #practice-section.in-session #practice-area #practice-content .fc-card {
-    width: 1100px;       /* exact px */
-    max-width: 100%;     /* responsive: shrink on smaller screens */
-    height: 380px;       /* as requested */
+    width: 1100px;
+    max-width: 100%;
+    height: 380px;
     background: transparent;
     cursor: pointer;
     perspective: 1200px;
     position: relative;
-    margin: 0 auto 8px;  /* reduce gap to buttons */
+    margin: 0 auto 8px;
     border-radius: 20px;
 }
 
@@ -51,12 +47,11 @@
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* JS adds .flipped on #flashcard (id) */
 #practice-section.in-session #practice-area #practice-content #flashcard.flipped .fc-card-inner {
     transform: rotateY(180deg);
 }
 
-/* ===== CARD FACES ===== */
+/* ===== CARD FACES - CÓ SCROLL ===== */
 #practice-section.in-session #practice-area #practice-content .fc-card-front,
 #practice-section.in-session #practice-area #practice-content .fc-card-back {
     position: absolute;
@@ -64,16 +59,45 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     border-radius: 20px;
-
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-
+    justify-content: flex-start;
     padding: 32px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     text-align: center;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+#practice-section.in-session #practice-area #practice-content .fc-card-front::-webkit-scrollbar,
+#practice-section.in-session #practice-area #practice-content .fc-card-back::-webkit-scrollbar {
+    width: 6px;
+}
+
+#practice-section.in-session #practice-area #practice-content .fc-card-front::-webkit-scrollbar-track,
+#practice-section.in-session #practice-area #practice-content .fc-card-back::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+
+#practice-section.in-session #practice-area #practice-content .fc-card-front::-webkit-scrollbar-thumb,
+#practice-section.in-session #practice-area #practice-content .fc-card-back::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+}
+
+#practice-section.in-session #practice-area #practice-content .fc-card-front::-webkit-scrollbar-thumb:hover,
+#practice-section.in-session #practice-area #practice-content .fc-card-back::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+/* Firefox scrollbar */
+#practice-section.in-session #practice-area #practice-content .fc-card-front,
+#practice-section.in-session #practice-area #practice-content .fc-card-back {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) rgba(255,255,255,0.1);
 }
 
 /* Front face - gradient pink */
@@ -102,6 +126,15 @@
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* ===== CARD CONTENT - GENERAL ===== */
+#practice-section.in-session #practice-area #practice-content .fc-card-front .card-line,
+#practice-section.in-session #practice-area #practice-content .fc-card-back .card-line {
+    width: 100%;
+    margin: 6px 0;
+    line-height: 1.6;
+    flex-shrink: 0;
+}
+
 /* ===== CARD CONTENT - FRONT ===== */
 #practice-section.in-session #practice-area #practice-content .fc-card-front .card-line.card-word {
     font-size: 2.4rem;
@@ -125,11 +158,12 @@
     background: rgba(255, 255, 255, 0.15);
     padding: 6px 14px;
     border-radius: 12px;
+    display: inline-block;
 }
 
 /* ===== CARD CONTENT - BACK ===== */
 #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     line-height: 1.7;
     text-align: center;
 }
@@ -140,30 +174,44 @@
 
 #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-defVi,
 #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-defEn {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     color: var(--text-primary, #fff);
 }
 
 #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-example {
-    font-size: 1.1rem;
+    font-size: 1rem;
     opacity: 0.85;
     font-style: italic;
-    padding: 14px 20px;
+    padding: 12px 16px;
     background: rgba(255, 107, 157, 0.1);
     border-radius: 12px;
     border-left: 3px solid var(--primary-color, #ff6b9d);
-    line-height: 1.7;
+    line-height: 1.6;
+    text-align: left;
 }
 
 #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-pos {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     background: rgba(255, 107, 157, 0.15);
     color: var(--primary-color, #ff6b9d);
+    padding: 6px 14px;
+    border-radius: 12px;
+    display: inline-block;
+    font-size: 0.9rem;
 }
 
-/* ===== SRS BUTTONS (Quên, Khó, Nhớ, Dễ) ===== */
+#practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-synonyms,
+#practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-antonyms {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+
+/* ===== SRS BUTTONS ===== */
 #practice-section.in-session #practice-area #practice-content .flashcard-controls {
     display: flex;
     justify-content: center;
@@ -219,7 +267,7 @@
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* ===== FLASHCARD NAVIGATION (Trước, Loa, Bỏ qua) ===== */
+/* ===== FLASHCARD NAVIGATION ===== */
 #practice-section.in-session #practice-area #practice-content .flashcard-nav {
     display: flex;
     justify-content: center;
@@ -294,8 +342,13 @@
 
     #practice-section.in-session #practice-area #practice-content .fc-card {
         width: 100%;
-        height: 300px;
+        height: 320px;
         max-width: 100%;
+    }
+
+    #practice-section.in-session #practice-area #practice-content .fc-card-front,
+    #practice-section.in-session #practice-area #practice-content .fc-card-back {
+        padding: 24px;
     }
 
     #practice-section.in-session #practice-area #practice-content .flashcard-controls {
@@ -333,7 +386,12 @@
 
 @media (max-width: 480px) {
     #practice-section.in-session #practice-area #practice-content .fc-card {
-        height: 260px;
+        height: 280px;
+    }
+
+    #practice-section.in-session #practice-area #practice-content .fc-card-front,
+    #practice-section.in-session #practice-area #practice-content .fc-card-back {
+        padding: 20px;
     }
 
     #practice-section.in-session #practice-area #practice-content .fc-card-front .card-line.card-word {
@@ -342,7 +400,12 @@
 
     #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-defVi,
     #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-defEn {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+    }
+
+    #practice-section.in-session #practice-area #practice-content .fc-card-back .card-line.card-example {
+        font-size: 0.9rem;
+        padding: 10px 12px;
     }
 
     #practice-section.in-session #practice-area #practice-content .flashcard-controls .btn-srs {
