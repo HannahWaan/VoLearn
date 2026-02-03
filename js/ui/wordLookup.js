@@ -43,6 +43,8 @@ function createPopup() {
     
     // Prevent popup clicks from closing it
     popupEl.addEventListener('click', (e) => e.stopPropagation());
+    popupEl.addEventListener('mouseup', (e) => e.stopPropagation());
+    popupEl.addEventListener('dblclick', (e) => e.stopPropagation());
     
     return popupEl;
 }
@@ -106,7 +108,10 @@ async function fetchDefinition(word) {
     const addBtn = popupEl.querySelector('.wlp-add-btn');
     
     try {
-        const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`;
+        // Handle phrases - take first word for lookup
+        const lookupWord = word.split(/\s+/)[0];
+        
+        const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`;
         const resp = await fetch(url);
         
         if (!resp.ok) {
@@ -124,6 +129,10 @@ async function fetchDefinition(word) {
         
         const entry = data[0];
         cachedData = entry;
+        
+        // Update word display to actual looked up word
+        popupEl.querySelector('.wlp-word').textContent = entry.word || lookupWord;
+        currentWord = entry.word || lookupWord;
         
         // Phonetic - try multiple sources
         let phonetic = entry.phonetic || '';
@@ -270,28 +279,16 @@ function escapeHtml(str) {
 }
 
 /* ===== GET SELECTED TEXT ===== */
-function getSelectedWord(allowPhrase = false) {
+function getSelectedWord() {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
     
     let text = selection.toString().trim();
     if (!text) return null;
     
-    // For phrases (select to translate)
-    if (allowPhrase) {
-        // Allow spaces for phrases, max 5 words
-        const wordCount = text.split(/\s+/).length;
-        if (wordCount > 5) return null;
-        if (text.length > 100) return null;
-        // Basic validation - letters, spaces, hyphens, apostrophes
-        if (!/^[a-zA-Z\s'-]+$/.test(text)) return null;
-        return text;
-    }
-    
-    // For single words (double-click)
-    // Only allow single word with hyphens/apostrophes
-    if (!/^[a-zA-Z'-]+$/.test(text)) return null;
-    if (text.length < 2 || text.length > 30) return null;
+    // Basic validation - letters, spaces, hyphens, apostrophes
+    if (!/^[a-zA-Z\s'-]+$/.test(text)) return null;
+    if (text.length < 2 || text.length > 50) return null;
     
     return text;
 }
@@ -300,21 +297,33 @@ function getSelectedWord(allowPhrase = false) {
 function isInNewsContent(element) {
     if (!element) return false;
     
-    const newsSection = element.closest('#news-section');
-    if (!newsSection) return false;
+    // Must be in news section
+    const newsSection = document.getElementById('news-section');
+    if (!newsSection || !newsSection.contains(element)) return false;
     
-    // Check if in reader content areas
-    const validAreas = [
-        '.news-reader-content',
-        '.news-trail-text',
-        '#news-reader',
-        '#news-trail-text',
-        '.news-card-title',
-        '.news-card-summary'
+    // Check if in valid content areas (using IDs from HTML)
+    const validSelectors = [
+        '#news-reader',           // Main article content
+        '#news-trail-text',       // Article summary/trail
+        '#news-title',            // Article title
+        '.news-card-title',       // Card titles in list
+        '.news-card-summary',     // Card summaries in list
+        '.news-article'           // Whole article container
     ];
     
-    for (const selector of validAreas) {
-        if (element.closest(selector)) return true;
+    for (const selector of validSelectors) {
+        const container = document.querySelector(selector);
+        if (container && container.contains(element)) {
+            return true;
+        }
+    }
+    
+    // Also check by closest
+    if (element.closest('#news-reader') || 
+        element.closest('#news-trail-text') ||
+        element.closest('.news-article') ||
+        element.closest('.news-card')) {
+        return true;
     }
     
     return false;
@@ -323,28 +332,46 @@ function isInNewsContent(element) {
 /* ===== INIT ===== */
 export function initWordLookup() {
     // Prevent double initialization
-    if (isInitialized) return;
+    if (isInitialized) {
+        console.log('Word Lookup already initialized');
+        return;
+    }
     isInitialized = true;
     
-    // Double-click to translate (single word)
+    console.log('Initializing Word Lookup...');
+    
+    // Double-click to translate
     document.addEventListener('dblclick', (e) => {
-        if (!isInNewsContent(e.target)) return;
+        console.log('Double click detected', e.target);
         
-        const word = getSelectedWord(false);
+        // Check if inside popup
+        if (popupEl && popupEl.contains(e.target)) {
+            console.log('Click inside popup, ignoring');
+            return;
+        }
+        
+        // Check if in news content
+        if (!isInNewsContent(e.target)) {
+            console.log('Not in news content');
+            return;
+        }
+        
+        const word = getSelectedWord();
+        console.log('Selected word:', word);
+        
         if (!word) return;
         
         e.preventDefault();
         e.stopPropagation();
         showPopup(e.clientX, e.clientY, word);
-    });
+    }, true); // Use capture phase
     
-    // Select text + wait to translate (phrase support)
+    // Select text and show translate button after delay
     let selectionTimeout = null;
     
     document.addEventListener('mouseup', (e) => {
         // Ignore if clicking inside popup
         if (popupEl && popupEl.contains(e.target)) return;
-        if (!isInNewsContent(e.target)) return;
         
         // Clear previous timeout
         if (selectionTimeout) {
@@ -352,18 +379,21 @@ export function initWordLookup() {
             selectionTimeout = null;
         }
         
-        // Wait a bit for selection to stabilize
+        // Check if in news content
+        if (!isInNewsContent(e.target)) return;
+        
+        // Wait for selection to stabilize
         selectionTimeout = setTimeout(() => {
-            const text = getSelectedWord(true);
+            const text = getSelectedWord();
             if (!text) return;
             
-            // Don't show if it's just a single word (handled by dblclick)
-            // Show for phrases or if user explicitly selected
+            // Only for multi-word selections (single words handled by dblclick)
             const wordCount = text.split(/\s+/).length;
-            if (wordCount === 1) return; // Let dblclick handle single words
+            if (wordCount <= 1) return;
             
+            console.log('Selected phrase:', text);
             showPopup(e.clientX, e.clientY, text);
-        }, 500); // 500ms delay for select-to-translate
+        }, 600);
     });
     
     // Click outside to close popup
