@@ -186,7 +186,6 @@ function cleanContentHtml(html) {
   
   let h = html;
   
-  // 1. Remove paragraphs containing unwanted text
   const removePatterns = [
     'Sign up:',
     'Sign up for',
@@ -210,8 +209,6 @@ function cleanContentHtml(html) {
     while (h.toLowerCase().includes(lowerPattern) && safety < 20) {
       safety++;
       const idx = h.toLowerCase().indexOf(lowerPattern);
-      
-      // Find the paragraph containing this text
       let pStart = h.lastIndexOf('<p', idx);
       let pEnd = h.indexOf('</p>', idx);
       
@@ -223,27 +220,24 @@ function cleanContentHtml(html) {
     }
   }
   
-  // 2. Remove timestamp patterns like "8.31am GMT" or "9.27am GMT"
-  h = h.replace(/<p>\s*\d{1,2}\.\d{2}(am|pm)\s*(GMT|BST|EST|PST)[^<]*<\/p>/gi, '');
-  h = h.replace(/<p>\s*\d{1,2}:\d{2}\s*(am|pm)?\s*(GMT|BST|EST|PST)?[^<]*<\/p>/gi, '');
+  // Remove timestamp patterns like "8.31am GMT", "9.27am GMT", "14:30 BST"
+  h = h.replace(/<p>\s*\d{1,2}\.\d{2}\s*(am|pm)\s*(GMT|BST|EST|PST|UTC)?[^<]*<\/p>/gi, '');
+  h = h.replace(/<p>\s*\d{1,2}:\d{2}\s*(am|pm)?\s*(GMT|BST|EST|PST|UTC)?[^<]*<\/p>/gi, '');
+  h = h.replace(/<p>\s*Updated\s+at\s+\d{1,2}[.:]\d{2}\s*(am|pm)?\s*(GMT|BST|EST|PST|UTC)?[^<]*<\/p>/gi, '');
   
-  // 3. Remove markdown-style links [text](url) - keep just the text
+  // Remove standalone timestamp lines (not in <p> tags)
+  h = h.replace(/\d{1,2}\.\d{2}\s*(am|pm)\s*(GMT|BST|EST|PST|UTC)\s*(<br>|<\/p>)/gi, '$3');
+  h = h.replace(/\d{1,2}:\d{2}\s*(am|pm)?\s*(GMT|BST|EST|PST|UTC)\s*(<br>|<\/p>)/gi, '$3');
+  
+  // Clean markdown links
   h = h.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // 4. Remove standalone URL paragraphs
+  // Remove standalone URLs
   h = h.replace(/<p>\s*https?:\/\/[^<]*<\/p>/gi, '');
   
-  // 5. Remove link tags pointing to guardian internal URLs but keep the text
-  h = h.replace(/<a[^>]*href="[^"]*guardianapis\.com[^"]*"[^>]*>([^<]*)<\/a>/gi, '$1');
-  h = h.replace(/<a[^>]*href="[^"]*theguardian\.com[^"]*"[^>]*>([^<]*)<\/a>/gi, '$1');
-  
-  // 6. Remove empty paragraphs
+  // Remove empty paragraphs
   h = h.replace(/<p>\s*<\/p>/gi, '');
   h = h.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '');
-  
-  // 7. Clean up excessive whitespace
-  h = h.replace(/\n\s*\n/g, '\n');
-  h = h.replace(/(<br\s*\/?>\s*){3,}/gi, '<br><br>');
   
   return h.trim();
 }
