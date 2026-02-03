@@ -22,7 +22,6 @@ import { getRandomFieldValue, getRandomMeaningFields } from './meaningSelector.j
 let options = [];
 let selectedOption = null;
 let answered = false;
-let currentMeaningIndex = 0;
 
 // snapshot settings for this run (don’t rely on getPracticeState().settings)
 let quizSettings = {};
@@ -32,6 +31,8 @@ let autoNextTimer = null;
 let autoNextInterval = null;
 
 let questionTimer = null;
+let currentMeaningIndex = 0;
+
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
@@ -97,6 +98,14 @@ function showCurrentQuestion() {
   
   answered = false;
   selectedOption = null;
+
+  // === Random chọn 1 meaning cho câu hỏi này ===
+  const meanings = word.meanings || [];
+  if (meanings.length > 1) {
+    currentMeaningIndex = Math.floor(Math.random() * meanings.length);
+  } else {
+    currentMeaningIndex = 0;
+  }
 
   const qIds = Array.isArray(quizSettings.questionFieldIds) && quizSettings.questionFieldIds.length
     ? quizSettings.questionFieldIds
@@ -431,7 +440,8 @@ export function restartQuiz() {
 
 /* ===== WORD DATA HELPERS ===== */
 function getPrimaryMeaningObj(word) {
-  return (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
+  const meanings = word?.meanings || [];
+  return meanings[currentMeaningIndex] || meanings[0] || {};
 }
 
 function getPhoneticText(word) {
