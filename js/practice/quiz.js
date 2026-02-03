@@ -16,14 +16,13 @@ import {
 
 import { speak } from '../utils/speech.js';
 import { showToast } from '../ui/toast.js';
-import { getRandomFieldValue, getRandomMeaningFields } from './meaningSelector.js';
 
 /* ===== STATE ===== */
 let options = [];
 let selectedOption = null;
 let answered = false;
 
-// snapshot settings for this run (don’t rely on getPracticeState().settings)
+// snapshot settings for this run (don't rely on getPracticeState().settings)
 let quizSettings = {};
 
 // timers
@@ -31,8 +30,9 @@ let autoNextTimer = null;
 let autoNextInterval = null;
 
 let questionTimer = null;
-let currentMeaningIndex = 0;
 
+// Random meaning index cho mỗi câu hỏi
+let currentMeaningIndex = 0;
 
 /* ===== START QUIZ ===== */
 export function startQuiz(scope, settings = {}) {
@@ -89,20 +89,13 @@ function showCurrentQuestion() {
     return;
   }
 
-  const meanings = word.meanings || [];
-  if (meanings.length > 1) {
-    currentMeaningIndex = Math.floor(Math.random() * meanings.length);
-  } else {
-    currentMeaningIndex = 0;
-  }
-  
   answered = false;
   selectedOption = null;
 
   // === Random chọn 1 meaning cho câu hỏi này ===
-  const meanings = word.meanings || [];
-  if (meanings.length > 1) {
-    currentMeaningIndex = Math.floor(Math.random() * meanings.length);
+  const wordMeanings = word.meanings || [];
+  if (wordMeanings.length > 1) {
+    currentMeaningIndex = Math.floor(Math.random() * wordMeanings.length);
   } else {
     currentMeaningIndex = 0;
   }
@@ -195,7 +188,7 @@ function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
 
   const wrongPool = allWords
     .filter(w => w && w.id !== correctWord.id)
-    .map(w => getFieldText(w, answerFieldId))
+    .map(w => getFieldTextFromRandomMeaning(w, answerFieldId))
     .filter(t => t && t !== correctText);
 
   const wrongUnique = Array.from(new Set(wrongPool));
@@ -212,7 +205,7 @@ function generateOptionsByField(correctWord, answerFieldId, optionCount = 4) {
 
   return shuffleArray(allOptions);
 }
-    
+
 /* ===== SELECT OPTION ===== */
 export function selectQuizOption(index) {
   if (answered) return;
@@ -400,21 +393,21 @@ function showQuizResults() {
         </div>
       </div>
 
-                  <div class="results-actions">
-                    ${hasWrongWords ? `
-                      <button class="btn-secondary" type="button" data-practice-action="quiz-review-wrong">
-                        <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
-                      </button>
-                    ` : ''}
-            
-                    <button class="btn-primary" type="button" data-practice-action="quiz-restart">
-                      <i class="fas fa-play"></i> Làm lại
-                    </button>
-            
-                    <button class="btn-secondary" type="button" data-practice-action="practice-exit">
-                      <i class="fas fa-arrow-left"></i> Quay lại luyện tập
-                    </button>
-                  </div>
+      <div class="results-actions">
+        ${hasWrongWords ? `
+          <button class="btn-secondary" type="button" data-practice-action="quiz-review-wrong">
+            <i class="fas fa-redo"></i> Ôn lại từ sai (${wrongWords.length})
+          </button>
+        ` : ''}
+
+        <button class="btn-primary" type="button" data-practice-action="quiz-restart">
+          <i class="fas fa-play"></i> Làm lại
+        </button>
+
+        <button class="btn-secondary" type="button" data-practice-action="practice-exit">
+          <i class="fas fa-arrow-left"></i> Quay lại luyện tập
+        </button>
+      </div>
     </div>
   `;
 
@@ -429,7 +422,7 @@ export function exitQuiz() {
   clearAutoNextTimer();
   clearQuestionTimer();
   resetPractice();
-  hidePracticeArea(); // back to practice modes screen
+  hidePracticeArea();
 }
 
 export function restartQuiz() {
@@ -464,10 +457,44 @@ function getFieldLabel(fieldId) {
   return map[fieldId] || 'Nội dung';
 }
 
+/**
+ * Lấy field text từ meaning đã được random (currentMeaningIndex)
+ * Dùng cho câu hỏi và đáp án đúng
+ */
 function getFieldText(word, fieldId) {
   const meanings = word?.meanings || [];
   const m = meanings[currentMeaningIndex] || meanings[0] || {};
-  
+
+  const normalize = (v) => {
+    if (v == null) return '';
+    if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
+    return String(v).trim();
+  };
+
+  switch (fieldId) {
+    case 1: return normalize(word?.word);
+    case 2: return normalize(m.phoneticUS || m.phoneticUK || word?.phonetic);
+    case 3: return normalize(m.pos);
+    case 4: return normalize(m.defEn);
+    case 5: return normalize(m.defVi);
+    case 6: return normalize(m.example);
+    case 7: return normalize(m.synonyms);
+    case 8: return normalize(m.antonyms);
+    default: return '';
+  }
+}
+
+/**
+ * Lấy field text từ random meaning của 1 word khác
+ * Dùng cho các đáp án sai (wrong options)
+ */
+function getFieldTextFromRandomMeaning(word, fieldId) {
+  const meanings = word?.meanings || [];
+  const randomIdx = meanings.length > 1 
+    ? Math.floor(Math.random() * meanings.length) 
+    : 0;
+  const m = meanings[randomIdx] || meanings[0] || {};
+
   const normalize = (v) => {
     if (v == null) return '';
     if (Array.isArray(v)) return v.filter(Boolean).join(', ').trim();
@@ -506,7 +533,7 @@ function pickAnswerFieldWithFallback(word, qFieldId, answerFieldIds) {
   aId = firstNonEmptyFieldId(word, answerFieldIds);
   if (aId) return aId;
 
-  return firstNonEmptyFieldId(word, [5, 4, 1]); // defVi -> defEn -> word
+  return firstNonEmptyFieldId(word, [5, 4, 1]);
 }
 
 /* ===== UTILITIES ===== */
