@@ -7,7 +7,7 @@ export default {
     }
 
     if (url.pathname === "/" || url.pathname === "") {
-      return json({ ok: true, service: "volearn-guardian-reader", version: "2.3" }, request);
+      return json({ ok: true, service: "volearn-guardian-reader", version: "2.4" }, request);
     }
 
     if (url.pathname === "/debug/guardian") {
@@ -56,7 +56,7 @@ async function fetchWithTimeout(url, timeout = 8000) {
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "VoLearnReader/2.3" }
+      headers: { "User-Agent": "VoLearnReader/2.4" }
     });
     clearTimeout(id);
     return res;
@@ -112,7 +112,6 @@ async function handleGuardianItem(url, env, ctx, request) {
   const id = url.searchParams.get("id");
   if (!id) return json({ error: "Missing id parameter" }, request, 400);
 
-  // KHÔNG encode id vì nó chứa dấu / cần giữ nguyên
   const apiUrl = `https://content.guardianapis.com/${id}?` +
     `show-fields=trailText,body,bodyText,thumbnail,byline,wordcount` +
     `&show-elements=image&api-key=${key}`;
@@ -125,7 +124,7 @@ async function handleGuardianItem(url, env, ctx, request) {
     const content = data?.response?.content;
     if (!content) return json({ error: "Content not found" }, request, 404);
 
-    // Extract images
+    // Extract ALL images from elements
     const elements = content.elements || [];
     const images = [];
     
@@ -144,9 +143,9 @@ async function handleGuardianItem(url, env, ctx, request) {
       }
     }
 
-    // Clean HTML
+    // Clean and enhance HTML
     let bodyHtml = content.fields?.body || "";
-    bodyHtml = cleanContentHtml(bodyHtml);
+    bodyHtml = cleanAndEnhanceHtml(bodyHtml, images);
 
     const item = {
       guardianId: content.id || "",
@@ -171,35 +170,136 @@ async function handleGuardianItem(url, env, ctx, request) {
   }
 }
 
-// ========== Clean HTML ==========
-function cleanContentHtml(html) {
+// ========== Clean and Enhance HTML ==========
+function cleanAndEnhanceHtml(html, images) {
   if (!html) return "";
   
   let h = html;
   
-  // Remove sign-up paragraphs
-  const patterns = ['Sign up:', 'Sign up for', 'Newsletter', 'Breaking News email', 'AU Breaking News'];
+  // 1. Remove unwanted paragraphs containing these phrases
+  const removePatterns = [
+    'Sign up:',
+    'Sign up for',
+    'Newsletter',
+    'Breaking News email',
+    'AU Breaking News',
+    'Tribute post from',
+    'Interactive',
+    'Related:',
+    'Skip past newsletter promotion'
+  ];
   
-  for (const pattern of patterns) {
-    let idx = h.toLowerCase().indexOf(pattern.toLowerCase());
-    while (idx !== -1) {
-      const before = h.lastIndexOf('<p', idx);
-      const after = h.indexOf('</p>', idx);
-      if (before !== -1 && after !== -1 && (idx - before) < 200) {
-        h = h.slice(0, before) + h.slice(after + 4);
+  for (const pattern of removePatterns) {
+    const lowerPattern = pattern.toLowerCase();
+    let safety = 0;
+    
+    while (h.toLowerCase().includes(lowerPattern) && safety < 10) {
+      safety++;
+      const idx = h.toLowerCase().indexOf(lowerPattern);
+      
+      // Find the paragraph containing this text
+      let pStart = h.lastIndexOf('<p', idx);
+      let pEnd = h.indexOf('</p>', idx);
+      
+      if (pStart !== -1 && pEnd !== -1 && (idx - pStart) < 500) {
+        h = h.slice(0, pStart) + h.slice(pEnd + 4);
       } else {
-        break;
+        // Try to remove just that line
+        let lineStart = h.lastIndexOf('>', idx) + 1;
+        let lineEnd = h.indexOf('<', idx);
+        if (lineEnd > lineStart) {
+          h = h.slice(0, lineStart) + h.slice(lineEnd);
+        } else {
+          break;
+        }
       }
-      idx = h.toLowerCase().indexOf(pattern.toLowerCase());
     }
   }
   
-  // Remove Interactive
-  h = h.replace(/<p>\s*\[Interactive\][^<]*<\/p>/gi, '');
-  h = h.replace(/\[Interactive\]/gi, '');
+  // 2. Remove markdown-style links [text](url) - convert to just text
+  h = h.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   
-  // Remove empty paragraphs
+  // 3. Remove standalone URLs in text
+  h = h.replace(/<p>[^<]*https?:\/\/[^<]*<\/p>/gi, '');
+  
+  // 4. Remove empty paragraphs
   h = h.replace(/<p>\s*<\/p>/gi, '');
+  h = h.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '');
+  
+  // 5. Clean up multiple line breaks
+  h = h.replace(/(<br\s*\/?>\s*){3,}/gi, '<br><br>');
+  
+  // 6. INSERT IMAGES into content
+  if (images && images.length > 0) {
+    // Check if content already has images
+    const hasImages = /<img\s/i.test(h);
+    
+    if (!hasImages) {
+      // Split content into paragraphs
+      const parts = h.split(/<\/p>/i);
+      
+      if (parts.length > 2) {
+        // Insert first image after 2nd paragraph
+        const img1 = buildFigureHtml(images[0]);
+        if (img1 && parts.length > 2) {
+          parts[1] = parts[1] + '</p>' + img1;
+          parts[1] = parts[1].replace('</p></p>', '</p>');
+        }
+        
+        // Insert second image after 5th paragraph if exists
+        if (images.length > 1 && parts.length > 5) {
+          const img2 = buildFigureHtml(images[1]);
+          parts[4] = parts[4] + '</p>' + img2;
+          parts[4] = parts[4].replace('</p></p>', '</p>');
+        }
+        
+        // Insert third image after 8th paragraph if exists
+        if (images.length > 2 && parts.length > 8) {
+          const img3 = buildFigureHtml(images[2]);
+          parts[7] = parts[7] + '</p>' + img3;
+          parts[7] = parts[7].replace('</p></p>', '</p>');
+        }
+        
+        h = parts.join('</p>');
+      } else if (parts.length > 0) {
+        // Short content - insert at beginning
+        h = buildFigureHtml(images[0]) + h;
+      }
+    }
+  }
+  
+  // 7. Fix any broken HTML from our manipulation
+  h = h.replace(/<\/p>\s*<\/p>/gi, '</p>');
+  h = h.replace(/<p>\s*<p>/gi, '<p>');
   
   return h.trim();
+}
+
+function buildFigureHtml(img) {
+  if (!img || !img.url) return '';
+  
+  const caption = img.caption || '';
+  const credit = img.credit || '';
+  
+  let figcaption = '';
+  if (caption || credit) {
+    const parts = [];
+    if (caption) parts.push(caption);
+    if (credit) parts.push(`<span class="img-credit">Photograph: ${escapeHtml(credit)}</span>`);
+    figcaption = `<figcaption>${parts.join(' ')}</figcaption>`;
+  }
+  
+  return `
+<figure class="content-figure">
+  <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.altText || '')}" loading="lazy">
+  ${figcaption}
+</figure>`;
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
