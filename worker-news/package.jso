@@ -1,0 +1,8 @@
+{
+  "name": "volearn-news-proxy",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
