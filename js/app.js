@@ -22,7 +22,6 @@ import { initSettings, applySettings } from './ui/settings.js';
 import { initNews } from './ui/news.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
 import { initConfirmModal } from './ui/confirmModal.js';
-import { initNews } from './ui/news.js';
 
 // ===== PRACTICE IMPORTS =====
 import { initPracticeEngine, updateSRSCount } from './practice/practiceEngine.js';
