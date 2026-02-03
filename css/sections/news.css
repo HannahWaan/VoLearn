@@ -671,53 +671,74 @@
 .word-lookup-popup {
     display: none;
     position: fixed;
-    z-index: 10000;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
+    z-index: 99999;
+    background: #1a1a2e;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    min-width: 280px;
-    max-width: min(400px, 90vw);
-    max-height: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    min-width: 300px;
+    max-width: min(420px, 90vw);
+    max-height: 450px;
     overflow: hidden;
     font-size: 14px;
-    transition: opacity 0.15s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+[data-theme="light"] .word-lookup-popup {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .word-lookup-popup .wlp-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-header {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
 }
 
 .word-lookup-popup .wlp-word {
     flex: 1;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
-    color: var(--text-primary);
-    text-transform: lowercase;
+    color: #ffffff;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-word {
+    color: #1e293b;
 }
 
 .word-lookup-popup .wlp-speak,
 .word-lookup-popup .wlp-close {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border: none;
     border-radius: 8px;
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 14px;
     transition: all 0.2s;
 }
 
+[data-theme="light"] .word-lookup-popup .wlp-speak,
+[data-theme="light"] .word-lookup-popup .wlp-close {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
 .word-lookup-popup .wlp-speak:hover {
-    background: var(--primary-color);
+    background: #6366f1;
     color: white;
 }
 
@@ -727,40 +748,51 @@
 }
 
 .word-lookup-popup .wlp-phonetic {
-    padding: 8px 16px 0;
-    font-size: 14px;
-    color: var(--text-secondary);
+    padding: 10px 16px 0;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
     font-family: monospace;
 }
 
+[data-theme="light"] .word-lookup-popup .wlp-phonetic {
+    color: #64748b;
+}
+
 .word-lookup-popup .wlp-content {
-    padding: 12px 16px;
-    max-height: 240px;
+    padding: 14px 16px;
+    max-height: 260px;
     overflow-y: auto;
 }
 
 .word-lookup-popup .wlp-loading,
 .word-lookup-popup .wlp-not-found {
     text-align: center;
-    color: var(--text-secondary);
-    padding: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 24px 16px;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-loading,
+[data-theme="light"] .word-lookup-popup .wlp-not-found {
+    color: #64748b;
 }
 
 .word-lookup-popup .wlp-loading i,
 .word-lookup-popup .wlp-not-found i {
     margin-right: 8px;
+    font-size: 16px;
 }
 
 .word-lookup-popup .wlp-pos {
     display: inline-block;
-    background: var(--primary-color);
+    background: #6366f1;
     color: white;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    margin: 8px 0 6px;
+    margin: 12px 0 8px;
+    letter-spacing: 0.5px;
 }
 
 .word-lookup-popup .wlp-pos:first-child {
@@ -768,32 +800,47 @@
 }
 
 .word-lookup-popup .wlp-def {
-    color: var(--text-primary);
-    line-height: 1.5;
-    margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-def {
+    color: #334155;
 }
 
 .word-lookup-popup .wlp-example {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5);
     font-style: italic;
     font-size: 13px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     padding-left: 12px;
-    border-left: 2px solid var(--border-color);
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    line-height: 1.5;
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-example {
+    color: #64748b;
+    border-left-color: #e2e8f0;
 }
 
 .word-lookup-popup .wlp-actions {
-    padding: 12px 16px;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="light"] .word-lookup-popup .wlp-actions {
+    border-top-color: #e2e8f0;
+    background: #f8fafc;
 }
 
 .word-lookup-popup .wlp-add-btn {
     width: 100%;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border: none;
     border-radius: 8px;
-    background: var(--primary-color);
+    background: #6366f1;
     color: white;
     font-size: 14px;
     font-weight: 600;
@@ -806,8 +853,9 @@
 }
 
 .word-lookup-popup .wlp-add-btn:hover:not(:disabled) {
-    background: var(--primary-hover);
+    background: #4f46e5;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
 .word-lookup-popup .wlp-add-btn:disabled {
@@ -821,26 +869,23 @@
 }
 
 .word-lookup-popup .wlp-content::-webkit-scrollbar-track {
-    background: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 3px;
 }
 
 .word-lookup-popup .wlp-content::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
 }
 
-/* Dark mode */
-[data-theme="dark"] .word-lookup-popup {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+.word-lookup-popup .wlp-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Mobile */
 @media (max-width: 480px) {
     .word-lookup-popup {
-        min-width: 260px;
+        min-width: 280px;
         max-width: calc(100vw - 32px);
-        left: 16px !important;
-        right: 16px !important;
     }
 }
