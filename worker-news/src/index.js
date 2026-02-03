@@ -202,7 +202,7 @@ function normalizeGuardianContent(c) {
     publishedAt: c?.webPublicationDate || null,
     summaryHtml: fields?.trailText || "",
     
-    // HTML content - giữ nguyên formatting
+    // HTML content 
     contentHtml: fields?.body || "",
     
     wordCount: fields?.wordcount ?? null,
