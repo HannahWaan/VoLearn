@@ -1,130 +1,221 @@
-/* ========================================
-   VoLearn - News Reader CSS
-   Scope: #news-section only
-   ======================================== */
+/* css/sections/news.css
+   Scoped styles for the News section + Reader (Guardian)
+   - Font size controlled by CSS var: --news-reader-font-px (set by JS)
+   - Reader-only dark mode via: #news-section.news-reader-dark
+   - Full reading mode (one-column) via: #news-section.news-reader-mode
+*/
 
-#news-section #news-reader {
-  /* Reader container */
-  max-width: 760px;
-  margin: 0 auto;
-
-  /* Typography */
-  font-size: 1.05rem;
-  line-height: 1.85;
-  letter-spacing: 0.2px;
-
-  /* Better wrapping for long words/URLs */
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* Paragraph spacing */
-#news-section #news-reader p {
-  margin: 0 0 1.05em;
-}
-
-/* Line breaks converted from text */
-#news-section #news-reader br {
-  content: "";
-}
-
-/* Headings (if any appear later) */
-#news-section #news-reader h1,
-#news-section #news-reader h2,
-#news-section #news-reader h3 {
-  line-height: 1.25;
-  margin: 1.1em 0 0.5em;
-}
-
-/* Quotes */
-#news-section #news-reader blockquote {
-  margin: 1em 0;
-  padding: 0.75em 1em;
-  border-left: 4px solid var(--primary-color, #6d5efc);
-  background: rgba(109, 94, 252, 0.08);
-  border-radius: 10px;
-}
-
-/* Links */
-#news-section #news-reader a {
-  color: var(--primary-color, #6d5efc);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* Images if later you render any */
-#news-section #news-reader img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  display: block;
-  margin: 12px auto;
-}
-
-/* Reader mode: make the article area feel like a page */
-#news-section .card-body #news-title {
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#news-section .card-body #news-meta {
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Optional: slightly larger on wide screens */
-@media (min-width: 1024px) {
-  #news-section #news-reader {
-    font-size: 1.1rem;
-  }
-}
-
-/* Optional: tighter on small screens */
-@media (max-width: 480px) {
-  #news-section #news-reader {
-    font-size: 1rem;
-    line-height: 1.75;
-  }
-}
-
-/* Default reader variables (only inside News section) */
 #news-section {
+  /* Reader variables (scoped only to News section) */
   --news-reader-font-px: 18;
   --news-reader-bg: transparent;
   --news-reader-fg: inherit;
-  --news-reader-muted: rgba(0,0,0,.65);
+  --news-reader-muted: rgba(0, 0, 0, 0.65);
   --news-reader-link: var(--primary-color, #6d5efc);
 }
 
-/* Apply to the reading container */
+/* -----------------------
+   Tabs / More tabs helpers
+------------------------ */
+#news-section .news-tab.active {
+  filter: brightness(1.05);
+  outline: 2px solid rgba(109, 94, 252, 0.35);
+  outline-offset: 1px;
+}
+
+#news-section #news-more-tabs.open {
+  display: flex !important;
+}
+
+/* -----------------------
+   List styling (left column)
+------------------------ */
+#news-section #news-list .news-item {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.10);
+}
+
+#news-section #news-list .news-item.selected {
+  border-color: rgba(109, 94, 252, 0.55);
+  box-shadow: 0 0 0 3px rgba(109, 94, 252, 0.12);
+}
+
+#news-section .news-item-title {
+  margin: 0 0 6px;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+#news-section .news-item-meta {
+  opacity: 0.8;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+#news-section .news-item-summary {
+  opacity: 0.9;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+#news-section .news-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* -----------------------
+   Reader styling (right column)
+------------------------ */
+#news-section #news-title,
+#news-section #news-meta {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#news-section #news-meta {
+  color: var(--news-reader-muted);
+}
+
 #news-section #news-reader {
   font-size: calc(var(--news-reader-font-px) * 1px);
   line-height: 1.85;
   max-width: 760px;
   margin: 0 auto;
-  padding: 8px 12px;
+  padding: 10px 12px;
   color: var(--news-reader-fg);
   background: var(--news-reader-bg);
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-#news-section #news-reader p { margin: 0 0 1.05em; }
-#news-section #news-reader a { color: var(--news-reader-link); text-decoration: underline; text-underline-offset: 3px; }
+#news-section #news-reader p {
+  margin: 0 0 1.05em;
+}
 
-/* Optional: meta/title style */
-#news-section #news-meta { max-width: 760px; margin: 0 auto 10px; color: var(--news-reader-muted); }
+#news-section #news-reader a {
+  color: var(--news-reader-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
-/* Reader Dark mode (scoped only to News section) */
+#news-section #news-reader h1,
+#news-section #news-reader h2,
+#news-section #news-reader h3 {
+  line-height: 1.25;
+  margin: 1.1em 0 0.55em;
+}
+
+#news-section #news-reader blockquote {
+  margin: 1em 0;
+  padding: 0.65em 0.9em;
+  border-left: 4px solid rgba(109, 94, 252, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+#news-section #news-reader img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+#news-section .news-cover img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+}
+
+/* Reader controls row (A-/A+/Dark) */
+#news-section #news-reader-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+/* -----------------------
+   Reader Dark mode (News-only)
+------------------------ */
 #news-section.news-reader-dark {
   --news-reader-bg: #0f1115;
   --news-reader-fg: #e9eef5;
-  --news-reader-muted: rgba(233,238,245,.7);
+  --news-reader-muted: rgba(233, 238, 245, 0.72);
   --news-reader-link: #9aa8ff;
 }
 
 #news-section.news-reader-dark #news-reader {
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 14px;
+  padding: 16px 16px;
+}
+
+/* -----------------------
+   Reader Mode: full width (one-column)
+   Triggered by: #news-section.news-reader-mode
+------------------------ */
+
+/* Turn the inline grid (2 columns) into 1 column */
+#news-section.news-reader-mode .card-body > div[style*="grid-template-columns"] {
+  grid-template-columns: 1fr !important;
+}
+
+/* Hide list column + tabs + status line */
+#news-section.news-reader-mode #news-list,
+#news-section.news-reader-mode .news-tabs,
+#news-section.news-reader-mode #news-more-tabs,
+#news-section.news-reader-mode #news-status {
+  display: none !important;
+}
+
+/* Ensure reader toolbar shows in reader mode */
+#news-section.news-reader-mode #news-reader-toolbar {
+  display: flex !important;
+}
+
+/* Make reader wider + centered */
+#news-section.news-reader-mode #news-reader,
+#news-section.news-reader-mode #news-title,
+#news-section.news-reader-mode #news-meta {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Slightly larger padding/spacing in reading mode */
+#news-section.news-reader-mode #news-reader {
+  padding: 18px 18px;
+  border-radius: 14px;
+}
+
+#news-section.news-reader-mode .news-cover {
+  margin-bottom: 18px !important;
+}
+
+#news-section.news-reader-mode #news-reader p {
+  margin: 0 0 1.15em;
+}
+
+/* -----------------------
+   Responsive tweaks
+------------------------ */
+@media (max-width: 640px) {
+  #news-section #news-reader,
+  #news-section #news-title,
+  #news-section #news-meta {
+    max-width: 100%;
+  }
+
+  #news-section #news-reader {
+    padding: 10px 10px;
+  }
+
+  #news-section.news-reader-mode #news-reader {
+    padding: 14px 12px;
+  }
 }
