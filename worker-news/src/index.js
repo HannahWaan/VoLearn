@@ -11,7 +11,11 @@ export default {
     if (url.pathname === "/") {
       return json({ ok: true, service: "volearn-guardian-reader" }, request);
     }
-
+    
+    if (url.pathname === "/debug/version") {
+      return json({ version: "worker-2026-02-03-v2" }, request);
+    }
+    
     // Debug env key (safe-ish: only last4 + length)
     if (url.pathname === "/debug/guardian") {
       const k = (env.GUARDIAN_API_KEY || "").trim();
