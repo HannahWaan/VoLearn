@@ -457,7 +457,6 @@ function bindNewsUI() {
 }
 
 /* ==================== Init ==================== */
-
 export function initNews() {
     onNavigate('news', () => {
         bindNewsUI();
@@ -467,10 +466,18 @@ export function initNews() {
             loadFeed(DEFAULT_SECTION);
         }
         
-        // Initialize word lookup (double-click & select to translate)
+        // Initialize word lookup
         if (!state.wordLookupInitialized) {
             state.wordLookupInitialized = true;
-            initWordLookup();
+            
+            // Dynamic import để đảm bảo module được load
+            import('./wordLookup.js').then(module => {
+                if (module.initWordLookup) {
+                    module.initWordLookup();
+                }
+            }).catch(err => {
+                console.error('Failed to load wordLookup:', err);
+            });
         }
     });
 }
