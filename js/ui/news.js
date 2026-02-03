@@ -1,18 +1,3 @@
-// js/ui/news.js
-// Guardian News reader for VoLearn (in-app).
-// Worker endpoints:
-//   GET https://volearn.asstrayca.workers.dev/guardian/feed?section=world&pageSize=12
-//   GET https://volearn.asstrayca.workers.dev/guardian/item?id=<guardianId>
-//
-// Features:
-// - Tabs (World default, Science next) + More… toggle
-// - Split view: list (left) + quick reader (right)
-// - Reader mode (fullscreen INSIDE news section) via "Đọc" button
-// - A-/A+ font size for reader (localStorage, scoped)
-// - Dark/Light for reader only (scoped, does not change global app theme)
-// - HTML sanitized with DOMPurify if available
-// - If contentHtml empty: render cover image + bodyText paragraphs
-
 const NEWS_API_BASE = 'https://volearn.asstrayca.workers.dev';
 
 const DEFAULT_SECTION = 'world';
@@ -20,7 +5,7 @@ const DEFAULT_PAGE_SIZE = 12;
 
 // Reader-only settings (scoped to News reader)
 const READER_FONT_KEY = 'volearn_news_reader_font_px';
-const READER_THEME_KEY = 'volearn_news_reader_theme'; // 'light' | 'dark'
+const READER_THEME_KEY = 'volearn_news_reader_theme'; 
 const READER_FONT_MIN = 14;
 const READER_FONT_MAX = 28;
 const READER_FONT_STEP = 1;
@@ -31,7 +16,7 @@ const state = {
   pageSize: DEFAULT_PAGE_SIZE,
   items: [],
   selectedId: null,
-  mode: 'split', // 'split' | 'reader'
+  mode: 'split', 
   loadingFeed: false,
   loadingItem: false,
 };
