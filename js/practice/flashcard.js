@@ -112,28 +112,48 @@ function renderFlashcardUI() {
 
 /* ===== SHOW CURRENT CARD ===== */
 function getFieldValueForFlashcard(word, fieldId) {
-  const m = (word?.meanings && word.meanings[0]) ? word.meanings[0] : {};
-
-  const asText = (v) => {
-    if (v == null) return '';
-    if (Array.isArray(v)) return v.filter(Boolean).join(', ');
-    return String(v).trim();
-  };
-
-  switch (fieldId) {
-    case 'word': return asText(word?.word);
-    case 'phonetic': return asText(m.phoneticUS || m.phoneticUK || word?.phonetic);
-    case 'pos': return asText(m.pos || word?.partOfSpeech);
-
-    case 'defVi': return asText(m.defVi);
-    case 'defEn': return asText(m.defEn);
-    case 'example': return asText(m.example);
-
-    case 'synonyms': return asText(m.synonyms);
-    case 'antonyms': return asText(m.antonyms);
-
-    default: return '';
+  const meanings = word?.meanings || [];
+  
+  if (meanings.length === 0) {
+    const m = {};
+    const asText = (v) => {
+      if (v == null) return '';
+      if (Array.isArray(v)) return v.filter(Boolean).join(', ');
+      return String(v).trim();
+    };
+    
+    switch (fieldId) {
+      case 'word': return asText(word?.word);
+      case 'phonetic': return asText(word?.phonetic);
+      // ... other cases ...
+      default: return '';
+    }
   }
+  
+  const values = [];
+  const seen = new Set();
+  
+  for (const m of meanings) {
+    let val = '';
+    
+    switch (fieldId) {
+      case 'word': val = word?.word; break;
+      case 'phonetic': val = m.phoneticUS || m.phoneticUK || word?.phonetic; break;
+      case 'pos': val = m.pos || word?.partOfSpeech; break;
+      case 'defVi': val = m.defVi; break;
+      case 'defEn': val = m.defEn; break;
+      case 'example': val = m.example; break;
+      case 'synonyms': val = Array.isArray(m.synonyms) ? m.synonyms.join(', ') : m.synonyms; break;
+      case 'antonyms': val = Array.isArray(m.antonyms) ? m.antonyms.join(', ') : m.antonyms; break;
+    }
+    
+    if (val && !seen.has(String(val).toLowerCase())) {
+      seen.add(String(val).toLowerCase());
+      values.push(String(val).trim());
+    }
+  }
+  
+  return values.join(' • ');
 }
 
 function showCurrentCard() {
@@ -451,6 +471,7 @@ window.restartFlashcard = restartFlashcard;
 window.reviewWrongFlashcards = reviewWrongFlashcards;
 window.flashcardGrade = flashcardGrade;
 window.renderFlashcard = renderFlashcard;
+
 
 
 
