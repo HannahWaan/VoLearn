@@ -1,5 +1,5 @@
 /* ===== WORD LOOKUP - Double-click & Right-click to translate ===== */
-/* VoLearn v2.3.0 - Tra từ trong News Reader */
+/* VoLearn v2.4.0 - Tra từ trong News Reader - Mobile Support */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
@@ -10,11 +10,27 @@ import { generateId } from '../utils/helpers.js';
 /* ===== STATE ===== */
 let popupEl = null;
 let contextMenuEl = null;
+let mobileLookupBtn = null;
 let cachedEntry = null;
 let lastSelectedText = '';
 let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
+
+/* ===== MOBILE TOUCH STATE ===== */
+let touchState = {
+    lastTap: 0,
+    lastTarget: null,
+    tapTimeout: null,
+    selectedText: ''
+};
+
+/* ===== MOBILE DETECTION ===== */
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || ('ontouchstart' in window) 
+        || (navigator.maxTouchPoints > 0);
+}
 
 /* ===== GET THEME COLORS ===== */
 function getThemeColors() {
@@ -49,6 +65,8 @@ function createPopup() {
     popupEl.className = 'word-lookup-popup';
     
     const colors = getThemeColors();
+    const mobile = isMobile();
+    
     popupEl.style.cssText = `
         position: fixed !important;
         z-index: 99999 !important;
@@ -56,9 +74,9 @@ function createPopup() {
         border: 1px solid ${colors.border} !important;
         border-radius: 12px !important;
         box-shadow: 0 8px 32px ${colors.shadow} !important;
-        min-width: 320px !important;
-        max-width: min(420px, 90vw) !important;
-        max-height: 500px !important;
+        min-width: ${mobile ? 'calc(100vw - 32px)' : '320px'} !important;
+        max-width: ${mobile ? 'calc(100vw - 32px)' : 'min(420px, 90vw)'} !important;
+        max-height: ${mobile ? '60vh' : '500px'} !important;
         overflow: hidden !important;
         display: none !important;
         flex-direction: column !important;
@@ -73,7 +91,7 @@ function createPopup() {
             padding: 12px 16px;
             background: ${colors.bgSecondary};
             border-bottom: 1px solid ${colors.border};
-            cursor: move;
+            cursor: ${mobile ? 'default' : 'move'};
             user-select: none;
         ">
             <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
@@ -93,30 +111,37 @@ function createPopup() {
             </div>
             <div style="display: flex; gap: 6px; flex-shrink: 0;">
                 <button class="wlp-speak" title="Phát âm" style="
-                    width: 32px; height: 32px; border-radius: 6px;
+                    width: ${mobile ? '44px' : '32px'}; 
+                    height: ${mobile ? '44px' : '32px'}; 
+                    border-radius: 6px;
                     border: 1px solid ${colors.border};
                     background: ${colors.bg};
                     color: ${colors.textMuted};
                     cursor: pointer; display: flex;
                     align-items: center; justify-content: center;
-                    font-size: 14px;
+                    font-size: ${mobile ? '18px' : '14px'};
+                    -webkit-tap-highlight-color: transparent;
                 "><i class="fas fa-volume-up"></i></button>
                 <button class="wlp-close" title="Đóng" style="
-                    width: 32px; height: 32px; border-radius: 6px;
+                    width: ${mobile ? '44px' : '32px'}; 
+                    height: ${mobile ? '44px' : '32px'}; 
+                    border-radius: 6px;
                     border: 1px solid ${colors.border};
                     background: ${colors.bg};
                     color: ${colors.textMuted};
                     cursor: pointer; display: flex;
                     align-items: center; justify-content: center;
-                    font-size: 14px;
+                    font-size: ${mobile ? '18px' : '14px'};
+                    -webkit-tap-highlight-color: transparent;
                 "><i class="fas fa-times"></i></button>
             </div>
         </div>
         <div class="wlp-content" style="
             padding: 16px;
             overflow-y: auto;
-            max-height: 350px;
+            max-height: ${mobile ? 'calc(60vh - 140px)' : '350px'};
             color: ${colors.text};
+            -webkit-overflow-scrolling: touch;
         ">
             <div class="wlp-loading" style="
                 text-align: center;
@@ -133,13 +158,17 @@ function createPopup() {
             display: none;
         ">
             <button class="wlp-add-btn" style="
-                width: 100%; padding: 10px 16px;
+                width: 100%; 
+                padding: ${mobile ? '14px 16px' : '10px 16px'};
                 border-radius: 8px; border: none;
                 background: ${colors.accent};
                 color: white; font-weight: 600;
-                cursor: pointer; font-size: 0.9rem;
+                cursor: pointer; 
+                font-size: ${mobile ? '1rem' : '0.9rem'};
                 display: flex; align-items: center;
                 justify-content: center; gap: 8px;
+                min-height: ${mobile ? '48px' : 'auto'};
+                -webkit-tap-highlight-color: transparent;
             ">
                 <i class="fas fa-plus"></i> Thêm vào từ điển
             </button>
@@ -150,19 +179,36 @@ function createPopup() {
     
     // Event listeners
     popupEl.querySelector('.wlp-close').addEventListener('click', hidePopup);
+    popupEl.querySelector('.wlp-close').addEventListener('touchend', (e) => {
+        e.preventDefault();
+        hidePopup();
+    });
+    
     popupEl.querySelector('.wlp-speak').addEventListener('click', () => {
         const word = popupEl.querySelector('.wlp-word')?.textContent;
         if (word) speak(word, 'en-US');
     });
-    popupEl.querySelector('.wlp-add-btn').addEventListener('click', addToVocabulary);
+    popupEl.querySelector('.wlp-speak').addEventListener('touchend', (e) => {
+        e.preventDefault();
+        const word = popupEl.querySelector('.wlp-word')?.textContent;
+        if (word) speak(word, 'en-US');
+    });
     
-    // Drag functionality
-    setupDrag(popupEl);
+    popupEl.querySelector('.wlp-add-btn').addEventListener('click', addToVocabulary);
+    popupEl.querySelector('.wlp-add-btn').addEventListener('touchend', (e) => {
+        e.preventDefault();
+        addToVocabulary();
+    });
+    
+    // Drag functionality (desktop only)
+    if (!mobile) {
+        setupDrag(popupEl);
+    }
     
     return popupEl;
 }
 
-/* ===== SETUP DRAG ===== */
+/* ===== SETUP DRAG (Desktop only) ===== */
 function setupDrag(el) {
     const header = el.querySelector('.wlp-header');
     if (!header) return;
@@ -205,7 +251,7 @@ function setupDrag(el) {
     });
 }
 
-/* ===== CREATE CONTEXT MENU ===== */
+/* ===== CREATE CONTEXT MENU (Desktop only) ===== */
 function createContextMenu() {
     if (contextMenuEl) return contextMenuEl;
     
@@ -280,6 +326,125 @@ function createContextMenu() {
     return contextMenuEl;
 }
 
+/* ===== CREATE MOBILE LOOKUP BUTTON ===== */
+function createMobileLookupButton() {
+    if (mobileLookupBtn) return mobileLookupBtn;
+    
+    const colors = getThemeColors();
+    
+    mobileLookupBtn = document.createElement('button');
+    mobileLookupBtn.id = 'mobile-lookup-btn';
+    mobileLookupBtn.className = 'mobile-lookup-btn';
+    mobileLookupBtn.innerHTML = '<i class="fas fa-book-open"></i> Tra từ';
+    mobileLookupBtn.style.cssText = `
+        position: fixed;
+        z-index: 100000;
+        padding: 10px 18px;
+        background: ${colors.accent};
+        color: white;
+        border: none;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(199, 0, 0, 0.4);
+        cursor: pointer;
+        display: none;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        animation: mobileBtnFadeIn 0.2s ease;
+    `;
+    
+    // Add animation keyframes
+    if (!document.getElementById('mobile-lookup-styles')) {
+        const style = document.createElement('style');
+        style.id = 'mobile-lookup-styles';
+        style.textContent = `
+            @keyframes mobileBtnFadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px) scale(0.9);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            .mobile-lookup-btn:active {
+                transform: scale(0.95);
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(mobileLookupBtn);
+    return mobileLookupBtn;
+}
+
+/* ===== SHOW MOBILE LOOKUP BUTTON ===== */
+function showMobileLookupButton(text) {
+    const btn = createMobileLookupButton();
+    const selection = window.getSelection();
+    
+    if (!selection.rangeCount) return;
+    
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    
+    // Position above selection
+    const btnHeight = 44;
+    let top = rect.top - btnHeight - 12;
+    let left = rect.left + (rect.width / 2) - 60;
+    
+    // Keep within viewport
+    if (top < 10) {
+        top = rect.bottom + 12;
+    }
+    if (left < 10) left = 10;
+    if (left + 120 > window.innerWidth) {
+        left = window.innerWidth - 130;
+    }
+    
+    btn.style.top = `${top}px`;
+    btn.style.left = `${left}px`;
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.gap = '6px';
+    
+    // Update theme colors
+    const colors = getThemeColors();
+    btn.style.background = colors.accent;
+    
+    // Remove old listener and add new one
+    btn.onclick = null;
+    btn.ontouchend = null;
+    
+    const handleLookup = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const centerX = left + 60;
+        const centerY = top + btnHeight + 20;
+        
+        showPopup(centerX, centerY, text);
+        hideMobileLookupButton();
+        
+        // Clear selection
+        window.getSelection().removeAllRanges();
+    };
+    
+    btn.onclick = handleLookup;
+    btn.ontouchend = handleLookup;
+}
+
+/* ===== HIDE MOBILE LOOKUP BUTTON ===== */
+function hideMobileLookupButton() {
+    if (mobileLookupBtn) {
+        mobileLookupBtn.style.display = 'none';
+    }
+}
+
 /* ===== GET SELECTED TEXT ===== */
 function getSelectedText() {
     const selection = window.getSelection();
@@ -321,6 +486,8 @@ function showPopup(x, y, text) {
     
     // Update theme colors
     const colors = getThemeColors();
+    const mobile = isMobile();
+    
     popupEl.style.background = colors.bg;
     popupEl.style.borderColor = colors.border;
     popupEl.style.boxShadow = `0 8px 32px ${colors.shadow}`;
@@ -338,23 +505,37 @@ function showPopup(x, y, text) {
     }
     
     // Position popup
-    const popupWidth = 380;
-    const popupHeight = 400;
+    let posX, posY;
     
-    let posX = x + 10;
-    let posY = y + 10;
-    
-    if (posX + popupWidth > window.innerWidth - 20) {
-        posX = window.innerWidth - popupWidth - 20;
+    if (mobile) {
+        // Center horizontally on mobile
+        posX = 16;
+        posY = Math.max(60, Math.min(y - 100, window.innerHeight - 400));
+        popupEl.style.left = '16px';
+        popupEl.style.right = '16px';
+        popupEl.style.width = 'calc(100vw - 32px)';
+    } else {
+        const popupWidth = 380;
+        const popupHeight = 400;
+        
+        posX = x + 10;
+        posY = y + 10;
+        
+        if (posX + popupWidth > window.innerWidth - 20) {
+            posX = window.innerWidth - popupWidth - 20;
+        }
+        if (posY + popupHeight > window.innerHeight - 20) {
+            posY = window.innerHeight - popupHeight - 20;
+        }
+        
+        posX = Math.max(10, posX);
+        posY = Math.max(10, posY);
+        
+        popupEl.style.left = posX + 'px';
+        popupEl.style.width = '';
+        popupEl.style.right = '';
     }
-    if (posY + popupHeight > window.innerHeight - 20) {
-        posY = window.innerHeight - popupHeight - 20;
-    }
     
-    posX = Math.max(10, posX);
-    posY = Math.max(10, posY);
-    
-    popupEl.style.left = posX + 'px';
     popupEl.style.top = posY + 'px';
     popupEl.style.display = 'flex';
     
@@ -398,7 +579,7 @@ function hidePopup() {
 
 /* ===== SHOW CONTEXT MENU ===== */
 function showContextMenu(x, y, text) {
-    if (!text) return;
+    if (!text || isMobile()) return;
     
     createContextMenu();
     if (!contextMenuEl) return;
@@ -628,38 +809,135 @@ function addToVocabulary() {
     hidePopup();
 }
 
+/* ===== HANDLE TOUCH SELECTION (Mobile) ===== */
+function handleTouchSelection(e) {
+    // Clear any pending tap timeout
+    if (touchState.tapTimeout) {
+        clearTimeout(touchState.tapTimeout);
+    }
+    
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - touchState.lastTap;
+    const target = e.target;
+    
+    // Double-tap detection (within 350ms)
+    if (tapLength < 350 && tapLength > 0 && touchState.lastTarget === target) {
+        // Double-tap detected!
+        e.preventDefault();
+        
+        // Wait a bit for selection to complete
+        setTimeout(() => {
+            const selectedText = getSelectedText();
+            if (selectedText && selectedText.length >= 1 && selectedText.length <= 50) {
+                const touch = e.changedTouches ? e.changedTouches[0] : e;
+                const x = touch.clientX || touch.pageX || window.innerWidth / 2;
+                const y = touch.clientY || touch.pageY || 150;
+                showPopup(x, y, selectedText);
+            }
+        }, 150);
+        
+        touchState.lastTap = 0;
+        touchState.lastTarget = null;
+    } else {
+        // First tap - wait for potential second tap
+        touchState.lastTap = currentTime;
+        touchState.lastTarget = target;
+        
+        // Reset after 350ms if no second tap
+        touchState.tapTimeout = setTimeout(() => {
+            touchState.lastTap = 0;
+            touchState.lastTarget = null;
+        }, 350);
+    }
+}
+
+/* ===== HANDLE SELECTION CHANGE (Mobile long-press) ===== */
+function handleSelectionChange() {
+    if (!isMobile()) return;
+    
+    const selectedText = getSelectedText();
+    
+    if (selectedText && selectedText !== touchState.selectedText && selectedText.length >= 1 && selectedText.length <= 50) {
+        touchState.selectedText = selectedText;
+        
+        // Check if selection is in news section
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            const element = container.nodeType === 3 ? container.parentElement : container;
+            
+            if (element && isInNewsSection(element)) {
+                // Delay to allow selection to stabilize
+                setTimeout(() => {
+                    const currentText = getSelectedText();
+                    if (currentText === selectedText) {
+                        showMobileLookupButton(selectedText);
+                    }
+                }, 200);
+            }
+        }
+    } else if (!selectedText) {
+        touchState.selectedText = '';
+        // Don't hide immediately - user might still be selecting
+        setTimeout(() => {
+            if (!getSelectedText()) {
+                hideMobileLookupButton();
+            }
+        }, 300);
+    }
+}
+
 /* ===== INIT WORD LOOKUP ===== */
 export function initWordLookup() {
-    console.log('✅ Word Lookup initializing...');
+    console.log('✅ Word Lookup v2.4.0 initializing...', isMobile() ? '(Mobile)' : '(Desktop)');
     
-    // Double-click handler
-    document.addEventListener('dblclick', (e) => {
-        if (!isInNewsSection(e.target)) return;
+    const mobile = isMobile();
+    
+    // Desktop: Double-click handler
+    if (!mobile) {
+        document.addEventListener('dblclick', (e) => {
+            if (!isInNewsSection(e.target)) return;
+            
+            console.log('Double click in news section');
+            
+            setTimeout(() => {
+                const text = getSelectedText();
+                if (text && text.length >= 1 && text.length <= 50) {
+                    console.log('Selected word:', text);
+                    showPopup(e.clientX, e.clientY, text);
+                }
+            }, 10);
+        });
         
-        console.log('Double click in news section');
-        
-        setTimeout(() => {
+        // Desktop: Right-click (context menu) handler
+        document.addEventListener('contextmenu', (e) => {
+            if (!isInNewsSection(e.target)) return;
+            
             const text = getSelectedText();
-            if (text && text.length >= 1 && text.length <= 50) {
-                console.log('Selected word:', text);
-                showPopup(e.clientX, e.clientY, text);
+            if (text && text.length >= 1 && text.length <= 100) {
+                e.preventDefault();
+                console.log('Right-click with selection:', text);
+                showContextMenu(e.clientX, e.clientY, text);
             }
-        }, 10);
-    });
+        });
+    }
     
-    // Right-click (context menu) handler
-    document.addEventListener('contextmenu', (e) => {
-        if (!isInNewsSection(e.target)) return;
+    // Mobile: Touch events
+    if (mobile) {
+        // Double-tap detection
+        document.addEventListener('touchend', (e) => {
+            if (!isInNewsSection(e.target)) return;
+            handleTouchSelection(e);
+        }, { passive: false });
         
-        const text = getSelectedText();
-        if (text && text.length >= 1 && text.length <= 100) {
-            e.preventDefault();
-            console.log('Right-click with selection:', text);
-            showContextMenu(e.clientX, e.clientY, text);
-        }
-    });
+        // Selection change (for long-press selection)
+        document.addEventListener('selectionchange', handleSelectionChange);
+        
+        console.log('📱 Mobile touch events registered');
+    }
     
-    // Close popup/menu on outside click
+    // Close popup/menu on outside click (desktop)
     document.addEventListener('click', (e) => {
         // Close context menu
         if (contextMenuEl && !contextMenuEl.contains(e.target)) {
@@ -672,17 +950,42 @@ export function initWordLookup() {
                 hidePopup();
             }
         }
+        
+        // Hide mobile button if clicking outside and not selecting
+        if (mobile && mobileLookupBtn && !mobileLookupBtn.contains(e.target)) {
+            setTimeout(() => {
+                if (!getSelectedText()) {
+                    hideMobileLookupButton();
+                }
+            }, 100);
+        }
     });
+    
+    // Mobile: Touch outside to close
+    if (mobile) {
+        document.addEventListener('touchstart', (e) => {
+            // Close popup if touching outside
+            if (popupEl && popupEl.style.display !== 'none' && !popupEl.contains(e.target)) {
+                // Small delay to allow button clicks to register
+                setTimeout(() => {
+                    if (popupEl && popupEl.style.display !== 'none' && !popupEl.contains(document.activeElement)) {
+                        hidePopup();
+                    }
+                }, 100);
+            }
+        }, { passive: true });
+    }
     
     // Close on ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             hidePopup();
             hideContextMenu();
+            hideMobileLookupButton();
         }
     });
     
-    console.log('✅ Word Lookup initialized');
+    console.log('✅ Word Lookup v2.4.0 initialized');
 }
 
 /* ===== GLOBAL EXPORT FOR TESTING ===== */
