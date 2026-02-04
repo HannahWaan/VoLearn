@@ -300,49 +300,39 @@ function showExportSelector(format) {
     const sets = appData.sets || [];
     const vocabulary = appData.vocabulary || [];
     
-    // Count words per set
+    // Count words
     const allWordsCount = vocabulary.length;
-    const noSetCount = vocabulary.filter(w => !w.setId).length;
     
-    // Build set options
+    if (allWordsCount === 0) {
+        showWarning('Không có dữ liệu để xuất!');
+        return;
+    }
+    
+    // Build set options - Tất cả từ vựng first
     let setOptionsHtml = `
         <label class="export-set-option">
             <input type="radio" name="export-set" value="all" checked>
             <span class="export-set-info">
-                <i class="fas fa-globe"></i>
+                <i class="fas fa-layer-group" style="color: #667eea;"></i>
                 <span class="export-set-name">Tất cả từ vựng</span>
                 <span class="export-set-count">${allWordsCount} từ</span>
             </span>
         </label>
     `;
     
-    if (noSetCount > 0) {
+    // Add user-created sets
+    sets.forEach(set => {
+        const count = vocabulary.filter(w => w.setId === set.id).length;
         setOptionsHtml += `
             <label class="export-set-option">
-                <input type="radio" name="export-set" value="no-set">
+                <input type="radio" name="export-set" value="${set.id}">
                 <span class="export-set-info">
-                    <i class="fas fa-inbox"></i>
-                    <span class="export-set-name">Chưa phân loại</span>
-                    <span class="export-set-count">${noSetCount} từ</span>
+                    <i class="fas fa-folder" style="color: ${set.color || '#667eea'};"></i>
+                    <span class="export-set-name">${escapeHtml(set.name)}</span>
+                    <span class="export-set-count">${count} từ</span>
                 </span>
             </label>
         `;
-    }
-    
-    sets.forEach(set => {
-        const count = vocabulary.filter(w => w.setId === set.id).length;
-        if (count > 0) {
-            setOptionsHtml += `
-                <label class="export-set-option">
-                    <input type="radio" name="export-set" value="${set.id}">
-                    <span class="export-set-info">
-                        <i class="fas fa-folder" style="color: ${set.color || '#667eea'}"></i>
-                        <span class="export-set-name">${escapeHtml(set.name)}</span>
-                        <span class="export-set-count">${count} từ</span>
-                    </span>
-                </label>
-            `;
-        }
     });
     
     // Create popup
@@ -362,7 +352,7 @@ function showExportSelector(format) {
                 </button>
             </div>
             <div class="help-popup-content">
-                <p class="export-instruction">Chọn bộ từ muốn xuất:</p>
+                <p class="export-instruction">Chọn bộ từ vựng muốn xuất:</p>
                 <div class="export-set-list">
                     ${setOptionsHtml}
                 </div>
@@ -425,26 +415,22 @@ function exportJSON(setId = 'all') {
         let exportName = 'all';
         
         // Filter by set
-        if (setId === 'no-set') {
-            vocabulary = vocabulary.filter(w => !w.setId);
-            sets = [];
-            exportName = 'unclassified';
-        } else if (setId !== 'all') {
+        if (setId !== 'all') {
             vocabulary = vocabulary.filter(w => w.setId === setId);
             const selectedSet = sets.find(s => s.id === setId);
             sets = selectedSet ? [selectedSet] : [];
-            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9]/g, '-') || setId;
+            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '-') || setId;
         }
         
         if (vocabulary.length === 0) {
-            showWarning('Không có dữ liệu để xuất!');
+            showWarning('Bộ từ này không có từ vựng nào!');
             return;
         }
         
         const data = {
             version: '2.2.0',
             exportedAt: new Date().toISOString(),
-            exportSet: setId,
+            exportSet: setId === 'all' ? 'Tất cả từ vựng' : (sets[0]?.name || setId),
             vocabulary: vocabulary,
             sets: sets,
             history: setId === 'all' ? (appData.history || {}) : {}
@@ -468,17 +454,14 @@ function exportCSV(setId = 'all') {
         let exportName = 'all';
         
         // Filter by set
-        if (setId === 'no-set') {
-            words = words.filter(w => !w.setId);
-            exportName = 'unclassified';
-        } else if (setId !== 'all') {
+        if (setId !== 'all') {
             words = words.filter(w => w.setId === setId);
             const selectedSet = (appData.sets || []).find(s => s.id === setId);
-            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9]/g, '-') || setId;
+            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '-') || setId;
         }
         
         if (words.length === 0) {
-            showWarning('Không có dữ liệu để xuất!');
+            showWarning('Bộ từ này không có từ vựng nào!');
             return;
         }
         
@@ -1207,3 +1190,4 @@ window.selectRestoreFile = selectRestoreFile;
 window.closeDataHelpPopup = closeDataHelpPopup;
 window.closeExportSelector = closeExportSelector;
 window.confirmExport = confirmExport;
+
