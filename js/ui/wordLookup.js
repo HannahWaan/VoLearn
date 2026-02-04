@@ -1,44 +1,42 @@
-/* ===== WORD LOOKUP - VoLearn v2.2.0 ===== */
+/* ===== WORD LOOKUP - Double-click & Right-click to translate ===== */
+/* VoLearn v2.3.0 - Tra từ trong News Reader */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast } from './toast.js';
+import { speak } from '../utils/speech.js';
+import { generateId } from '../utils/helpers.js';
 
+/* ===== STATE ===== */
 let popupEl = null;
 let contextMenuEl = null;
-let currentWord = '';
-let cachedData = null;
-let isInitialized = false;
+let cachedEntry = null;
 let lastSelectedText = '';
 let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
-/* ===== THEME COLORS ===== */
-function getColors() {
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    return isLight ? {
+/* ===== GET THEME COLORS ===== */
+function getThemeColors() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                   document.body.getAttribute('data-theme') === 'dark';
+    
+    return isDark ? {
+        bg: '#1e1e2e',
+        bgSecondary: '#2a2a3e',
+        border: '#3a3a4e',
+        text: '#ffffff',
+        textMuted: '#a0a0b0',
+        shadow: 'rgba(0,0,0,0.5)',
+        accent: '#c70000'
+    } : {
         bg: '#ffffff',
-        bgSec: '#f8fafc',
+        bgSecondary: '#f8fafc',
         border: '#e2e8f0',
         text: '#1e293b',
         textMuted: '#64748b',
-        textDef: '#334155',
-        btnBg: '#e2e8f0',
-        btnColor: '#64748b',
-        shadow: '0 8px 32px rgba(0,0,0,0.12)',
-        exampleBorder: '#e2e8f0'
-    } : {
-        bg: '#1a1a2e',
-        bgSec: 'rgba(255,255,255,0.05)',
-        border: 'rgba(255,255,255,0.15)',
-        text: '#ffffff',
-        textMuted: 'rgba(255,255,255,0.6)',
-        textDef: 'rgba(255,255,255,0.9)',
-        btnBg: 'rgba(255,255,255,0.1)',
-        btnColor: 'rgba(255,255,255,0.7)',
-        shadow: '0 8px 32px rgba(0,0,0,0.4)',
-        exampleBorder: 'rgba(255,255,255,0.15)'
+        shadow: 'rgba(0,0,0,0.15)',
+        accent: '#c70000'
     };
 }
 
@@ -46,29 +44,103 @@ function getColors() {
 function createPopup() {
     if (popupEl) return popupEl;
     
-    const c = getColors();
-    
     popupEl = document.createElement('div');
     popupEl.id = 'word-lookup-popup';
+    popupEl.className = 'word-lookup-popup';
+    
+    const colors = getThemeColors();
     popupEl.style.cssText = `
-        display:none; position:fixed; z-index:99999;
-        background:${c.bg}; border:1px solid ${c.border}; border-radius:12px;
-        box-shadow:${c.shadow}; min-width:320px; max-width:420px; max-height:480px;
-        overflow:hidden; font-size:14px; color:${c.text};
-        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        position: fixed !important;
+        z-index: 99999 !important;
+        background: ${colors.bg} !important;
+        border: 1px solid ${colors.border} !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px ${colors.shadow} !important;
+        min-width: 320px !important;
+        max-width: min(420px, 90vw) !important;
+        max-height: 500px !important;
+        overflow: hidden !important;
+        display: none !important;
+        flex-direction: column !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     `;
     
     popupEl.innerHTML = `
-        <div class="wlp-header" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:${c.bgSec};border-bottom:1px solid ${c.border};cursor:move;user-select:none;">
-            <i class="fas fa-grip-vertical" style="color:${c.textMuted};font-size:12px;opacity:0.5;"></i>
-            <span class="wlp-word" style="flex:1;font-size:20px;font-weight:700;color:${c.text};"></span>
-            <button class="wlp-speak" title="Phát âm" style="width:32px;height:32px;border:none;border-radius:8px;background:${c.btnBg};color:${c.btnColor};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;"><i class="fas fa-volume-up"></i></button>
-            <button class="wlp-close" title="Đóng" style="width:32px;height:32px;border:none;border-radius:8px;background:${c.btnBg};color:${c.btnColor};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;"><i class="fas fa-times"></i></button>
+        <div class="wlp-header" style="
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: ${colors.bgSecondary};
+            border-bottom: 1px solid ${colors.border};
+            cursor: move;
+            user-select: none;
+        ">
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                <span class="wlp-word" style="
+                    font-weight: 700;
+                    font-size: 1.15rem;
+                    color: ${colors.text};
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                "></span>
+                <span class="wlp-phonetic" style="
+                    font-size: 0.9rem;
+                    color: ${colors.textMuted};
+                    white-space: nowrap;
+                "></span>
+            </div>
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <button class="wlp-speak" title="Phát âm" style="
+                    width: 32px; height: 32px; border-radius: 6px;
+                    border: 1px solid ${colors.border};
+                    background: ${colors.bg};
+                    color: ${colors.textMuted};
+                    cursor: pointer; display: flex;
+                    align-items: center; justify-content: center;
+                    font-size: 14px;
+                "><i class="fas fa-volume-up"></i></button>
+                <button class="wlp-close" title="Đóng" style="
+                    width: 32px; height: 32px; border-radius: 6px;
+                    border: 1px solid ${colors.border};
+                    background: ${colors.bg};
+                    color: ${colors.textMuted};
+                    cursor: pointer; display: flex;
+                    align-items: center; justify-content: center;
+                    font-size: 14px;
+                "><i class="fas fa-times"></i></button>
+            </div>
         </div>
-        <div class="wlp-phonetic" style="padding:8px 16px 0;font-size:15px;color:${c.textMuted};font-family:monospace;"></div>
-        <div class="wlp-content" style="padding:12px 16px;max-height:280px;overflow-y:auto;"></div>
-        <div class="wlp-footer" style="padding:12px 16px;border-top:1px solid ${c.border};background:${c.bgSec};">
-            <button class="wlp-add-btn" disabled style="width:100%;padding:11px 16px;border:none;border-radius:8px;background:#6366f1;color:white;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.5;transition:all 0.15s;">
+        <div class="wlp-content" style="
+            padding: 16px;
+            overflow-y: auto;
+            max-height: 350px;
+            color: ${colors.text};
+        ">
+            <div class="wlp-loading" style="
+                text-align: center;
+                padding: 30px;
+                color: ${colors.textMuted};
+            ">
+                <i class="fas fa-spinner fa-spin"></i> Đang tìm...
+            </div>
+        </div>
+        <div class="wlp-footer" style="
+            padding: 12px 16px;
+            background: ${colors.bgSecondary};
+            border-top: 1px solid ${colors.border};
+            display: none;
+        ">
+            <button class="wlp-add-btn" style="
+                width: 100%; padding: 10px 16px;
+                border-radius: 8px; border: none;
+                background: ${colors.accent};
+                color: white; font-weight: 600;
+                cursor: pointer; font-size: 0.9rem;
+                display: flex; align-items: center;
+                justify-content: center; gap: 8px;
+            ">
                 <i class="fas fa-plus"></i> Thêm vào từ điển
             </button>
         </div>
@@ -76,319 +148,544 @@ function createPopup() {
     
     document.body.appendChild(popupEl);
     
-    // Drag
-    const header = popupEl.querySelector('.wlp-header');
-    header.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button')) return;
-        isDragging = true;
-        dragOffsetX = e.clientX - popupEl.offsetLeft;
-        dragOffsetY = e.clientY - popupEl.offsetTop;
-        header.style.cursor = 'grabbing';
-        e.preventDefault();
+    // Event listeners
+    popupEl.querySelector('.wlp-close').addEventListener('click', hidePopup);
+    popupEl.querySelector('.wlp-speak').addEventListener('click', () => {
+        const word = popupEl.querySelector('.wlp-word')?.textContent;
+        if (word) speak(word, 'en-US');
     });
+    popupEl.querySelector('.wlp-add-btn').addEventListener('click', addToVocabulary);
     
-    // Button events
-    popupEl.querySelector('.wlp-close').onclick = (e) => { e.stopPropagation(); hidePopup(); };
-    popupEl.querySelector('.wlp-speak').onclick = (e) => { e.stopPropagation(); speakWord(currentWord); };
-    popupEl.querySelector('.wlp-add-btn').onclick = (e) => { e.stopPropagation(); handleAddWord(); };
-    
-    // Hover
-    const speakBtn = popupEl.querySelector('.wlp-speak');
-    speakBtn.onmouseenter = () => { speakBtn.style.background = '#6366f1'; speakBtn.style.color = 'white'; };
-    speakBtn.onmouseleave = () => { const c = getColors(); speakBtn.style.background = c.btnBg; speakBtn.style.color = c.btnColor; };
-    
-    const closeBtn = popupEl.querySelector('.wlp-close');
-    closeBtn.onmouseenter = () => { closeBtn.style.background = '#ef4444'; closeBtn.style.color = 'white'; };
-    closeBtn.onmouseleave = () => { const c = getColors(); closeBtn.style.background = c.btnBg; closeBtn.style.color = c.btnColor; };
-    
-    const addBtn = popupEl.querySelector('.wlp-add-btn');
-    addBtn.onmouseenter = () => { if (!addBtn.disabled) addBtn.style.background = '#4f46e5'; };
-    addBtn.onmouseleave = () => { addBtn.style.background = '#6366f1'; };
-    
-    popupEl.onclick = (e) => e.stopPropagation();
-    popupEl.ondblclick = (e) => e.stopPropagation();
-    popupEl.oncontextmenu = (e) => e.stopPropagation();
+    // Drag functionality
+    setupDrag(popupEl);
     
     return popupEl;
+}
+
+/* ===== SETUP DRAG ===== */
+function setupDrag(el) {
+    const header = el.querySelector('.wlp-header');
+    if (!header) return;
+    
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        
+        isDragging = true;
+        const rect = el.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        
+        el.style.transition = 'none';
+        header.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !popupEl) return;
+        
+        const rect = popupEl.getBoundingClientRect();
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+        
+        let newX = e.clientX - dragOffsetX;
+        let newY = e.clientY - dragOffsetY;
+        
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        
+        popupEl.style.left = newX + 'px';
+        popupEl.style.top = newY + 'px';
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isDragging && popupEl) {
+            isDragging = false;
+            const header = popupEl.querySelector('.wlp-header');
+            if (header) header.style.cursor = 'move';
+        }
+    });
 }
 
 /* ===== CREATE CONTEXT MENU ===== */
 function createContextMenu() {
     if (contextMenuEl) return contextMenuEl;
     
-    const c = getColors();
-    
     contextMenuEl = document.createElement('div');
     contextMenuEl.id = 'word-lookup-context-menu';
+    
+    const colors = getThemeColors();
     contextMenuEl.style.cssText = `
-        display:none; position:fixed; z-index:99998;
-        background:${c.bg}; border:1px solid ${c.border}; border-radius:8px;
-        box-shadow:${c.shadow}; padding:6px; min-width:160px;
-        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        position: fixed !important;
+        z-index: 999999 !important;
+        background: ${colors.bg} !important;
+        border: 1px solid ${colors.border} !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 20px ${colors.shadow} !important;
+        padding: 6px !important;
+        display: none !important;
+        min-width: 160px !important;
     `;
     
-    const btnStyle = `display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;border-radius:6px;background:transparent;color:${c.text};font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:all 0.15s;`;
-    
     contextMenuEl.innerHTML = `
-        <button id="wlp-ctx-translate" style="${btnStyle}"><i class="fas fa-language" style="width:18px;text-align:center;"></i> Tra từ điển</button>
-        <button id="wlp-ctx-speak" style="${btnStyle}"><i class="fas fa-volume-up" style="width:18px;text-align:center;"></i> Phát âm</button>
+        <button class="ctx-translate" style="
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 10px 14px;
+            border: none; background: transparent;
+            color: ${colors.text}; font-size: 0.9rem;
+            cursor: pointer; border-radius: 6px;
+            text-align: left;
+        ">
+            <i class="fas fa-language" style="width: 18px; color: ${colors.textMuted};"></i>
+            Tra từ điển
+        </button>
+        <button class="ctx-speak" style="
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 10px 14px;
+            border: none; background: transparent;
+            color: ${colors.text}; font-size: 0.9rem;
+            cursor: pointer; border-radius: 6px;
+            text-align: left;
+        ">
+            <i class="fas fa-volume-up" style="width: 18px; color: ${colors.textMuted};"></i>
+            Phát âm
+        </button>
     `;
     
     document.body.appendChild(contextMenuEl);
     
-    const btns = contextMenuEl.querySelectorAll('button');
-    btns.forEach(btn => {
-        btn.onmouseenter = () => { btn.style.background = 'rgba(99,102,241,0.15)'; btn.style.color = '#6366f1'; };
-        btn.onmouseleave = () => { const c = getColors(); btn.style.background = 'transparent'; btn.style.color = c.text; };
+    // Hover effect
+    contextMenuEl.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            btn.style.background = colors.bgSecondary;
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.background = 'transparent';
+        });
     });
     
-    document.getElementById('wlp-ctx-translate').onclick = (e) => {
-        e.stopPropagation(); hideContextMenu();
-        if (lastSelectedText) showPopup(contextMenuEl.offsetLeft, contextMenuEl.offsetTop, lastSelectedText);
-    };
+    // Actions
+    contextMenuEl.querySelector('.ctx-translate').addEventListener('click', () => {
+        hideContextMenu();
+        if (lastSelectedText) {
+            showPopup(window.lastContextX || 200, window.lastContextY || 200, lastSelectedText);
+        }
+    });
     
-    document.getElementById('wlp-ctx-speak').onclick = (e) => {
-        e.stopPropagation(); hideContextMenu();
-        if (lastSelectedText) speakWord(lastSelectedText);
-    };
-    
-    contextMenuEl.onclick = (e) => e.stopPropagation();
+    contextMenuEl.querySelector('.ctx-speak').addEventListener('click', () => {
+        hideContextMenu();
+        if (lastSelectedText) {
+            speak(lastSelectedText, 'en-US');
+        }
+    });
     
     return contextMenuEl;
 }
 
-function showContextMenu(x, y, text) {
-    const menu = createContextMenu();
-    const c = getColors();
+/* ===== GET SELECTED TEXT ===== */
+function getSelectedText() {
+    const selection = window.getSelection();
+    return selection?.toString().trim() || '';
+}
+
+/* ===== IS IN NEWS SECTION ===== */
+function isInNewsSection(target) {
+    const newsSection = document.getElementById('news-section');
+    if (!newsSection) return false;
     
-    // Update colors
-    menu.style.background = c.bg;
-    menu.style.borderColor = c.border;
-    menu.querySelectorAll('button').forEach(btn => btn.style.color = c.text);
+    // Check if target is within news section
+    if (!newsSection.contains(target)) return false;
+    
+    // Valid content areas
+    const validSelectors = [
+        '#news-reader',
+        '#news-content',
+        '#news-trail-text',
+        '#news-title',
+        '.news-reader-content',
+        '.news-card-title',
+        '.news-card-summary',
+        '.news-article',
+        '.news-card'
+    ];
+    
+    return validSelectors.some(selector => target.closest(selector));
+}
+
+/* ===== SHOW POPUP ===== */
+function showPopup(x, y, text) {
+    console.log('🔍 showPopup called:', { x, y, text });
+    
+    if (!text || text.length < 1) return;
+    
+    createPopup();
+    if (!popupEl) return;
+    
+    // Update theme colors
+    const colors = getThemeColors();
+    popupEl.style.background = colors.bg;
+    popupEl.style.borderColor = colors.border;
+    popupEl.style.boxShadow = `0 8px 32px ${colors.shadow}`;
+    
+    const header = popupEl.querySelector('.wlp-header');
+    if (header) {
+        header.style.background = colors.bgSecondary;
+        header.style.borderBottomColor = colors.border;
+    }
+    
+    const footer = popupEl.querySelector('.wlp-footer');
+    if (footer) {
+        footer.style.background = colors.bgSecondary;
+        footer.style.borderTopColor = colors.border;
+    }
+    
+    // Position popup
+    const popupWidth = 380;
+    const popupHeight = 400;
+    
+    let posX = x + 10;
+    let posY = y + 10;
+    
+    if (posX + popupWidth > window.innerWidth - 20) {
+        posX = window.innerWidth - popupWidth - 20;
+    }
+    if (posY + popupHeight > window.innerHeight - 20) {
+        posY = window.innerHeight - popupHeight - 20;
+    }
+    
+    posX = Math.max(10, posX);
+    posY = Math.max(10, posY);
+    
+    popupEl.style.left = posX + 'px';
+    popupEl.style.top = posY + 'px';
+    popupEl.style.display = 'flex';
+    
+    // Update word display
+    const wordEl = popupEl.querySelector('.wlp-word');
+    if (wordEl) {
+        wordEl.textContent = text;
+        wordEl.style.color = colors.text;
+    }
+    
+    const phoneticEl = popupEl.querySelector('.wlp-phonetic');
+    if (phoneticEl) {
+        phoneticEl.textContent = '';
+        phoneticEl.style.color = colors.textMuted;
+    }
+    
+    const contentEl = popupEl.querySelector('.wlp-content');
+    if (contentEl) {
+        contentEl.innerHTML = `
+            <div class="wlp-loading" style="text-align: center; padding: 30px; color: ${colors.textMuted};">
+                <i class="fas fa-spinner fa-spin"></i> Đang tìm...
+            </div>
+        `;
+        contentEl.style.color = colors.text;
+    }
+    
+    // Hide footer initially
+    if (footer) footer.style.display = 'none';
+    
+    // Fetch definition
+    fetchDefinition(text);
+}
+
+/* ===== HIDE POPUP ===== */
+function hidePopup() {
+    if (popupEl) {
+        popupEl.style.display = 'none';
+    }
+    cachedEntry = null;
+}
+
+/* ===== SHOW CONTEXT MENU ===== */
+function showContextMenu(x, y, text) {
+    if (!text) return;
+    
+    createContextMenu();
+    if (!contextMenuEl) return;
     
     lastSelectedText = text;
-    menu.style.display = 'block';
+    window.lastContextX = x;
+    window.lastContextY = y;
     
-    let left = x, top = y;
-    if (left + 180 > window.innerWidth) left = window.innerWidth - 190;
-    if (top + 100 > window.innerHeight) top = window.innerHeight - 110;
+    // Update theme colors
+    const colors = getThemeColors();
+    contextMenuEl.style.background = colors.bg;
+    contextMenuEl.style.borderColor = colors.border;
+    contextMenuEl.style.boxShadow = `0 4px 20px ${colors.shadow}`;
     
-    menu.style.left = Math.max(10, left) + 'px';
-    menu.style.top = Math.max(10, top) + 'px';
-}
-
-function hideContextMenu() { if (contextMenuEl) contextMenuEl.style.display = 'none'; }
-
-/* ===== SHOW/HIDE POPUP ===== */
-function showPopup(x, y, word) {
-    if (!word || word.length < 2) return;
-    
-    const popup = createPopup();
-    const c = getColors();
-    
-    // Update colors for current theme
-    popup.style.background = c.bg;
-    popup.style.borderColor = c.border;
-    popup.style.boxShadow = c.shadow;
-    popup.style.color = c.text;
-    
-    const header = popup.querySelector('.wlp-header');
-    header.style.background = c.bgSec;
-    header.style.borderBottomColor = c.border;
-    header.querySelector('.fa-grip-vertical').style.color = c.textMuted;
-    
-    popup.querySelector('.wlp-word').style.color = c.text;
-    popup.querySelector('.wlp-phonetic').style.color = c.textMuted;
-    popup.querySelector('.wlp-footer').style.background = c.bgSec;
-    popup.querySelector('.wlp-footer').style.borderTopColor = c.border;
-    
-    ['.wlp-speak', '.wlp-close'].forEach(sel => {
-        const btn = popup.querySelector(sel);
-        btn.style.background = c.btnBg;
-        btn.style.color = c.btnColor;
+    contextMenuEl.querySelectorAll('button').forEach(btn => {
+        btn.style.color = colors.text;
     });
     
-    currentWord = word.toLowerCase().trim();
-    popup.querySelector('.wlp-word').textContent = currentWord;
-    popup.querySelector('.wlp-phonetic').textContent = '';
-    popup.querySelector('.wlp-content').innerHTML = `<div style="text-align:center;color:${c.textMuted};padding:24px;"><i class="fas fa-spinner fa-spin"></i> Đang tra từ...</div>`;
+    // Position
+    let posX = x;
+    let posY = y;
     
-    const addBtn = popup.querySelector('.wlp-add-btn');
-    addBtn.disabled = true;
-    addBtn.style.opacity = '0.5';
-    addBtn.style.cursor = 'not-allowed';
+    if (posX + 180 > window.innerWidth) {
+        posX = window.innerWidth - 180;
+    }
+    if (posY + 100 > window.innerHeight) {
+        posY = window.innerHeight - 100;
+    }
     
-    popup.style.display = 'block';
-    popup.style.left = '-9999px';
-    popup.style.top = '-9999px';
-    
-    setTimeout(() => {
-        const rect = popup.getBoundingClientRect();
-        let left = x + 10, top = y + 10;
-        if (left + rect.width > window.innerWidth - 20) left = x - rect.width - 10;
-        if (top + rect.height > window.innerHeight - 20) top = y - rect.height - 10;
-        popup.style.left = Math.max(10, left) + 'px';
-        popup.style.top = Math.max(10, top) + 'px';
-    }, 0);
-    
-    fetchDefinition(currentWord);
+    contextMenuEl.style.left = posX + 'px';
+    contextMenuEl.style.top = posY + 'px';
+    contextMenuEl.style.display = 'block';
 }
 
-function hidePopup() { if (popupEl) popupEl.style.display = 'none'; currentWord = ''; cachedData = null; }
+/* ===== HIDE CONTEXT MENU ===== */
+function hideContextMenu() {
+    if (contextMenuEl) {
+        contextMenuEl.style.display = 'none';
+    }
+}
 
 /* ===== FETCH DEFINITION ===== */
 async function fetchDefinition(word) {
-    const c = getColors();
-    const contentEl = popupEl.querySelector('.wlp-content');
-    const phoneticEl = popupEl.querySelector('.wlp-phonetic');
-    const addBtn = popupEl.querySelector('.wlp-add-btn');
+    const lookupWord = word.toLowerCase().trim().split(/\s+/)[0];
+    const colors = getThemeColors();
     
     try {
-        const lookupWord = word.split(/\s+/)[0].toLowerCase();
-        const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`);
+        const response = await fetch(
+            `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lookupWord)}`
+        );
         
-        if (!resp.ok) {
-            contentEl.innerHTML = `<div style="text-align:center;color:${c.textMuted};padding:24px;"><i class="fas fa-search"></i> Không tìm thấy từ này</div>`;
+        if (!response.ok) {
+            showNotFound(word);
             return;
         }
         
-        const data = await resp.json();
-        if (!data?.[0]) {
-            contentEl.innerHTML = `<div style="text-align:center;color:${c.textMuted};padding:24px;">Không tìm thấy</div>`;
-            return;
-        }
-        
+        const data = await response.json();
         const entry = data[0];
-        cachedData = entry;
         
-        popupEl.querySelector('.wlp-word').textContent = entry.word || lookupWord;
-        currentWord = entry.word || lookupWord;
+        if (!entry) {
+            showNotFound(word);
+            return;
+        }
         
-        phoneticEl.textContent = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
+        cachedEntry = entry;
         
+        // Update phonetic
+        const phoneticEl = popupEl?.querySelector('.wlp-phonetic');
+        if (phoneticEl && entry.phonetic) {
+            phoneticEl.textContent = entry.phonetic;
+        }
+        
+        // Build content
         let html = '';
-        for (const m of (entry.meanings || []).slice(0, 3)) {
-            html += `<div style="display:inline-block;background:#6366f1;color:white;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;margin:10px 0 6px;">${escapeHtml(m.partOfSpeech)}</div>`;
-            for (const d of (m.definitions || []).slice(0, 2)) {
-                html += `<div style="color:${c.textDef};line-height:1.55;margin-bottom:5px;">${escapeHtml(d.definition)}</div>`;
-                if (d.example) html += `<div style="color:${c.textMuted};font-style:italic;font-size:13px;margin-bottom:8px;padding-left:10px;border-left:3px solid ${c.exampleBorder};">"${escapeHtml(d.example)}"</div>`;
-            }
-        }
+        const meanings = entry.meanings?.slice(0, 3) || [];
         
-        contentEl.innerHTML = html || `<div style="text-align:center;padding:20px;color:${c.textMuted};">Không có định nghĩa</div>`;
-        addBtn.disabled = false;
-        addBtn.style.opacity = '1';
-        addBtn.style.cursor = 'pointer';
-        
-    } catch (err) {
-        console.error('Lookup error:', err);
-        contentEl.innerHTML = `<div style="text-align:center;color:${c.textMuted};padding:24px;"><i class="fas fa-exclamation-circle"></i> Lỗi khi tra từ</div>`;
-    }
-}
-
-function speakWord(word) {
-    if (!word) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(word);
-    u.lang = 'en-US'; u.rate = 0.9;
-    speechSynthesis.speak(u);
-}
-
-function handleAddWord() {
-    if (!currentWord || !cachedData) return;
-    if (appData.vocabulary?.find(w => w.word?.toLowerCase() === currentWord.toLowerCase())) {
-        showToast('Từ này đã có trong từ điển!', 'warning'); return;
-    }
-    
-    const entry = cachedData;
-    const meanings = [];
-    for (const m of (entry.meanings || [])) {
-        for (const d of (m.definitions || []).slice(0, 2)) {
-            meanings.push({
-                phoneticUS: entry.phonetic || entry.phonetics?.[0]?.text || '',
-                phoneticUK: entry.phonetics?.find(p => p.audio?.includes('uk'))?.text || '',
-                pos: m.partOfSpeech || '', defEn: d.definition || '', defVi: '',
-                example: d.example || '',
-                synonyms: m.synonyms?.slice(0, 5)?.join(', ') || '',
-                antonyms: m.antonyms?.slice(0, 5)?.join(', ') || ''
+        meanings.forEach(meaning => {
+            const pos = meaning.partOfSpeech || '';
+            html += `<div style="margin-bottom: 16px;">`;
+            html += `<div style="
+                font-weight: 600; 
+                color: ${colors.accent}; 
+                font-size: 0.85rem;
+                text-transform: capitalize;
+                margin-bottom: 8px;
+            ">${pos}</div>`;
+            
+            const defs = meaning.definitions?.slice(0, 2) || [];
+            defs.forEach((def, i) => {
+                html += `<div style="margin-bottom: 10px; padding-left: 12px; border-left: 2px solid ${colors.border};">`;
+                html += `<div style="color: ${colors.text}; line-height: 1.5;">${i + 1}. ${def.definition || ''}</div>`;
+                if (def.example) {
+                    html += `<div style="
+                        color: ${colors.textMuted}; 
+                        font-style: italic; 
+                        font-size: 0.9rem;
+                        margin-top: 4px;
+                    ">"${def.example}"</div>`;
+                }
+                html += `</div>`;
             });
+            
+            html += `</div>`;
+        });
+        
+        const contentEl = popupEl?.querySelector('.wlp-content');
+        if (contentEl) {
+            contentEl.innerHTML = html || `<div style="color: ${colors.textMuted};">Không có định nghĩa</div>`;
         }
+        
+        // Show footer
+        const footer = popupEl?.querySelector('.wlp-footer');
+        if (footer) {
+            footer.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Fetch definition error:', error);
+        showNotFound(word);
     }
-    if (!meanings.length) meanings.push({ phoneticUS:'', phoneticUK:'', pos:'', defEn:'', defVi:'', example:'', synonyms:'', antonyms:'' });
+}
+
+/* ===== SHOW NOT FOUND ===== */
+function showNotFound(word) {
+    const colors = getThemeColors();
+    const contentEl = popupEl?.querySelector('.wlp-content');
+    if (contentEl) {
+        contentEl.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: ${colors.textMuted};">
+                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                Không tìm thấy "<strong style="color: ${colors.text};">${word}</strong>"
+            </div>
+        `;
+    }
     
-    const wordObj = {
-        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
-        word: currentWord, setId: null, meanings, source: 'news',
-        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-        mastered: false, bookmarked: false, srsLevel: 0,
-        nextReview: new Date().toISOString(), reviewCount: 0, correctCount: 0, streak: 0
+    const footer = popupEl?.querySelector('.wlp-footer');
+    if (footer) {
+        footer.style.display = 'none';
+    }
+}
+
+/* ===== ADD TO VOCABULARY ===== */
+function addToVocabulary() {
+    if (!cachedEntry) {
+        showToast('Không có dữ liệu từ vựng', 'error');
+        return;
+    }
+    
+    const word = cachedEntry.word;
+    
+    // Check if already exists
+    const exists = appData.vocabulary?.some(
+        w => w.word.toLowerCase() === word.toLowerCase()
+    );
+    
+    if (exists) {
+        showToast(`"${word}" đã có trong từ điển`, 'info');
+        hidePopup();
+        return;
+    }
+    
+    // Build meanings
+    const meanings = [];
+    
+    (cachedEntry.meanings || []).forEach(meaning => {
+        const pos = meaning.partOfSpeech || '';
+        const phonetic = cachedEntry.phonetic || '';
+        
+        (meaning.definitions || []).slice(0, 2).forEach(def => {
+            meanings.push({
+                phoneticUS: phonetic,
+                phoneticUK: phonetic,
+                pos: pos,
+                defEn: def.definition || '',
+                defVi: '',
+                example: def.example || '',
+                synonyms: (meaning.synonyms || []).slice(0, 5).join(', '),
+                antonyms: (meaning.antonyms || []).slice(0, 5).join(', ')
+            });
+        });
+    });
+    
+    if (meanings.length === 0) {
+        meanings.push({
+            phoneticUS: cachedEntry.phonetic || '',
+            phoneticUK: cachedEntry.phonetic || '',
+            pos: '',
+            defEn: '',
+            defVi: '',
+            example: '',
+            synonyms: '',
+            antonyms: ''
+        });
+    }
+    
+    // Create word object
+    const now = new Date().toISOString();
+    const newWord = {
+        id: generateId(),
+        word: word,
+        setId: null,
+        formation: '',
+        meanings: meanings,
+        createdAt: now,
+        updatedAt: now,
+        nextReview: now,
+        srsLevel: 0,
+        mastered: false,
+        bookmarked: false,
+        source: 'news-reader'
     };
     
+    // Add to vocabulary
     if (!appData.vocabulary) appData.vocabulary = [];
-    appData.vocabulary.push(wordObj);
+    appData.vocabulary.push(newWord);
     saveData(appData);
     
-    showToast(`Đã thêm "${currentWord}" vào từ điển!`, 'success');
+    // Dispatch event
+    window.dispatchEvent(new CustomEvent('volearn:wordSaved', { 
+        detail: { word: word, wordId: newWord.id, source: 'news-reader' } 
+    }));
+    document.dispatchEvent(new CustomEvent('volearn:wordSaved', { 
+        detail: { word: word, wordId: newWord.id, source: 'news-reader' } 
+    }));
+    
+    showToast(`Đã thêm "${word}" vào từ điển`, 'success');
     hidePopup();
-    window.dispatchEvent(new CustomEvent('volearn:wordSaved', { detail: wordObj }));
 }
 
-function escapeHtml(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
-function getSelectedText() {
-    const sel = window.getSelection();
-    if (!sel?.rangeCount) return '';
-    const t = sel.toString().trim();
-    return (t && /^[a-zA-Z\s'-]+$/.test(t) && t.length >= 2 && t.length <= 50) ? t : '';
-}
-function isInNewsSection(el) { const news = document.getElementById('news-section'); return news?.contains(el); }
-
-function setupDragListeners() {
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging || !popupEl) return;
-        let newX = e.clientX - dragOffsetX, newY = e.clientY - dragOffsetY;
-        const rect = popupEl.getBoundingClientRect();
-        popupEl.style.left = Math.max(0, Math.min(newX, window.innerWidth - rect.width)) + 'px';
-        popupEl.style.top = Math.max(0, Math.min(newY, window.innerHeight - rect.height)) + 'px';
+/* ===== INIT WORD LOOKUP ===== */
+export function initWordLookup() {
+    console.log('✅ Word Lookup initializing...');
+    
+    // Double-click handler
+    document.addEventListener('dblclick', (e) => {
+        if (!isInNewsSection(e.target)) return;
+        
+        console.log('Double click in news section');
+        
+        setTimeout(() => {
+            const text = getSelectedText();
+            if (text && text.length >= 1 && text.length <= 50) {
+                console.log('Selected word:', text);
+                showPopup(e.clientX, e.clientY, text);
+            }
+        }, 10);
     });
-    document.addEventListener('mouseup', () => {
-        if (isDragging) {
-            isDragging = false;
-            if (popupEl) popupEl.querySelector('.wlp-header').style.cursor = 'move';
+    
+    // Right-click (context menu) handler
+    document.addEventListener('contextmenu', (e) => {
+        if (!isInNewsSection(e.target)) return;
+        
+        const text = getSelectedText();
+        if (text && text.length >= 1 && text.length <= 100) {
+            e.preventDefault();
+            console.log('Right-click with selection:', text);
+            showContextMenu(e.clientX, e.clientY, text);
         }
     });
-}
-
-export function initWordLookup() {
-    if (isInitialized) return;
-    isInitialized = true;
     
-    createPopup();
-    createContextMenu();
-    setupDragListeners();
-    
-    document.addEventListener('dblclick', (e) => {
-        if (popupEl?.contains(e.target) || contextMenuEl?.contains(e.target)) return;
-        if (!isInNewsSection(e.target)) return;
-        const text = getSelectedText();
-        if (text) { e.preventDefault(); hideContextMenu(); showPopup(e.clientX, e.clientY, text); }
-    }, true);
-    
-    document.addEventListener('contextmenu', (e) => {
-        if (popupEl?.contains(e.target) || contextMenuEl?.contains(e.target)) return;
-        if (!isInNewsSection(e.target)) return;
-        const text = getSelectedText();
-        if (text) { e.preventDefault(); hidePopup(); showContextMenu(e.clientX, e.clientY, text); }
-    }, true);
-    
+    // Close popup/menu on outside click
     document.addEventListener('click', (e) => {
-        if (contextMenuEl?.style.display !== 'none' && !contextMenuEl?.contains(e.target)) hideContextMenu();
-        if (popupEl?.style.display !== 'none' && !popupEl?.contains(e.target)) hidePopup();
-    }, true);
+        // Close context menu
+        if (contextMenuEl && !contextMenuEl.contains(e.target)) {
+            hideContextMenu();
+        }
+        
+        // Close popup (but not if clicking inside it)
+        if (popupEl && popupEl.style.display !== 'none') {
+            if (!popupEl.contains(e.target)) {
+                hidePopup();
+            }
+        }
+    });
     
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hidePopup(); hideContextMenu(); } });
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hidePopup();
+            hideContextMenu();
+        }
+    });
     
-    console.log('✅ Word Lookup ready!');
+    console.log('✅ Word Lookup initialized');
 }
 
-window.initWordLookup = initWordLookup;
+/* ===== GLOBAL EXPORT FOR TESTING ===== */
 window.showWordLookupPopup = showPopup;
+
+export { showPopup, hidePopup };
