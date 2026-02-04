@@ -2424,3 +2424,124 @@
         box-shadow: none;
     }
 }
+
+/* ===== SOURCE OPTIONS ===== */
+.skills-source-options {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ai-border);
+}
+
+.source-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.source-options .radio-option {
+    padding: 14px 16px;
+}
+
+.source-options .radio-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.source-options .radio-title i {
+    color: var(--ai-primary);
+    width: 18px;
+}
+
+.web-search-options {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--ai-bg-tertiary);
+    border-radius: var(--ai-radius);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.source-sites {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.web-search-topic {
+    margin-top: 16px;
+}
+
+.topic-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.topic-tag {
+    padding: 8px 14px;
+    background: var(--ai-bg);
+    border: 1px solid var(--ai-border);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--ai-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.topic-tag:hover {
+    border-color: var(--ai-primary);
+    color: var(--ai-primary);
+}
+
+.topic-tag.active {
+    background: var(--ai-primary);
+    border-color: var(--ai-primary);
+    color: white;
+}
+
+.custom-topic-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ai-radius);
+    background: var(--ai-bg);
+    color: var(--ai-text);
+    font-size: 0.9rem;
+}
+
+.custom-topic-input:focus {
+    outline: none;
+    border-color: var(--ai-primary);
+}
+
+.custom-topic-input::placeholder {
+    color: var(--ai-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .source-sites {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .source-sites {
+        grid-template-columns: 1fr;
+    }
+    
+    .topic-tags {
+        justify-content: center;
+    }
+}
