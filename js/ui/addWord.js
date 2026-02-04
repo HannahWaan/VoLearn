@@ -1123,8 +1123,10 @@ export function saveWord() {
         : setId;
     
     const now = new Date().toISOString();
+    let savedWordId = null;
     
     if (editingWordId) {
+        // Editing existing word
         const existingWord = appData.vocabulary?.find(w => w.id === editingWordId);
         if (existingWord) {
             existingWord.word = word;
@@ -1132,10 +1134,12 @@ export function saveWord() {
             existingWord.formation = wordFormation;
             existingWord.meanings = meanings;
             existingWord.updatedAt = now;
+            savedWordId = editingWordId;
             
             showToast(`Đã cập nhật "${word}"`, 'success');
         }
     } else {
+        // Adding new word
         const newWord = {
             id: generateId(),
             word,
@@ -1152,6 +1156,7 @@ export function saveWord() {
         
         if (!appData.vocabulary) appData.vocabulary = [];
         appData.vocabulary.push(newWord);
+        savedWordId = newWord.id;
         
         if (typeof addToHistory === 'function') {
             addToHistory('add', newWord.id);
@@ -1160,15 +1165,28 @@ export function saveWord() {
         showToast(`Đã thêm "${word}"`, 'success');
     }
     
+    // Save to storage
     saveData(appData);
     
-    document.dispatchEvent(new CustomEvent('volearn:wordSaved', {
-        detail: { word, isEdit: !!editingWordId }
-    }));
+    // ========== DISPATCH EVENTS ==========
+    // Dispatch cho cả window và document để các module khác nhận được
+    const eventDetail = { 
+        detail: { 
+            word, 
+            isEdit: !!editingWordId,
+            wordId: savedWordId
+        } 
+    };
     
+    window.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
+    document.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
+    // =====================================
+    
+    // Clear form
     clearWordFormSilent();
     editingWordId = null;
     
+    // Navigate back to set view if applicable
     if (returnToSetId) {
         window.currentSetViewId = returnToSetId;
         navigate('set-view');
