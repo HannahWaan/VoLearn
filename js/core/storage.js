@@ -1,125 +1,102 @@
-/* ========================================
-   VoLearn - Storage Module
-   Quản lý localStorage
-   ======================================== */
+/* ===== STORAGE MODULE ===== */
+/* VoLearn v2.2.0 - Local Storage & Export/Import */
 
-import { appData, setAppData, DEFAULT_DATA } from './state.js';
+import { appData, settings } from './state.js';
 
+/* ===== CONSTANTS ===== */
 const STORAGE_KEY = 'volearn_data';
 
+const DEFAULT_DATA = {
+    vocabulary: [],
+    sets: [],
+    history: []
+};
+
+/* ===== SANITIZE DATA ===== */
 function sanitizeLoadedData(data) {
-    if (!data || typeof data !== 'object') return { data, changed: false };
-
-    let changed = false;
-
-    // Ensure arrays exist
-    if (!Array.isArray(data.vocabulary)) {
-        data.vocabulary = [];
-        changed = true;
-    }
-    if (!Array.isArray(data.sets)) {
-        data.sets = [];
-        changed = true;
-    }
-    if (!Array.isArray(data.history)) {
-        data.history = [];
-        changed = true;
-    }
-
-    // Sanitize practice history durations
-    // - duration can accidentally be Unix timestamp seconds (1e9..2e9) -> set to 0
-    // - duration can be ms (very large) -> convert to seconds
-    for (const h of data.history) {
-        if (!h || typeof h !== 'object') continue;
-        if (h.type !== 'practice') continue;
-
-        const d = h.duration;
-
-        if (typeof d === 'number' && Number.isFinite(d)) {
-            // Unix timestamp seconds ~ years 2001..2033
-            if (d >= 1_000_000_000 && d <= 2_000_000_000) {
-                h.duration = 0;
-                changed = true;
-                continue;
+    if (!data) return { ...DEFAULT_DATA };
+    
+    const sanitized = {
+        vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary : [],
+        sets: Array.isArray(data.sets) ? data.sets : [],
+        history: Array.isArray(data.history) ? data.history : []
+    };
+    
+    // Normalize practice-history durations
+    sanitized.history = sanitized.history.map(entry => {
+        if (entry && typeof entry.duration === 'number') {
+            // Detect Unix seconds (1,000,000,000 to 2,000,000,000)
+            if (entry.duration >= 1000000000 && entry.duration < 2000000000) {
+                entry.duration = 0;
             }
-
-            // epoch ms timestamp -> not a duration
-            if (d > 1_000_000_000_000) {
-                h.duration = 0;
-                changed = true;
-                continue;
+            // Detect epoch ms (> 1 trillion)
+            else if (entry.duration > 1000000000000) {
+                entry.duration = 0;
             }
-
-            // likely milliseconds duration -> convert to seconds
-            // 10,000,000 seconds ~ 115 days
-            if (d > 10_000_000) {
-                h.duration = Math.round(d / 1000);
-                changed = true;
-                continue;
+            // Detect ms that should be seconds (> 10 million ms = ~2.7 hours)
+            else if (entry.duration > 10000000) {
+                entry.duration = Math.floor(entry.duration / 1000);
             }
-
-            if (d < 0) {
-                h.duration = 0;
-                changed = true;
-                continue;
+            // Negative durations
+            else if (entry.duration < 0) {
+                entry.duration = 0;
             }
         }
-    }
-
-    return { data, changed };
+        return entry;
+    });
+    
+    return sanitized;
 }
 
-/**
- * Load dữ liệu từ localStorage
- */
+/* ===== LOAD DATA ===== */
 export function loadData() {
     try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-
-        if (saved) {
-            const parsed = JSON.parse(saved);
-
-            const merged = {
-                ...DEFAULT_DATA,
-                ...parsed,
-                settings: {
-                    ...DEFAULT_DATA.settings,
-                    ...(parsed.settings || {})
-                }
-            };
-
-            // Sanitize data (migrate bad durations, ensure arrays, etc.)
-            const sanitized = sanitizeLoadedData(merged);
-
-            setAppData(sanitized.data);
-
-            // If we fixed something, persist immediately so it stays clean
-            if (sanitized.changed) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized.data));
-                window.dispatchEvent(new CustomEvent('volearn:dataSaved'));
-                console.log('  🧹 Sanitized saved data (history durations fixed)');
-            }
-
-            console.log(`  📊 Loaded: ${sanitized.data.vocabulary?.length || 0} words, ${sanitized.data.sets?.length || 0} sets`);
-        } else {
-            console.log('  📊 No saved data, using defaults');
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            Object.assign(appData, DEFAULT_DATA);
+            return appData;
         }
-
-        return true;
+        
+        const parsed = JSON.parse(stored);
+        const sanitized = sanitizeLoadedData(parsed);
+        
+        // Check if sanitization made changes
+        const wasChanged = JSON.stringify(parsed) !== JSON.stringify(sanitized);
+        
+        Object.assign(appData, sanitized);
+        
+        // Auto-save if data was sanitized
+        if (wasChanged) {
+            saveData(appData);
+        }
+        
+        return appData;
     } catch (error) {
-        console.error('  ❌ Error loading data:', error);
-        return false;
+        console.error('Error loading data:', error);
+        Object.assign(appData, DEFAULT_DATA);
+        return appData;
     }
 }
 
-/**
- * Lưu dữ liệu vào localStorage
- */
+/* ===== SAVE DATA ===== */
 export function saveData(data) {
     try {
-        const dataToSave = data || appData;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-        window.dispatchEvent(new CustomEvent('volearn:dataSaved'));
+        const toSave = {
+            vocabulary: data.vocabulary || [],
+            sets: data.sets || [],
+            history: data.history || []
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        
+        // Dispatch events for other modules to listen
+        window.dispatchEvent(new CustomEvent('volearn:dataSaved', { 
+            detail: { 
+                vocabularyCount: toSave.vocabulary.length,
+                setsCount: toSave.sets.length 
+            } 
+        }));
+        
         return true;
     } catch (error) {
         console.error('Error saving data:', error);
@@ -127,14 +104,14 @@ export function saveData(data) {
     }
 }
 
-/**
- * Xóa tất cả dữ liệu
- */
+/* ===== CLEAR ALL DATA ===== */
 export function clearAllData() {
     try {
         localStorage.removeItem(STORAGE_KEY);
-        setAppData({ ...DEFAULT_DATA });
+        Object.assign(appData, DEFAULT_DATA);
+        
         window.dispatchEvent(new CustomEvent('volearn:dataCleared'));
+        
         return true;
     } catch (error) {
         console.error('Error clearing data:', error);
@@ -142,127 +119,152 @@ export function clearAllData() {
     }
 }
 
-/**
- * Xóa tất cả dữ liệu (alias cho clearAllData)
- */
+/* ===== CLEAR DATA (Alias) ===== */
 export function clearData() {
     return clearAllData();
 }
 
-/**
- * Export dữ liệu ra JSON
- */
+/* ===== EXPORT TO JSON ===== */
 export function exportToJSON() {
-    const dataStr = JSON.stringify(appData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
+    const data = {
+        vocabulary: appData.vocabulary || [],
+        sets: appData.sets || [],
+        history: appData.history || [],
+        exportedAt: new Date().toISOString(),
+        version: '2.2.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-
+    
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `volearn_backup_${today}.json`;
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = `volearn_backup_${formatDate(new Date())}.json`;
+    a.download = filename;
+    document.body.appendChild(a);
     a.click();
-
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    return filename;
 }
 
-/**
- * Export dữ liệu ra CSV
- */
+/* ===== EXPORT TO CSV ===== */
 export function exportToCSV() {
-    const vocabulary = appData.vocabulary || [];
-
-    if (vocabulary.length === 0) {
-        alert('Không có từ vựng để xuất!');
-        return;
-    }
-
-    let csv = 'Word,Phonetic US,Phonetic UK,POS,Definition EN,Definition VI,Example,Synonyms,Antonyms,Set,Mastered,Bookmarked\n';
-
-    vocabulary.forEach(word => {
+    const headers = [
+        'Word', 'Phonetic US', 'Phonetic UK', 'POS', 
+        'Definition EN', 'Definition VI', 'Example', 
+        'Synonyms', 'Antonyms', 'Set', 'Mastered', 'Bookmarked'
+    ];
+    
+    const escapeCSV = (str) => {
+        if (!str) return '';
+        const s = String(str);
+        if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    };
+    
+    const getSetName = (setId) => {
+        if (!setId) return '';
+        const set = appData.sets?.find(s => s.id === setId);
+        return set?.name || '';
+    };
+    
+    const rows = [headers.join(',')];
+    
+    (appData.vocabulary || []).forEach(word => {
         const meanings = word.meanings || [];
-        meanings.forEach(m => {
-            const row = [
+        
+        if (meanings.length === 0) {
+            rows.push([
                 escapeCSV(word.word),
-                escapeCSV(m.phoneticUS || ''),
-                escapeCSV(m.phoneticUK || ''),
-                escapeCSV(m.pos || ''),
-                escapeCSV(m.defEn || ''),
-                escapeCSV(m.defVi || ''),
-                escapeCSV(m.example || ''),
-                escapeCSV(m.synonyms || ''),
-                escapeCSV(m.antonyms || ''),
-                escapeCSV(word.setId || ''),
+                '', '', '', '', '', '', '', '',
+                escapeCSV(getSetName(word.setId)),
                 word.mastered ? 'Yes' : 'No',
                 word.bookmarked ? 'Yes' : 'No'
-            ];
-            csv += row.join(',') + '\n';
-        });
+            ].join(','));
+        } else {
+            meanings.forEach((m, idx) => {
+                rows.push([
+                    idx === 0 ? escapeCSV(word.word) : '',
+                    escapeCSV(m.phoneticUS),
+                    escapeCSV(m.phoneticUK),
+                    escapeCSV(m.pos),
+                    escapeCSV(m.defEn),
+                    escapeCSV(m.defVi),
+                    escapeCSV(m.example),
+                    escapeCSV(m.synonyms),
+                    escapeCSV(m.antonyms),
+                    idx === 0 ? escapeCSV(getSetName(word.setId)) : '',
+                    idx === 0 ? (word.mastered ? 'Yes' : 'No') : '',
+                    idx === 0 ? (word.bookmarked ? 'Yes' : 'No') : ''
+                ].join(','));
+            });
+        }
     });
-
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-
+    
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `volearn_vocabulary_${today}.csv`;
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = `volearn_vocabulary_${formatDate(new Date())}.csv`;
+    a.download = filename;
+    document.body.appendChild(a);
     a.click();
-
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    return filename;
 }
 
-/**
- * Import dữ liệu từ JSON file
- */
+/* ===== IMPORT FROM JSON ===== */
 export function importFromJSON(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-
+        
         reader.onload = (e) => {
             try {
-                const imported = JSON.parse(e.target.result);
-
-                if (!imported.vocabulary || !Array.isArray(imported.vocabulary)) {
-                    throw new Error('Invalid data format');
+                const data = JSON.parse(e.target.result);
+                
+                if (!data.vocabulary || !Array.isArray(data.vocabulary)) {
+                    reject(new Error('Invalid file format: missing vocabulary array'));
+                    return;
                 }
-
+                
                 const merged = {
-                    ...DEFAULT_DATA,
-                    ...imported,
-                    settings: {
-                        ...DEFAULT_DATA.settings,
-                        ...(imported.settings || {})
-                    }
+                    vocabulary: data.vocabulary,
+                    sets: data.sets || [],
+                    history: data.history || []
                 };
-
+                
                 const sanitized = sanitizeLoadedData(merged);
-
-                setAppData(sanitized.data);
-                saveData(sanitized.data);
-
-                window.dispatchEvent(new CustomEvent('volearn:dataImported'));
-
-                resolve(sanitized.data);
+                Object.assign(appData, sanitized);
+                saveData(appData);
+                
+                window.dispatchEvent(new CustomEvent('volearn:dataImported', {
+                    detail: {
+                        vocabularyCount: sanitized.vocabulary.length,
+                        setsCount: sanitized.sets.length
+                    }
+                }));
+                
+                resolve({
+                    vocabularyCount: sanitized.vocabulary.length,
+                    setsCount: sanitized.sets.length
+                });
             } catch (error) {
-                reject(error);
+                reject(new Error('Failed to parse JSON file'));
             }
         };
-
+        
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsText(file);
     });
-}
-
-// ===== HELPER FUNCTIONS =====
-
-function escapeCSV(str) {
-    if (!str) return '';
-    str = String(str);
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
-}
-
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
 }
