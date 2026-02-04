@@ -1,6 +1,8 @@
 /**
  * VoLearn - Settings Module
- * Version: 2.1.0
+ * Version: 2.2.0
+ * - Auto update stats when vocabulary changes
+ * - Export with set selection
  */
 
 import { appData, setAppData, DEFAULT_DATA } from '../core/state.js';
@@ -14,6 +16,7 @@ const BACKUP_FILENAME = 'volearn-backup.json';
 
 // ===== VOICE STATE =====
 let availableVoices = { us: [], uk: [], vi: [] };
+let eventsBound = false;
 
 // ===== INITIALIZATION =====
 export function initSettings() {
@@ -23,6 +26,26 @@ export function initSettings() {
     loadCurrentSettings();
     updateStats();
     checkGoogleDriveStatus();
+    
+    // ===== LISTEN FOR DATA CHANGES =====
+    if (!eventsBound) {
+        eventsBound = true;
+        
+        // Listen for vocabulary changes
+        window.addEventListener('volearn:wordSaved', updateStats);
+        document.addEventListener('volearn:wordSaved', updateStats);
+        window.addEventListener('volearn:wordDeleted', updateStats);
+        window.addEventListener('volearn:dataSaved', updateStats);
+        window.addEventListener('volearn:dataImported', updateStats);
+        
+        // Listen for storage changes from other tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'volearn_data') {
+                updateStats();
+            }
+        });
+    }
+    
     console.log('✅ Settings initialized');
 }
 
@@ -31,6 +54,9 @@ export function applySettings() {
     const savedTheme = localStorage.getItem('volearn-theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme', 'dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
     }
     
     const savedFont = localStorage.getItem('volearn-font');
@@ -169,7 +195,10 @@ function loadCurrentSettings() {
                        document.body.classList.contains('dark-theme') || 
                        document.body.classList.contains('dark-mode');
         themeToggle.checked = isDark;
-        if (isDark) document.body.classList.add('dark-theme', 'dark-mode');
+        if (isDark) {
+            document.body.classList.add('dark-theme', 'dark-mode');
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
     }
     
     const fontSelect = document.getElementById('font-select');
@@ -191,9 +220,11 @@ function loadCurrentSettings() {
 function applyTheme(isDark) {
     if (isDark) {
         document.body.classList.add('dark-theme', 'dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('volearn-theme', 'dark');
     } else {
         document.body.classList.remove('dark-theme', 'dark-mode');
+        document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('volearn-theme', 'light');
     }
 }
@@ -241,8 +272,9 @@ function bindSettingsEvents() {
     document.getElementById('btn-test-uk')?.addEventListener('click', () => testVoice('uk'));
     document.getElementById('btn-test-vi')?.addEventListener('click', () => testVoice('vi'));
     
-    document.getElementById('btn-export-json')?.addEventListener('click', exportJSON);
-    document.getElementById('btn-export-csv')?.addEventListener('click', exportCSV);
+    // ===== EXPORT BUTTONS - SHOW SELECTOR =====
+    document.getElementById('btn-export-json')?.addEventListener('click', () => showExportSelector('json'));
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => showExportSelector('csv'));
     
     const btnImport = document.getElementById('btn-import');
     const importFile = document.getElementById('import-file');
@@ -259,34 +291,198 @@ function bindSettingsEvents() {
     document.getElementById('btn-data-help')?.addEventListener('click', showDataHelpPopup);
 }
 
+// ===== EXPORT SET SELECTOR POPUP =====
+function showExportSelector(format) {
+    // Remove existing popup
+    let overlay = document.getElementById('export-set-selector');
+    if (overlay) overlay.remove();
+    
+    const sets = appData.sets || [];
+    const vocabulary = appData.vocabulary || [];
+    
+    // Count words per set
+    const allWordsCount = vocabulary.length;
+    const noSetCount = vocabulary.filter(w => !w.setId).length;
+    
+    // Build set options
+    let setOptionsHtml = `
+        <label class="export-set-option">
+            <input type="radio" name="export-set" value="all" checked>
+            <span class="export-set-info">
+                <i class="fas fa-globe"></i>
+                <span class="export-set-name">Tất cả từ vựng</span>
+                <span class="export-set-count">${allWordsCount} từ</span>
+            </span>
+        </label>
+    `;
+    
+    if (noSetCount > 0) {
+        setOptionsHtml += `
+            <label class="export-set-option">
+                <input type="radio" name="export-set" value="no-set">
+                <span class="export-set-info">
+                    <i class="fas fa-inbox"></i>
+                    <span class="export-set-name">Chưa phân loại</span>
+                    <span class="export-set-count">${noSetCount} từ</span>
+                </span>
+            </label>
+        `;
+    }
+    
+    sets.forEach(set => {
+        const count = vocabulary.filter(w => w.setId === set.id).length;
+        if (count > 0) {
+            setOptionsHtml += `
+                <label class="export-set-option">
+                    <input type="radio" name="export-set" value="${set.id}">
+                    <span class="export-set-info">
+                        <i class="fas fa-folder" style="color: ${set.color || '#667eea'}"></i>
+                        <span class="export-set-name">${escapeHtml(set.name)}</span>
+                        <span class="export-set-count">${count} từ</span>
+                    </span>
+                </label>
+            `;
+        }
+    });
+    
+    // Create popup
+    overlay = document.createElement('div');
+    overlay.id = 'export-set-selector';
+    overlay.className = 'help-popup-overlay show';
+    
+    overlay.innerHTML = `
+        <div class="help-popup export-popup">
+            <div class="help-popup-header">
+                <h4>
+                    <i class="fas fa-${format === 'json' ? 'file-code' : 'file-csv'}"></i> 
+                    Xuất ${format.toUpperCase()}
+                </h4>
+                <button class="help-popup-close" onclick="closeExportSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="help-popup-content">
+                <p class="export-instruction">Chọn bộ từ muốn xuất:</p>
+                <div class="export-set-list">
+                    ${setOptionsHtml}
+                </div>
+            </div>
+            <div class="export-popup-footer">
+                <button class="btn-cancel" onclick="closeExportSelector()">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button class="btn-confirm-export" onclick="confirmExport('${format}')">
+                    <i class="fas fa-download"></i> Xuất file
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeExportSelector();
+    });
+    
+    // Close on ESC
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeExportSelector();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function closeExportSelector() {
+    const overlay = document.getElementById('export-set-selector');
+    if (overlay) overlay.remove();
+}
+
+function confirmExport(format) {
+    const selected = document.querySelector('input[name="export-set"]:checked');
+    if (!selected) {
+        showWarning('Vui lòng chọn bộ từ!');
+        return;
+    }
+    
+    const setId = selected.value;
+    closeExportSelector();
+    
+    if (format === 'json') {
+        exportJSON(setId);
+    } else {
+        exportCSV(setId);
+    }
+}
+
 // ===== EXPORT FUNCTIONS =====
-function exportJSON() {
+function exportJSON(setId = 'all') {
     try {
+        let vocabulary = appData.vocabulary || [];
+        let sets = appData.sets || [];
+        let exportName = 'all';
+        
+        // Filter by set
+        if (setId === 'no-set') {
+            vocabulary = vocabulary.filter(w => !w.setId);
+            sets = [];
+            exportName = 'unclassified';
+        } else if (setId !== 'all') {
+            vocabulary = vocabulary.filter(w => w.setId === setId);
+            const selectedSet = sets.find(s => s.id === setId);
+            sets = selectedSet ? [selectedSet] : [];
+            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9]/g, '-') || setId;
+        }
+        
+        if (vocabulary.length === 0) {
+            showWarning('Không có dữ liệu để xuất!');
+            return;
+        }
+        
         const data = {
-            version: '2.1.0',
+            version: '2.2.0',
             exportedAt: new Date().toISOString(),
-            vocabulary: appData.vocabulary || [],
-            sets: appData.sets || [],
-            history: appData.history || {}
+            exportSet: setId,
+            vocabulary: vocabulary,
+            sets: sets,
+            history: setId === 'all' ? (appData.history || {}) : {}
         };
-        downloadFile(JSON.stringify(data, null, 2), `volearn-backup-${getDateString()}.json`, 'application/json');
-        showSuccess('Đã xuất dữ liệu JSON!');
+        
+        downloadFile(
+            JSON.stringify(data, null, 2), 
+            `volearn-${exportName}-${getDateString()}.json`, 
+            'application/json'
+        );
+        showSuccess(`Đã xuất ${vocabulary.length} từ vựng!`);
     } catch (error) {
         console.error('Export JSON error:', error);
         showError('Lỗi khi xuất JSON!');
     }
 }
 
-function exportCSV() {
+function exportCSV(setId = 'all') {
     try {
-        const words = appData.vocabulary || [];
+        let words = appData.vocabulary || [];
+        let exportName = 'all';
+        
+        // Filter by set
+        if (setId === 'no-set') {
+            words = words.filter(w => !w.setId);
+            exportName = 'unclassified';
+        } else if (setId !== 'all') {
+            words = words.filter(w => w.setId === setId);
+            const selectedSet = (appData.sets || []).find(s => s.id === setId);
+            exportName = selectedSet?.name?.replace(/[^a-zA-Z0-9]/g, '-') || setId;
+        }
         
         if (words.length === 0) {
             showWarning('Không có dữ liệu để xuất!');
             return;
         }
         
-        // Headers - Dòng 1 (đúng như Excel mẫu)
+        // Headers
         const headers = [
             'Word',
             'Word Formation',
@@ -307,18 +503,18 @@ function exportCSV() {
         rows.push(headers.join(','));
         
         words.forEach(wordData => {
-            // Lấy tên bookshelf
+            // Get bookshelf name
             let bookshelfName = 'Tất cả';
             if (wordData.setId) {
                 const set = (appData.sets || []).find(s => s.id === wordData.setId);
                 if (set) bookshelfName = set.name;
             }
             
-            // Lấy meaning đầu tiên
+            // Get first meaning
             const meanings = wordData.meanings || [];
             const m = meanings[0] || {};
             
-            // Xử lý synonyms và antonyms
+            // Process synonyms and antonyms
             let synonyms = '';
             let antonyms = '';
             
@@ -329,7 +525,7 @@ function exportCSV() {
                 antonyms = Array.isArray(m.antonyms) ? m.antonyms.join(', ') : m.antonyms;
             }
             
-            // Tạo dòng dữ liệu - MỖI TỪ 1 DÒNG NGANG
+            // Build row
             const row = [
                 escapeCSV(wordData.word || ''),
                 escapeCSV(wordData.formation || wordData.wordFormation || ''),
@@ -349,11 +545,15 @@ function exportCSV() {
             rows.push(row.join(','));
         });
         
-        // Tạo CSV với BOM để Excel đọc đúng tiếng Việt
+        // Create CSV with BOM for Excel Vietnamese support
         const csvContent = '\ufeff' + rows.join('\r\n');
         
-        downloadFile(csvContent, `volearn-vocabulary-${getDateString()}.csv`, 'text/csv;charset=utf-8');
-        showSuccess(`Đã xuất ${words.length} từ vựng ra CSV!`);
+        downloadFile(
+            csvContent, 
+            `volearn-${exportName}-${getDateString()}.csv`, 
+            'text/csv;charset=utf-8'
+        );
+        showSuccess(`Đã xuất ${words.length} từ vựng!`);
         
     } catch (error) {
         console.error('Export CSV error:', error);
@@ -632,7 +832,6 @@ function showGoogleDriveDisconnected() {
 
 function loginGoogleDrive() {
     const redirectUri = window.location.origin + window.location.pathname;
-    // Thêm scope để tạo folder và file trên Drive
     const scope = 'https://www.googleapis.com/auth/drive.file';
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
 }
@@ -646,10 +845,8 @@ function logoutGoogleDrive() {
     showSuccess('Đã đăng xuất Google Drive!');
 }
 
-// Tìm hoặc tạo folder VoLearnSync
 async function getOrCreateFolder(token) {
     try {
-        // Tìm folder đã tồn tại
         const searchResponse = await fetch(
             `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
             { headers: { 'Authorization': `Bearer ${token}` } }
@@ -660,11 +857,9 @@ async function getOrCreateFolder(token) {
         const searchData = await searchResponse.json();
         
         if (searchData.files && searchData.files.length > 0) {
-            console.log('📁 Found existing folder:', searchData.files[0].id);
             return searchData.files[0].id;
         }
         
-        // Tạo folder mới
         const createResponse = await fetch(
             'https://www.googleapis.com/drive/v3/files',
             {
@@ -683,7 +878,6 @@ async function getOrCreateFolder(token) {
         if (!createResponse.ok) throw new Error('Create folder failed');
         
         const createData = await createResponse.json();
-        console.log('📁 Created new folder:', createData.id);
         return createData.id;
         
     } catch (error) {
@@ -692,7 +886,6 @@ async function getOrCreateFolder(token) {
     }
 }
 
-// Tạo tên file với ngày tháng
 function getBackupFileName() {
     const now = new Date();
     const year = now.getFullYear();
@@ -709,12 +902,10 @@ async function backupToGoogleDrive() {
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang sao lưu...'; }
     
     try {
-        // Lấy hoặc tạo folder
         const folderId = await getOrCreateFolder(token);
         
-        // Tạo dữ liệu backup
         const backupData = {
-            version: '2.1.0',
+            version: '2.2.0',
             backupAt: new Date().toISOString(),
             vocabulary: appData.vocabulary || [],
             sets: appData.sets || [],
@@ -722,11 +913,8 @@ async function backupToGoogleDrive() {
         };
         
         const fileName = getBackupFileName();
-        
-        // Tìm file cùng tên trong folder (để cập nhật thay vì tạo mới)
         const existingFile = await findBackupFileInFolder(token, folderId, fileName);
         
-        // Tạo metadata
         const metadata = {
             name: fileName,
             mimeType: 'application/json'
@@ -736,7 +924,6 @@ async function backupToGoogleDrive() {
             metadata.parents = [folderId];
         }
         
-        // Upload file
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' }));
@@ -782,10 +969,7 @@ async function restoreFromGoogleDrive() {
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...'; }
     
     try {
-        // Lấy folder
         const folderId = await getOrCreateFolder(token);
-        
-        // Tìm tất cả file backup trong folder
         const files = await listBackupFiles(token, folderId);
         
         if (!files || files.length === 0) {
@@ -793,7 +977,6 @@ async function restoreFromGoogleDrive() {
             return;
         }
         
-        // Hiển thị popup chọn file
         showRestoreFileSelector(token, files);
         
     } catch (error) {
@@ -809,7 +992,6 @@ async function restoreFromGoogleDrive() {
     }
 }
 
-// Tìm file backup trong folder
 async function findBackupFileInFolder(token, folderId, fileName) {
     try {
         const response = await fetch(
@@ -826,7 +1008,6 @@ async function findBackupFileInFolder(token, folderId, fileName) {
     }
 }
 
-// Liệt kê tất cả file backup trong folder
 async function listBackupFiles(token, folderId) {
     try {
         const response = await fetch(
@@ -843,7 +1024,6 @@ async function listBackupFiles(token, folderId) {
     }
 }
 
-// Hiển thị popup chọn file khôi phục
 function showRestoreFileSelector(token, files) {
     let overlay = document.getElementById('restore-file-selector');
     
@@ -990,9 +1170,16 @@ function closeDataHelpPopup() {
     if (overlay) overlay.classList.remove('show');
 }
 
-window.closeDataHelpPopup = closeDataHelpPopup;
-
 // ===== UTILITIES =====
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 function escapeCSV(value) {
     if (value == null) return '';
     const str = String(value);
@@ -1013,10 +1200,10 @@ function getDateString() {
     return new Date().toISOString().split('T')[0];
 }
 
-// ===== EXPORTS =====
+// ===== GLOBAL EXPORTS =====
 window.exportData = exportJSON;
 window.closeRestoreSelector = closeRestoreSelector;
 window.selectRestoreFile = selectRestoreFile;
-
-
-
+window.closeDataHelpPopup = closeDataHelpPopup;
+window.closeExportSelector = closeExportSelector;
+window.confirmExport = confirmExport;
