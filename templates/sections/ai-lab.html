@@ -1,0 +1,954 @@
+<!-- ==================== AI PRACTICE LAB SECTION ==================== -->
+<section id="ai-lab-section" class="section">
+    
+    <!-- ===== HEADER ===== -->
+    <div class="ai-lab-header">
+        <div class="ai-lab-header-text">
+            <h1><i class="fas fa-brain"></i> AI Practice Lab</h1>
+            <p class="ai-lab-subtitle">Luyện tập thông minh với AI</p>
+        </div>
+        <div class="ai-lab-header-actions">
+            <button id="btn-ai-lab-history" class="btn-ai-lab-icon" title="Lịch sử">
+                <i class="fas fa-history"></i>
+            </button>
+            <button id="btn-ai-lab-stats" class="btn-ai-lab-icon" title="Thống kê">
+                <i class="fas fa-chart-bar"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== DAILY CHALLENGE CARD ===== -->
+    <div class="ai-lab-daily-card" id="daily-challenge-card">
+        <div class="daily-card-left">
+            <div class="daily-card-icon">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div class="daily-card-info">
+                <h3>Thử thách hôm nay</h3>
+                <p>5 câu • Reading + Vocabulary • ~3 phút</p>
+            </div>
+        </div>
+        <div class="daily-card-right">
+            <div class="daily-streak">
+                <span class="streak-fire">🔥</span>
+                <span class="streak-count" id="streak-count">0</span>
+                <span class="streak-label">ngày</span>
+            </div>
+            <button id="btn-daily-start" class="btn-daily-start">
+                <i class="fas fa-play"></i> Làm ngay
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT: SETTINGS / EXERCISE / RESULTS ===== -->
+    <div class="ai-lab-content">
+        
+        <!-- ========== SETTINGS PANEL ========== -->
+        <div class="ai-lab-panel ai-lab-settings" id="ai-lab-settings">
+            
+            <!-- Section: Vocabulary Source -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-book"></i> Phạm vi từ vựng</h3>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="vocab-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="settings-section-body" id="vocab-options">
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="vocab-source" value="all" checked>
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Tất cả từ vựng</span>
+                            <span class="radio-count" id="vocab-count-all">0 từ</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab-source" value="set">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Bộ từ:</span>
+                            <select id="vocab-set-select" class="inline-select">
+                                <option value="">Chọn bộ từ</option>
+                            </select>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab-source" value="unlearned">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Từ chưa thuộc (SRS 0-2)</span>
+                            <span class="radio-count" id="vocab-count-unlearned">0 từ</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab-source" value="bookmarked">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Từ đã bookmark ⭐</span>
+                            <span class="radio-count" id="vocab-count-bookmarked">0 từ</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="vocab-source" value="recent">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Từ thêm gần đây:</span>
+                            <select id="vocab-recent-days" class="inline-select">
+                                <option value="7">7 ngày</option>
+                                <option value="14">14 ngày</option>
+                                <option value="30">30 ngày</option>
+                            </select>
+                        </label>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            <span>Số lượng từ:</span>
+                            <span class="slider-value" id="vocab-amount-value">10 từ</span>
+                        </label>
+                        <input type="range" id="vocab-amount" min="5" max="30" value="10" class="styled-slider">
+                        <div class="slider-range">
+                            <span>5</span>
+                            <span>30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Skills -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-tasks"></i> Kỹ năng luyện tập</h3>
+                </div>
+                
+                <div class="settings-section-body">
+                    <div class="skills-group">
+                        <p class="skills-group-label">Kỹ năng chính</p>
+                        <div class="checkbox-grid">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-main" value="reading" checked>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">📖</span>
+                                <span class="checkbox-label">Reading</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-main" value="writing" checked>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">✍️</span>
+                                <span class="checkbox-label">Writing</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-main" value="listening">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">🎧</span>
+                                <span class="checkbox-label">Listening</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-main" value="speaking">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">🗣️</span>
+                                <span class="checkbox-label">Speaking</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="skills-group">
+                        <p class="skills-group-label">Kỹ năng phụ</p>
+                        <div class="checkbox-grid">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-sub" value="vocabulary" checked>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">🔤</span>
+                                <span class="checkbox-label">Vocabulary</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-sub" value="grammar">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">📝</span>
+                                <span class="checkbox-label">Grammar</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="skill-sub" value="pronunciation">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-icon">🔊</span>
+                                <span class="checkbox-label">Pronunciation</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Level & Mode -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-layer-group"></i> Tiêu chuẩn & Cấp độ</h3>
+                </div>
+                
+                <div class="settings-section-body">
+                    <div class="radio-group">
+                        <label class="radio-option radio-option-large">
+                            <input type="radio" name="standard" value="ielts" checked>
+                            <span class="radio-custom"></span>
+                            <div class="radio-content">
+                                <span class="radio-title">🎯 IELTS</span>
+                                <span class="radio-desc">Luyện theo chuẩn IELTS (Band 4.0 - 9.0)</span>
+                            </div>
+                        </label>
+                        <label class="radio-option radio-option-large">
+                            <input type="radio" name="standard" value="free">
+                            <span class="radio-custom"></span>
+                            <div class="radio-content">
+                                <span class="radio-title">📖 Luyện tập tự do</span>
+                                <span class="radio-desc">Có thể tra từ điển, không áp lực</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="level-slider-group" id="ielts-level-group">
+                        <label class="slider-label">
+                            <span>Cấp độ IELTS:</span>
+                            <span class="slider-value ielts-band" id="ielts-level-value">Band 6.0</span>
+                        </label>
+                        <input type="range" id="ielts-level" min="4" max="9" step="0.5" value="6" class="styled-slider ielts-slider">
+                        <div class="slider-range">
+                            <span>4.0</span>
+                            <span>5.0</span>
+                            <span>6.0</span>
+                            <span>7.0</span>
+                            <span>8.0</span>
+                            <span>9.0</span>
+                        </div>
+                    </div>
+                    
+                    <label class="checkbox-option strict-mode-option">
+                        <input type="checkbox" id="strict-mode">
+                        <span class="checkbox-custom"></span>
+                        <span class="checkbox-icon">🔒</span>
+                        <span class="checkbox-label">Chế độ nghiêm khắc</span>
+                        <span class="checkbox-desc">(không tra từ điển, không gợi ý)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section: Bloom Taxonomy -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-brain"></i> Thang Bloom - Cấp độ tư duy</h3>
+                </div>
+                
+                <div class="settings-section-body">
+                    <div class="bloom-presets">
+                        <button class="bloom-preset" data-preset="basic">📘 Cơ bản</button>
+                        <button class="bloom-preset active" data-preset="balanced">📗 Cân bằng</button>
+                        <button class="bloom-preset" data-preset="advanced">📕 Nâng cao</button>
+                        <button class="bloom-preset" data-preset="ielts">🎯 IELTS</button>
+                        <button class="bloom-preset" data-preset="random">🎲 Random</button>
+                    </div>
+                    
+                    <div class="bloom-random-options" id="bloom-random-options" style="display: none;">
+                        <label class="radio-option">
+                            <input type="radio" name="random-type" value="easy" checked>
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">🎲 Mix Dễ (Nhớ + Hiểu + Vận dụng)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="random-type" value="medium">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">🎲 Mix Trung bình (Tất cả 6 cấp)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="random-type" value="hard">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">🎲 Mix Khó (Phân tích + Đánh giá + Sáng tạo)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="bloom-levels" id="bloom-levels">
+                        <div class="bloom-level" data-level="1">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">💭</span>
+                                <span class="bloom-name">Nhớ</span>
+                                <span class="bloom-desc">Nhận diện, ghi nhớ</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="1">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="1">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-level" data-level="2">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">💡</span>
+                                <span class="bloom-name">Hiểu</span>
+                                <span class="bloom-desc">Giải thích, diễn đạt</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="2">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="2">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-level" data-level="3">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">🔧</span>
+                                <span class="bloom-name">Vận dụng</span>
+                                <span class="bloom-desc">Áp dụng vào thực tế</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="3">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3" selected>3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="3">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-level" data-level="4">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">🔍</span>
+                                <span class="bloom-name">Phân tích</span>
+                                <span class="bloom-desc">So sánh, phân biệt</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="4">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="4">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-level" data-level="5">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">⚖️</span>
+                                <span class="bloom-name">Đánh giá</span>
+                                <span class="bloom-desc">Nhận xét, đánh giá</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="5">
+                                    <option value="0">0</option>
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="5">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-level" data-level="6">
+                            <div class="bloom-level-info">
+                                <span class="bloom-icon">🎨</span>
+                                <span class="bloom-name">Sáng tạo</span>
+                                <span class="bloom-desc">Tạo mới, sáng tác</span>
+                            </div>
+                            <div class="bloom-level-control">
+                                <select class="bloom-count" data-level="6">
+                                    <option value="0">0</option>
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                                <label class="bloom-toggle">
+                                    <input type="checkbox" checked data-level="6">
+                                    <span class="toggle-slider-small"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bloom-total">
+                            <span>Tổng số câu:</span>
+                            <span class="bloom-total-count" id="bloom-total">12 câu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Question Type -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-list-alt"></i> Dạng bài tập</h3>
+                </div>
+                
+                <div class="settings-section-body">
+                    <div class="question-type-slider">
+                        <div class="qtype-labels">
+                            <span class="qtype-label">Trắc nghiệm</span>
+                            <span class="qtype-value" id="qtype-value">60% : 40%</span>
+                            <span class="qtype-label">Tự luận</span>
+                        </div>
+                        <input type="range" id="question-type-ratio" min="0" max="100" value="60" class="styled-slider qtype-slider">
+                        <div class="qtype-hints">
+                            <span>100% MC</span>
+                            <span>50 : 50</span>
+                            <span>100% Essay</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Time & AI -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-clock"></i> Thời gian & AI</h3>
+                </div>
+                
+                <div class="settings-section-body">
+                    <div class="time-options">
+                        <p class="option-label">Giới hạn thời gian:</p>
+                        <div class="radio-group-inline">
+                            <label class="radio-pill">
+                                <input type="radio" name="time-limit" value="0" checked>
+                                <span>Không</span>
+                            </label>
+                            <label class="radio-pill">
+                                <input type="radio" name="time-limit" value="15">
+                                <span>15 phút</span>
+                            </label>
+                            <label class="radio-pill">
+                                <input type="radio" name="time-limit" value="30">
+                                <span>30 phút</span>
+                            </label>
+                            <label class="radio-pill">
+                                <input type="radio" name="time-limit" value="custom">
+                                <span>Tùy chỉnh</span>
+                            </label>
+                            <input type="number" id="custom-time" class="custom-time-input" placeholder="phút" min="1" max="120" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <div class="ai-model-select">
+                        <p class="option-label">AI Model:</p>
+                        <select id="ai-model" class="styled-select">
+                            <option value="claude">Claude Sonnet</option>
+                            <option value="gpt">GPT-4o</option>
+                            <option value="gemini">Gemini Pro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="settings-actions">
+                <button id="btn-save-preset" class="btn-secondary">
+                    <i class="fas fa-save"></i> Lưu preset
+                </button>
+                <button id="btn-generate" class="btn-primary">
+                    <i class="fas fa-play"></i> Tạo bài tập
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== EXERCISE PANEL (Hidden by default) ========== -->
+        <div class="ai-lab-panel ai-lab-exercise" id="ai-lab-exercise" style="display: none;">
+            
+            <!-- Exercise Header -->
+            <div class="exercise-header">
+                <div class="exercise-header-left">
+                    <button id="btn-exit-exercise" class="btn-exit" title="Thoát">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="exercise-info">
+                        <span class="exercise-mode" id="exercise-mode">🎯 IELTS Band 6.0</span>
+                        <span class="exercise-strict" id="exercise-strict" style="display: none;">🔒 Nghiêm khắc</span>
+                    </div>
+                </div>
+                <div class="exercise-header-center">
+                    <div class="exercise-timer" id="exercise-timer" style="display: none;">
+                        <i class="fas fa-clock"></i>
+                        <span id="timer-display">15:00</span>
+                    </div>
+                </div>
+                <div class="exercise-header-right">
+                    <div class="exercise-progress">
+                        <span id="progress-text">1/12</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 8%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exercise Split View -->
+            <div class="exercise-split-view" id="exercise-split-view">
+                
+                <!-- Left Panel: Question -->
+                <div class="split-panel split-panel-left" id="panel-question">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-file-alt"></i> Đề bài</h3>
+                    </div>
+                    <div class="panel-content" id="question-content">
+                        <!-- Question content rendered here -->
+                        <div class="question-meta">
+                            <span class="q-number">Câu 1/12</span>
+                            <span class="q-bloom">💭 Nhớ</span>
+                            <span class="q-skill">📖 Reading</span>
+                            <span class="q-type">Trắc nghiệm</span>
+                        </div>
+                        
+                        <div class="question-instruction">
+                            Read the passage and answer the question.
+                        </div>
+                        
+                        <div class="question-context" id="question-context">
+                            <p>The <span class="vocab-highlight">ambitious</span> young entrepreneur worked hard to achieve her goals despite many obstacles.</p>
+                        </div>
+                        
+                        <div class="question-text">
+                            What does "ambitious" mean in this context?
+                        </div>
+                        
+                        <div class="question-vocab-list">
+                            <p class="vocab-list-title"><i class="fas fa-bookmark"></i> Từ vựng target:</p>
+                            <ul>
+                                <li><strong>ambitious</strong> /æmˈbɪʃəs/</li>
+                                <li><strong>achieve</strong> /əˈtʃiːv/</li>
+                                <li><strong>obstacle</strong> /ˈɒbstəkl/</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-tool" id="btn-listen" title="Nghe">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        <button class="btn-tool" id="btn-hint" title="Gợi ý">
+                            <i class="fas fa-lightbulb"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resizer -->
+                <div class="split-resizer" id="split-resizer">
+                    <div class="resizer-handle"></div>
+                </div>
+
+                <!-- Right Panel: Answer -->
+                <div class="split-panel split-panel-right" id="panel-answer">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-edit"></i> Bài làm</h3>
+                        <div class="panel-tools">
+                            <div class="highlight-tools" id="highlight-tools">
+                                <button class="btn-highlight" data-color="yellow" title="Highlight vàng">
+                                    <span class="hl-color hl-yellow"></span>
+                                </button>
+                                <button class="btn-highlight" data-color="green" title="Highlight xanh lá">
+                                    <span class="hl-color hl-green"></span>
+                                </button>
+                                <button class="btn-highlight" data-color="blue" title="Highlight xanh dương">
+                                    <span class="hl-color hl-blue"></span>
+                                </button>
+                                <button class="btn-highlight" data-color="purple" title="Highlight tím">
+                                    <span class="hl-color hl-purple"></span>
+                                </button>
+                                <button class="btn-highlight" data-color="red" title="Highlight đỏ">
+                                    <span class="hl-color hl-red"></span>
+                                </button>
+                                <button class="btn-tool btn-remove-hl" id="btn-remove-highlight" title="Xóa highlight">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
+                            </div>
+                            <div class="answer-tools">
+                                <button class="btn-tool" id="btn-clear-answer" title="Xóa đáp án câu này">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="btn-tool" id="btn-clear-all-answers" title="Xóa tất cả đáp án">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-content" id="answer-content">
+                        <!-- Answer area rendered by question type -->
+                        
+                        <!-- Example: Multiple Choice -->
+                        <div class="answer-area answer-mc" id="answer-area">
+                            <div class="mc-option">
+                                <input type="radio" name="answer-1" id="opt-a" value="A">
+                                <label for="opt-a">
+                                    <span class="opt-letter">A</span>
+                                    <span class="opt-text">to accomplish something you have been trying to do</span>
+                                </label>
+                            </div>
+                            <div class="mc-option">
+                                <input type="radio" name="answer-1" id="opt-b" value="B">
+                                <label for="opt-b">
+                                    <span class="opt-letter">B</span>
+                                    <span class="opt-text">having a strong desire for success or achievement</span>
+                                </label>
+                            </div>
+                            <div class="mc-option">
+                                <input type="radio" name="answer-1" id="opt-c" value="C">
+                                <label for="opt-c">
+                                    <span class="opt-letter">C</span>
+                                    <span class="opt-text">to give time and effort to a particular activity</span>
+                                </label>
+                            </div>
+                            <div class="mc-option">
+                                <input type="radio" name="answer-1" id="opt-d" value="D">
+                                <label for="opt-d">
+                                    <span class="opt-letter">D</span>
+                                    <span class="opt-text">feeling worried or nervous about something</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Note area -->
+                        <div class="note-area">
+                            <label class="note-label">
+                                <i class="fas fa-sticky-note"></i> Ghi chú của bạn:
+                            </label>
+                            <textarea id="question-note" class="note-input" placeholder="Ghi chú..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exercise Footer -->
+            <div class="exercise-footer">
+                <button id="btn-prev-question" class="btn-nav" disabled>
+                    <i class="fas fa-chevron-left"></i> Trước
+                </button>
+                
+                <div class="question-dots" id="question-dots">
+                    <span class="q-dot current" data-q="1">1</span>
+                    <span class="q-dot" data-q="2">2</span>
+                    <span class="q-dot" data-q="3">3</span>
+                    <span class="q-dot" data-q="4">4</span>
+                    <span class="q-dot" data-q="5">5</span>
+                    <span class="q-dot" data-q="6">6</span>
+                    <span class="q-dot" data-q="7">7</span>
+                    <span class="q-dot" data-q="8">8</span>
+                    <span class="q-dot" data-q="9">9</span>
+                    <span class="q-dot" data-q="10">10</span>
+                    <span class="q-dot" data-q="11">11</span>
+                    <span class="q-dot" data-q="12">12</span>
+                </div>
+                
+                <button id="btn-next-question" class="btn-nav">
+                    Tiếp <i class="fas fa-chevron-right"></i>
+                </button>
+                
+                <button id="btn-submit-exercise" class="btn-submit">
+                    <i class="fas fa-check"></i> Nộp bài
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== RESULTS PANEL (Hidden by default) ========== -->
+        <div class="ai-lab-panel ai-lab-results" id="ai-lab-results" style="display: none;">
+            
+            <!-- Results Header -->
+            <div class="results-header">
+                <h2><i class="fas fa-trophy"></i> Kết quả bài tập</h2>
+                <span class="results-date" id="results-date">04/02/2026</span>
+            </div>
+
+            <!-- Score Card -->
+            <div class="results-score-card">
+                <div class="score-circle">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="score-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="score-fill" cx="50" cy="50" r="45" id="score-circle"></circle>
+                    </svg>
+                    <div class="score-text">
+                        <span class="score-percent" id="score-percent">85%</span>
+                        <span class="score-fraction" id="score-fraction">10/12</span>
+                    </div>
+                </div>
+                <div class="score-details">
+                    <div class="score-stars" id="score-stars">⭐⭐⭐⭐☆</div>
+                    <div class="score-band" id="score-band">Band 6.5</div>
+                    <div class="score-time" id="score-time">Thời gian: 8:32</div>
+                </div>
+            </div>
+
+            <!-- Analysis Sections -->
+            <div class="results-analysis">
+                
+                <!-- Skill Analysis -->
+                <div class="analysis-section">
+                    <h3><i class="fas fa-tasks"></i> Phân tích theo kỹ năng</h3>
+                    <div class="analysis-bars" id="skill-analysis">
+                        <div class="analysis-bar">
+                            <div class="bar-label">📖 Reading</div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: 80%;"></div>
+                            </div>
+                            <div class="bar-value">80% (4/5)</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">✍️ Writing</div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: 90%;"></div>
+                            </div>
+                            <div class="bar-value">90% (3/3)</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">🔤 Vocabulary</div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: 100%;"></div>
+                            </div>
+                            <div class="bar-value">100% (4/4)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloom Analysis -->
+                <div class="analysis-section">
+                    <h3><i class="fas fa-brain"></i> Phân tích theo Thang Bloom</h3>
+                    <div class="analysis-bars" id="bloom-analysis">
+                        <div class="analysis-bar">
+                            <div class="bar-label">💭 Nhớ</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill" style="width: 100%;"></div>
+                            </div>
+                            <div class="bar-value">100% (2/2) ✓</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">💡 Hiểu</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill" style="width: 67%;"></div>
+                            </div>
+                            <div class="bar-value">67% (2/3)</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">🔧 Vận dụng</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill" style="width: 100%;"></div>
+                            </div>
+                            <div class="bar-value">100% (3/3) ✓</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">🔍 Phân tích</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill warning" style="width: 50%;"></div>
+                            </div>
+                            <div class="bar-value">50% (1/2) ⚠</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">⚖️ Đánh giá</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill" style="width: 100%;"></div>
+                            </div>
+                            <div class="bar-value">100% (1/1) ✓</div>
+                        </div>
+                        <div class="analysis-bar">
+                            <div class="bar-label">🎨 Sáng tạo</div>
+                            <div class="bar-track">
+                                <div class="bar-fill bloom-fill" style="width: 100%;"></div>
+                            </div>
+                            <div class="bar-value">100% (1/1) ✓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Words to Review -->
+                <div class="analysis-section">
+                    <h3><i class="fas fa-redo"></i> Từ vựng cần ôn lại</h3>
+                    <div class="words-to-review" id="words-to-review">
+                        <div class="review-word">
+                            <span class="review-word-text">ambitious</span>
+                            <span class="review-word-reason">Nhầm với "ambiguous"</span>
+                        </div>
+                        <div class="review-word">
+                            <span class="review-word-text">comprehensive</span>
+                            <span class="review-word-reason">Ngữ pháp chưa chuẩn</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Feedback -->
+                <div class="analysis-section">
+                    <h3><i class="fas fa-robot"></i> Nhận xét từ AI</h3>
+                    <div class="ai-feedback" id="ai-feedback">
+                        <p>Bạn thể hiện tốt ở các cấp độ tư duy cơ bản (Nhớ, Hiểu) và cao (Sáng tạo). Tuy nhiên, cấp độ Phân tích cần cải thiện - đặc biệt khi so sánh cách dùng từ trong các ngữ cảnh khác nhau.</p>
+                        <div class="ai-tips">
+                            <p><strong>💡 Gợi ý cho IELTS Band 7.0:</strong></p>
+                            <ul>
+                                <li>Luyện thêm bài tập phân tích ngữ cảnh</li>
+                                <li>Chú ý collocation với 'ambitious': ambitious plan/goal</li>
+                                <li>Tăng tốc độ đọc hiểu để tiết kiệm thời gian</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison -->
+                <div class="analysis-section analysis-comparison">
+                    <div class="comparison-item">
+                        <span class="comparison-label">So với lần trước:</span>
+                        <span class="comparison-value positive" id="comparison-prev">+5%</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-label">Streak:</span>
+                        <span class="comparison-value">🔥 5 ngày</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-label">Rank tuần:</span>
+                        <span class="comparison-value">#12</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Actions -->
+            <div class="results-actions">
+                <button id="btn-retry" class="btn-secondary">
+                    <i class="fas fa-redo"></i> Làm lại
+                </button>
+                <button id="btn-view-answers" class="btn-secondary">
+                    <i class="fas fa-list"></i> Xem đáp án
+                </button>
+                <button id="btn-new-exercise" class="btn-primary">
+                    <i class="fas fa-plus"></i> Bài mới
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== HISTORY PANEL (Hidden by default) ========== -->
+        <div class="ai-lab-panel ai-lab-history" id="ai-lab-history" style="display: none;">
+            <div class="history-header">
+                <h2><i class="fas fa-history"></i> Lịch sử luyện tập</h2>
+                <button id="btn-close-history" class="btn-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="history-filters">
+                <select id="history-filter-skill" class="styled-select">
+                    <option value="">Tất cả kỹ năng</option>
+                    <option value="reading">Reading</option>
+                    <option value="writing">Writing</option>
+                    <option value="listening">Listening</option>
+                    <option value="speaking">Speaking</option>
+                </select>
+                <select id="history-filter-time" class="styled-select">
+                    <option value="7">7 ngày qua</option>
+                    <option value="30">30 ngày qua</option>
+                    <option value="all">Tất cả</option>
+                </select>
+            </div>
+            
+            <div class="history-list" id="history-list">
+                <!-- History items rendered here -->
+                <div class="history-item">
+                    <div class="history-item-date">04/02/2026 - 14:30</div>
+                    <div class="history-item-info">
+                        <span class="history-mode">🎯 IELTS Band 6.0</span>
+                        <span class="history-skills">📖 Reading, 🔤 Vocabulary</span>
+                    </div>
+                    <div class="history-item-score">85%</div>
+                    <button class="btn-view-history" data-id="123">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STATISTICS PANEL (Hidden by default) ========== -->
+        <div class="ai-lab-panel ai-lab-stats" id="ai-lab-stats" style="display: none;">
+            <div class="stats-header">
+                <h2><i class="fas fa-chart-bar"></i> Thống kê</h2>
+                <button id="btn-close-stats" class="btn-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="stat-value" id="stat-total-exercises">24</div>
+                    <div class="stat-label">Bài đã làm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+                    <div class="stat-value" id="stat-avg-score">78%</div>
+                    <div class="stat-label">Điểm TB</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-fire"></i></div>
+                    <div class="stat-value" id="stat-best-streak">12</div>
+                    <div class="stat-label">Streak cao nhất</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-value" id="stat-total-time">5h 30m</div>
+                    <div class="stat-label">Tổng thời gian</div>
+                </div>
+            </div>
+            
+            <div class="stats-charts">
+                <div class="chart-container">
+                    <h3>Tiến độ theo thời gian</h3>
+                    <canvas id="chart-progress"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Phân bố theo Bloom</h3>
+                    <canvas id="chart-bloom"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="ai-lab-loading" id="ai-lab-loading" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">AI đang tạo bài tập...</p>
+            <p class="loading-subtext">Vui lòng đợi trong giây lát</p>
+        </div>
+    </div>
+
+    <!-- Translate Popup (for free mode) -->
+    <div class="translate-popup" id="translate-popup" style="display: none;">
+        <div class="translate-popup-header">
+            <span class="translate-word" id="translate-word">ambitious</span>
+            <span class="translate-phonetic" id="translate-phonetic">/æmˈbɪʃəs/</span>
+            <button class="btn-speak-translate" id="btn-speak-translate">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="btn-close-translate" id="btn-close-translate">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="translate-popup-content" id="translate-content">
+            <p class="translate-meaning">có tham vọng, đầy hoài bão</p>
+        </div>
+    </div>
+
+</section>
