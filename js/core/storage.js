@@ -1,7 +1,7 @@
 /* ===== STORAGE MODULE ===== */
 /* VoLearn v2.2.0 - Local Storage & Export/Import */
 
-import { appData, settings } from './state.js';
+import { appData } from './state.js';
 
 /* ===== CONSTANTS ===== */
 const STORAGE_KEY = 'volearn_data';
