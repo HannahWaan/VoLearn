@@ -170,6 +170,86 @@
                             </label>
                         </div>
                     </div>
+                    <div class="skills-source-options" id="skills-source-options">
+                        <p class="skills-group-label">Nguồn bài tập (Reading/Writing)</p>
+                        <div class="source-options">
+                            <label class="radio-option">
+                                <input type="radio" name="exercise-source" value="ai-generate" checked>
+                                <span class="radio-custom"></span>
+                                <div class="radio-content">
+                                    <span class="radio-title"><i class="fas fa-robot"></i> AI tạo bài</span>
+                                    <span class="radio-desc">AI tự tạo bài tập dựa trên từ vựng của bạn</span>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="exercise-source" value="web-search">
+                                <span class="radio-custom"></span>
+                                <div class="radio-content">
+                                    <span class="radio-title"><i class="fas fa-globe"></i> Tìm trên Web</span>
+                                    <span class="radio-desc">AI tìm bài tập IELTS thực tế từ internet</span>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="exercise-source" value="mixed">
+                                <span class="radio-custom"></span>
+                                <div class="radio-content">
+                                    <span class="radio-title"><i class="fas fa-random"></i> Kết hợp</span>
+                                    <span class="radio-desc">Kết hợp cả hai nguồn để đa dạng bài tập</span>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="web-search-options" id="web-search-options" style="display: none;">
+                            <p class="option-label">Nguồn tài liệu ưu tiên:</p>
+                            <div class="checkbox-grid source-sites">
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="ielts-official" checked>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">IELTS Official</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="cambridge" checked>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">Cambridge</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="british-council" checked>
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">British Council</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="ielts-liz">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">IELTS Liz</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="ielts-simon">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">IELTS Simon</span>
+                                </label>
+                                <label class="checkbox-option">
+                                    <input type="checkbox" name="source-site" value="other">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">Nguồn khác</span>
+                                </label>
+                            </div>
+                            
+                            <div class="web-search-topic">
+                                <p class="option-label">Chủ đề (tùy chọn):</p>
+                                <div class="topic-tags" id="topic-tags">
+                                    <span class="topic-tag" data-topic="environment">🌍 Environment</span>
+                                    <span class="topic-tag" data-topic="technology">💻 Technology</span>
+                                    <span class="topic-tag" data-topic="education">📚 Education</span>
+                                    <span class="topic-tag" data-topic="health">🏥 Health</span>
+                                    <span class="topic-tag" data-topic="society">👥 Society</span>
+                                    <span class="topic-tag" data-topic="economy">💰 Economy</span>
+                                    <span class="topic-tag" data-topic="culture">🎭 Culture</span>
+                                    <span class="topic-tag" data-topic="science">🔬 Science</span>
+                                </div>
+                                <input type="text" id="custom-topic" class="custom-topic-input" placeholder="Hoặc nhập chủ đề tùy chỉnh...">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
