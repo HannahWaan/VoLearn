@@ -588,3 +588,158 @@
     font-size: 0.8rem;
     color: var(--text-muted);
 }
+
+/* ===== EXPORT SET SELECTOR POPUP ===== */
+.export-popup {
+    max-width: 450px;
+}
+
+.export-instruction {
+    margin-bottom: 16px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.export-set-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.export-set-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.export-set-option:hover {
+    background: var(--bg-hover, #f1f5f9);
+    border-color: var(--primary-color, #667eea);
+}
+
+.export-set-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color, #667eea);
+    cursor: pointer;
+}
+
+.export-set-option input[type="radio"]:checked + .export-set-info {
+    color: var(--primary-color, #667eea);
+}
+
+.export-set-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.export-set-info i {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+}
+
+.export-set-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.export-set-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary, #e2e8f0);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.export-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+    background: var(--bg-secondary, #f8fafc);
+    border-radius: 0 0 16px 16px;
+}
+
+.export-popup-footer .btn-cancel {
+    padding: 10px 20px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.export-popup-footer .btn-cancel:hover {
+    background: var(--bg-hover, #f1f5f9);
+}
+
+.export-popup-footer .btn-confirm-export {
+    padding: 10px 20px;
+    border: none;
+    background: var(--primary-color, #667eea);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.export-popup-footer .btn-confirm-export:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+/* Dark mode */
+[data-theme="dark"] .export-set-option {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .export-set-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .export-set-count {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .export-popup-footer {
+    background: rgba(255, 255, 255, 0.03);
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Scrollbar */
+.export-set-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.export-set-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.export-set-list::-webkit-scrollbar-thumb {
+    background: var(--border-color, #cbd5e1);
+    border-radius: 3px;
+}
