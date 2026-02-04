@@ -1,8 +1,8 @@
 /**
  * VoLearn AI Practice Lab - Presets Configuration
- * Version: 1.0.0
+ * Version: 1.1.0
  * 
- * Quick presets cho Bloom distribution và Settings
+ * Bỏ Listening & Pronunciation
  */
 
 // Bloom Distribution Presets
@@ -76,12 +76,12 @@ export const BLOOM_PRESETS = {
         name: 'Ngẫu nhiên',
         description: 'Mix ngẫu nhiên các độ khó',
         icon: 'random',
-        distribution: null, // Will be generated randomly
+        distribution: null,
         total: 10
     }
 };
 
-// Skill Presets
+// Skill Presets (BỎ Listening & Pronunciation)
 export const SKILL_PRESETS = {
     reading_focus: {
         id: 'reading_focus',
@@ -97,18 +97,18 @@ export const SKILL_PRESETS = {
         description: 'Tập trung kỹ năng viết'
     },
     
-    listening_speaking: {
-        id: 'listening_speaking',
-        name: 'Listening & Speaking',
-        skills: ['listening', 'speaking', 'pronunciation'],
-        description: 'Kỹ năng nghe nói'
+    speaking_focus: {
+        id: 'speaking_focus',
+        name: 'Speaking Focus',
+        skills: ['speaking', 'vocabulary'],
+        description: 'Kỹ năng nói (dạng text)'
     },
     
-    full_test: {
-        id: 'full_test',
-        name: 'Full Test',
-        skills: ['reading', 'writing', 'listening', 'speaking'],
-        description: 'Đầy đủ 4 kỹ năng chính'
+    full_skills: {
+        id: 'full_skills',
+        name: 'Full Skills',
+        skills: ['reading', 'writing', 'speaking'],
+        description: 'Đầy đủ 3 kỹ năng chính'
     },
     
     vocabulary_intensive: {
@@ -116,6 +116,13 @@ export const SKILL_PRESETS = {
         name: 'Vocabulary Intensive',
         skills: ['vocabulary', 'grammar'],
         description: 'Tập trung từ vựng & ngữ pháp'
+    },
+    
+    academic: {
+        id: 'academic',
+        name: 'Academic',
+        skills: ['reading', 'writing', 'vocabulary'],
+        description: 'Học thuật: đọc, viết, từ vựng'
     }
 };
 
@@ -149,77 +156,26 @@ export const TIME_PRESETS = {
 
 // IELTS Band Descriptions
 export const IELTS_BAND_INFO = {
-    4.0: {
-        level: 'Limited',
-        description: 'Năng lực hạn chế, thường xuyên gặp khó khăn',
-        vocabulary_range: '2000-3000 từ'
-    },
-    4.5: {
-        level: 'Limited+',
-        description: 'Năng lực hạn chế nhưng có cải thiện',
-        vocabulary_range: '3000-4000 từ'
-    },
-    5.0: {
-        level: 'Modest',
-        description: 'Năng lực khiêm tốn, xử lý được nghĩa tổng quát',
-        vocabulary_range: '4000-5000 từ'
-    },
-    5.5: {
-        level: 'Modest+',
-        description: 'Năng lực khiêm tốn, đang phát triển',
-        vocabulary_range: '5000-6000 từ'
-    },
-    6.0: {
-        level: 'Competent',
-        description: 'Năng lực tốt, có thể giao tiếp hiệu quả',
-        vocabulary_range: '6000-7000 từ'
-    },
-    6.5: {
-        level: 'Competent+',
-        description: 'Năng lực tốt, sử dụng ngôn ngữ phức tạp',
-        vocabulary_range: '7000-8000 từ'
-    },
-    7.0: {
-        level: 'Good',
-        description: 'Năng lực giỏi, xử lý ngôn ngữ phức tạp',
-        vocabulary_range: '8000-9000 từ'
-    },
-    7.5: {
-        level: 'Good+',
-        description: 'Năng lực giỏi, ít sai sót',
-        vocabulary_range: '9000-10000 từ'
-    },
-    8.0: {
-        level: 'Very Good',
-        description: 'Năng lực rất giỏi, hiếm khi sai',
-        vocabulary_range: '10000-12000 từ'
-    },
-    8.5: {
-        level: 'Very Good+',
-        description: 'Gần như hoàn hảo',
-        vocabulary_range: '12000-15000 từ'
-    },
-    9.0: {
-        level: 'Expert',
-        description: 'Chuyên gia, thành thạo hoàn toàn',
-        vocabulary_range: '15000+ từ'
-    }
+    4.0: { level: 'Limited', description: 'Năng lực hạn chế', vocabulary_range: '2000-3000 từ' },
+    4.5: { level: 'Limited+', description: 'Năng lực hạn chế, có cải thiện', vocabulary_range: '3000-4000 từ' },
+    5.0: { level: 'Modest', description: 'Năng lực khiêm tốn', vocabulary_range: '4000-5000 từ' },
+    5.5: { level: 'Modest+', description: 'Năng lực khiêm tốn, đang phát triển', vocabulary_range: '5000-6000 từ' },
+    6.0: { level: 'Competent', description: 'Năng lực tốt', vocabulary_range: '6000-7000 từ' },
+    6.5: { level: 'Competent+', description: 'Năng lực tốt, ngôn ngữ phức tạp', vocabulary_range: '7000-8000 từ' },
+    7.0: { level: 'Good', description: 'Năng lực giỏi', vocabulary_range: '8000-9000 từ' },
+    7.5: { level: 'Good+', description: 'Năng lực giỏi, ít sai sót', vocabulary_range: '9000-10000 từ' },
+    8.0: { level: 'Very Good', description: 'Năng lực rất giỏi', vocabulary_range: '10000-12000 từ' },
+    8.5: { level: 'Very Good+', description: 'Gần như hoàn hảo', vocabulary_range: '12000-15000 từ' },
+    9.0: { level: 'Expert', description: 'Chuyên gia', vocabulary_range: '15000+ từ' }
 };
 
 // Default Settings
 export const DEFAULT_SETTINGS = {
-    // Vocabulary source
     vocabSource: 'all',
     selectedSet: null,
     wordCount: 10,
-    
-    // Skills
     skills: ['reading', 'vocabulary'],
-    
-    // Level
     ieltsTarget: 6.0,
-    
-    // Bloom
     bloomPreset: 'balanced',
     bloomDistribution: {
         remember: 2,
@@ -229,24 +185,12 @@ export const DEFAULT_SETTINGS = {
         evaluate: 1,
         create: 1
     },
-    
-    // Question types
-    mcRatio: 60, // Multiple choice percentage
-    
-    // Time
-    timeLimit: 20, // minutes, 0 = unlimited
-    
-    // AI
+    mcRatio: 60,
+    timeLimit: 20,
     aiModel: 'claude',
-    
-    // Source
-    exerciseSource: 'ai-generate', // 'ai-generate', 'web-search', 'mixed'
+    exerciseSource: 'ai-generate',
     webSources: ['ielts-official', 'cambridge'],
-    
-    // Mode
-    strictMode: false, // No dictionary lookup
-    
-    // Display
+    strictMode: false,
     showHints: true,
     showTimer: true
 };
@@ -257,17 +201,14 @@ export function generateRandomBloom(total = 10) {
     const distribution = {};
     let remaining = total;
     
-    // Ensure at least 1 for first 4 levels
     levels.slice(0, 4).forEach(level => {
         distribution[level] = 1;
         remaining -= 1;
     });
     
-    // Set 0 for last 2 initially
     distribution.evaluate = 0;
     distribution.create = 0;
     
-    // Randomly distribute remaining
     while (remaining > 0) {
         const randomLevel = levels[Math.floor(Math.random() * levels.length)];
         distribution[randomLevel]++;
@@ -283,16 +224,13 @@ export function getBloomPreset(presetId) {
     if (!preset) return BLOOM_PRESETS.balanced;
     
     if (presetId === 'random') {
-        return {
-            ...preset,
-            distribution: generateRandomBloom(preset.total)
-        };
+        return { ...preset, distribution: generateRandomBloom(preset.total) };
     }
     
     return preset;
 }
 
-// Scale Bloom distribution to match word count
+// Scale Bloom distribution
 export function scaleBloomDistribution(distribution, targetTotal) {
     const currentTotal = Object.values(distribution).reduce((a, b) => a + b, 0);
     if (currentTotal === 0) return distribution;
@@ -304,7 +242,6 @@ export function scaleBloomDistribution(distribution, targetTotal) {
     const levels = Object.keys(distribution);
     levels.forEach((level, index) => {
         if (index === levels.length - 1) {
-            // Last level gets the remainder to ensure exact total
             scaled[level] = targetTotal - sum;
         } else {
             scaled[level] = Math.round(distribution[level] * scale);
