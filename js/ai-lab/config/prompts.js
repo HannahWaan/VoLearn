@@ -1,8 +1,7 @@
 /**
  * VoLearn AI Practice Lab - Prompts Configuration
- * Version: 1.0.0
+ * Version: 1.1.0
  * 
- * Chứa các prompt templates cho AI generation
  */
 
 // System prompts cho các AI models
@@ -142,7 +141,7 @@ export const BLOOM_PROMPTS = {
     }
 };
 
-// Prompt templates theo Skill
+// Prompt templates theo Skill (BỎ Listening & Pronunciation)
 export const SKILL_PROMPTS = {
     reading: {
         name: 'Reading',
@@ -190,37 +189,31 @@ Yêu cầu:
         }
     },
     
-    listening: {
-        name: 'Listening',
-        instructions: `Tạo bài tập LISTENING (dạng script):
-- Conversation hoặc monologue
-- Có transcript để đọc/nghe
-- Câu hỏi: Fill blanks, Multiple choice, Matching
-- Tích hợp từ vựng target`,
-        
-        templates: {
-            conversation: `Viết script hội thoại 2 người về "{topic}":
-- Độ dài: {length} từ
-- Tự nhiên, có filler words
-- Sử dụng từ vựng: {words}
-- Kèm câu hỏi comprehension`
-        }
-    },
-    
     speaking: {
         name: 'Speaking',
-        instructions: `Tạo bài tập SPEAKING:
+        instructions: `Tạo bài tập SPEAKING (dạng text-based):
 - Part 1: Câu hỏi ngắn về bản thân
 - Part 2: Cue card mô tả
 - Part 3: Thảo luận sâu
-- Gợi ý sử dụng từ vựng target`,
+- Gợi ý sử dụng từ vựng target
+- Yêu cầu viết câu trả lời (không cần audio)`,
         
         templates: {
+            part1: `Tạo 3-4 câu hỏi IELTS Speaking Part 1 về chủ đề "{topic}":
+- Câu hỏi đơn giản, về bản thân
+- Gợi ý dùng từ vựng: {words}
+- Kèm sample answer ngắn`,
+            
             cue_card: `Tạo IELTS Speaking Part 2 Cue Card:
 - Chủ đề cho phép dùng từ: {words}
 - Có 4 bullet points hướng dẫn
 - Kèm sample answer ideas
-- Follow-up questions cho Part 3`
+- Follow-up questions cho Part 3`,
+            
+            part3: `Tạo 2-3 câu hỏi thảo luận sâu (Part 3):
+- Liên quan đến cue card về "{topic}"
+- Yêu cầu suy nghĩ, phân tích
+- Gợi ý dùng từ: {words}`
         }
     },
     
@@ -242,7 +235,13 @@ Yêu cầu:
             collocations: `Tạo bài tập collocations cho từ: {words}
 - Matching collocations
 - Điền collocation vào câu
-- Sửa lỗi collocation`
+- Sửa lỗi collocation`,
+            
+            synonyms: `Tạo bài tập synonyms/antonyms:
+- Từ vựng: {words}
+- Matching synonyms
+- Chọn từ đồng nghĩa trong context
+- Phân biệt subtle differences`
         }
     },
     
@@ -263,29 +262,12 @@ Yêu cầu:
             transformation: `Tạo bài biến đổi câu:
 - Sử dụng từ cho trước: {words}
 - Giữ nguyên nghĩa
-- Thay đổi cấu trúc`
-        }
-    },
-    
-    pronunciation: {
-        name: 'Pronunciation',
-        instructions: `Tạo bài tập PRONUNCIATION:
-- Stress patterns
-- Phonetic transcription
-- Minimal pairs
-- Connected speech
-- LƯU Ý: Cần đảm bảo độ chính xác cao`,
-        
-        templates: {
-            stress: `Tạo bài tập word stress cho từ: {words}
-- Đánh dấu stressed syllable
-- Nhóm từ theo stress pattern
-- Câu hỏi về stress rules`,
+- Thay đổi cấu trúc`,
             
-            phonetics: `Tạo bài tập phonetics:
-- IPA transcription cho: {words}
-- Matching từ với IPA
-- Identify vowel/consonant sounds`
+            fill_grammar: `Tạo bài điền từ ngữ pháp:
+- Câu chứa từ vựng: {words}
+- Điền preposition, article, conjunction
+- Focus: {grammar_focus}`
         }
     }
 };
@@ -314,18 +296,18 @@ Trả về JSON với cấu trúc:
     "sections": [
         {
             "section_id": "section_1",
-            "skill": "reading|writing|listening|speaking|vocabulary|grammar|pronunciation",
+            "skill": "reading|writing|speaking|vocabulary|grammar",
             "bloom_level": "remember|understand|apply|analyze|evaluate|create",
             "instructions": "Hướng dẫn cho section",
-            "content": "Nội dung (đoạn văn, audio script, etc.)",
+            "content": "Nội dung (đoạn văn, etc.)",
             "questions": [
                 {
                     "question_id": "q1",
                     "type": "multiple_choice|fill_blank|true_false|matching|short_answer|essay",
                     "question": "Nội dung câu hỏi",
-                    "options": ["A", "B", "C", "D"] // nếu là trắc nghiệm
+                    "options": ["A", "B", "C", "D"],
                     "correct_answer": "đáp án đúng",
-                    "accepted_answers": ["các đáp án chấp nhận được"], // cho tự luận
+                    "accepted_answers": ["các đáp án chấp nhận được"],
                     "points": number,
                     "target_words": ["từ vựng liên quan"],
                     "explanation": "Giải thích đáp án",
@@ -377,20 +359,25 @@ Trả về JSON:
             "student_answer": "câu trả lời",
             "correct_answer": "đáp án đúng",
             "is_correct": boolean,
-            "partial_credit": number, // 0-1 cho partial correct
+            "partial_credit": number,
             "score": number,
             "feedback": "Nhận xét chi tiết"
         }
     ],
     "skill_analysis": {
         "reading": { "score": x, "max": y, "feedback": "..." },
-        "writing": { "score": x, "max": y, "feedback": "..." }
-        // ... other skills
+        "writing": { "score": x, "max": y, "feedback": "..." },
+        "speaking": { "score": x, "max": y, "feedback": "..." },
+        "vocabulary": { "score": x, "max": y, "feedback": "..." },
+        "grammar": { "score": x, "max": y, "feedback": "..." }
     },
     "bloom_analysis": {
         "remember": { "correct": x, "total": y },
-        "understand": { "correct": x, "total": y }
-        // ... other levels
+        "understand": { "correct": x, "total": y },
+        "apply": { "correct": x, "total": y },
+        "analyze": { "correct": x, "total": y },
+        "evaluate": { "correct": x, "total": y },
+        "create": { "correct": x, "total": y }
     },
     "vocabulary_analysis": [
         {
@@ -405,12 +392,6 @@ Trả về JSON:
     "strengths": ["Điểm mạnh 1", "Điểm mạnh 2"],
     "weaknesses": ["Điểm yếu cần cải thiện"]
 }
-
-## TIÊU CHÍ CHẤM
-- Trắc nghiệm: Đúng/Sai rõ ràng
-- Điền từ: Chấp nhận các biến thể hợp lệ (số ít/nhiều, viết hoa/thường)
-- Tự luận ngắn: Đánh giá ý chính, từ vựng, ngữ pháp
-- Essay: Theo rubric IELTS (Task Response, Coherence, Lexical Resource, Grammar)
 `;
 
 // Prompt cho Daily Challenge
@@ -427,18 +408,48 @@ Tạo Daily Challenge đơn giản, nhanh (3-5 phút):
 - Độ khó: Trung bình
 - Bloom: Chủ yếu Remember, Understand, Apply
 - Không quá khó để duy trì streak
+- CHỈ dùng skills: reading, writing, vocabulary, grammar (KHÔNG listening/pronunciation)
 
 ## OUTPUT FORMAT
 {
     "challenge_id": "daily_{date}",
     "title": "Thử thách ngày {date}",
-    "questions": [...], // 5-7 câu
-    "bonus_word": { // Từ mới bonus
+    "questions": [...],
+    "bonus_word": {
         "word": "...",
         "definition": "...",
         "example": "..."
     },
     "motivation": "Câu động viên cho streak {streak}"
+}
+`;
+
+// Prompt cho Web Search
+export const WEB_SEARCH_PROMPT = `
+Tìm kiếm bài tập IELTS {skill} từ các nguồn uy tín:
+
+## YÊU CẦU TÌM KIẾM
+- Skill: {skill}
+- Trình độ: Band {band}
+- Chủ đề: {topic}
+- Nguồn ưu tiên: {sources}
+
+## TIÊU CHÍ CHỌN LỌC
+1. Bài tập phải có đáp án
+2. Phù hợp trình độ yêu cầu
+3. Có thể tích hợp từ vựng: {words}
+4. Từ nguồn chính thống, đáng tin cậy
+
+## OUTPUT
+{
+    "source_url": "url",
+    "source_name": "tên nguồn",
+    "exercise_type": "loại bài",
+    "content": "nội dung bài tập",
+    "questions": [...],
+    "answers": [...],
+    "adapted": true/false,
+    "original_band": number
 }
 `;
 
@@ -448,5 +459,6 @@ export default {
     SKILL_PROMPTS,
     EXERCISE_GENERATION_PROMPT,
     GRADING_PROMPT,
-    DAILY_CHALLENGE_PROMPT
+    DAILY_CHALLENGE_PROMPT,
+    WEB_SEARCH_PROMPT
 };
