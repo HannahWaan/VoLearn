@@ -1149,3 +1149,47 @@
         display: none !important;
     }
 }
+
+/* Mobile Lookup Button */
+.mobile-lookup-btn {
+    animation: fadeInUp 0.2s ease;
+}
+
+.mobile-lookup-btn:active {
+    transform: scale(0.95);
+    background: var(--primary-hover, #4f46e5);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+    #dictionary-popup {
+        width: calc(100vw - 32px) !important;
+        max-width: none !important;
+        left: 16px !important;
+        right: 16px !important;
+        max-height: 60vh;
+    }
+    
+    #dictionary-popup .popup-close {
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+    }
+    
+    #dictionary-popup .add-to-vocab-btn {
+        padding: 14px 20px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+}
