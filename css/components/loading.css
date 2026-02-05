@@ -1,52 +1,170 @@
 /* ========================================
-   VoLearn - Loading Screen
+   VoLearn - Loading Screen v2.0
+   Cute Cat Theme
    ======================================== */
 
 .loading-screen {
     position: fixed;
     inset: 0;
-    background: var(--bg-primary);
+    background: linear-gradient(135deg, #87CEEB 0%, #E0F4FF 50%, #87CEEB 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+    overflow: hidden;
 }
 
 .loading-screen.hidden {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
 }
 
-.loading-logo {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 16px;
-    animation: pulse 2s ease infinite;
+/* Image Wrapper */
+.loading-image-wrapper {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+    animation: floatImage 3s ease-in-out infinite;
 }
 
-.loading-content h2 {
-    font-size: 1.8rem;
+.loading-image {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Text Section */
+.loading-text {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 24px 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.loading-text h2 {
+    font-size: 2rem;
     font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 24px;
+    color: #D4A84B;
+    margin: 0 0 16px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: 'Pacifico', cursive, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--bg-tertiary);
-    border-top-color: var(--primary-color);
-    border-radius: 50%;
-    margin: 0 auto 16px;
-    animation: spin 1s linear infinite;
+/* Loading Bar */
+.loading-bar {
+    width: 200px;
+    height: 8px;
+    background: #E8E8E8;
+    border-radius: 10px;
+    margin: 0 auto 12px;
+    overflow: hidden;
 }
 
-.loading-content p {
-    color: var(--text-secondary);
+.loading-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #FFB347, #FF6B6B, #C70000);
+    border-radius: 10px;
+    animation: loadingProgress 2s ease-in-out infinite;
+}
+
+.loading-text p {
+    color: #666;
     font-size: 0.95rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes floatImage {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes loadingProgress {
+    0% {
+        width: 0%;
+    }
+    50% {
+        width: 70%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .loading-content {
+        padding: 16px;
+    }
+    
+    .loading-image-wrapper {
+        max-width: 300px;
+    }
+    
+    .loading-text {
+        padding: 20px 30px;
+    }
+    
+    .loading-text h2 {
+        font-size: 1.6rem;
+    }
+    
+    .loading-bar {
+        width: 160px;
+    }
+}
+
+@media (max-width: 400px) {
+    .loading-image-wrapper {
+        max-width: 250px;
+        margin-bottom: 16px;
+    }
+    
+    .loading-text h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .loading-screen {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+}
+
+[data-theme="dark"] .loading-text {
+    background: rgba(30, 30, 46, 0.95);
+}
+
+[data-theme="dark"] .loading-text h2 {
+    color: #FFD700;
+}
+
+[data-theme="dark"] .loading-text p {
+    color: #a0a0b0;
+}
+
+[data-theme="dark"] .loading-bar {
+    background: #3a3a4e;
 }
