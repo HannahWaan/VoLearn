@@ -6,7 +6,7 @@
 .loading-screen {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #87CEEB 0%, #E0F4FF 50%, #87CEEB 100%);
+    background: linear-gradient(180deg, #87CEEB 0%, #B8E4F9 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -29,65 +29,53 @@
     text-align: center;
     padding: 20px;
     width: 100%;
-    max-width: 500px;
 }
 
 /* Image Wrapper */
 .loading-image-wrapper {
     width: 100%;
-    max-width: 400px;
-    margin-bottom: 20px;
+    max-width: 550px;
+    margin-bottom: 24px;
     animation: floatImage 3s ease-in-out infinite;
 }
 
 .loading-image {
     width: 100%;
     height: auto;
-    border-radius: 20px;
-    box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.15),
-        0 8px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 /* Text Section */
 .loading-text {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 24px 40px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 16px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
-}
-
-.loading-text h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #D4A84B;
-    margin: 0 0 16px 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-    font-family: 'Pacifico', cursive, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Loading Bar */
 .loading-bar {
-    width: 200px;
-    height: 8px;
-    background: #E8E8E8;
+    width: 180px;
+    height: 6px;
+    background: #E0E0E0;
     border-radius: 10px;
-    margin: 0 auto 12px;
+    margin: 0 auto 10px;
     overflow: hidden;
 }
 
 .loading-bar-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #FFB347, #FF6B6B, #C70000);
+    background: linear-gradient(90deg, #FFB347, #FF6B6B, #c70000);
     border-radius: 10px;
-    animation: loadingProgress 2s ease-in-out infinite;
+    animation: loadingProgress 1.8s ease-in-out infinite;
 }
 
 .loading-text p {
-    color: #666;
-    font-size: 0.95rem;
+    color: #555;
+    font-size: 0.9rem;
     margin: 0;
     font-weight: 500;
 }
@@ -95,10 +83,10 @@
 /* Animations */
 @keyframes floatImage {
     0%, 100% {
-        transform: translateY(0px);
+        transform: translateY(0);
     }
     50% {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }
 }
 
@@ -107,7 +95,7 @@
         width: 0%;
     }
     50% {
-        width: 70%;
+        width: 80%;
     }
     100% {
         width: 100%;
@@ -116,49 +104,27 @@
 
 /* Responsive */
 @media (max-width: 600px) {
-    .loading-content {
-        padding: 16px;
-    }
-    
     .loading-image-wrapper {
-        max-width: 300px;
+        max-width: 90vw;
+        margin-bottom: 20px;
     }
     
     .loading-text {
-        padding: 20px 30px;
-    }
-    
-    .loading-text h2 {
-        font-size: 1.6rem;
+        padding: 14px 24px;
     }
     
     .loading-bar {
-        width: 160px;
+        width: 150px;
     }
 }
 
-@media (max-width: 400px) {
-    .loading-image-wrapper {
-        max-width: 250px;
-        margin-bottom: 16px;
-    }
-    
-    .loading-text h2 {
-        font-size: 1.4rem;
-    }
-}
-
-/* Dark Mode Support */
+/* Dark Mode */
 [data-theme="dark"] .loading-screen {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
 }
 
 [data-theme="dark"] .loading-text {
-    background: rgba(30, 30, 46, 0.95);
-}
-
-[data-theme="dark"] .loading-text h2 {
-    color: #FFD700;
+    background: rgba(30, 30, 46, 0.9);
 }
 
 [data-theme="dark"] .loading-text p {
