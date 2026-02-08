@@ -1,8 +1,8 @@
-# 📚 VoLearn - Ứng Dụng Học Từ Vựng Tiếng Anh
+# 📚 VoLearn - Web Học Từ Vựng Tiếng Anh
 
 ## 🌟 Giới Thiệu
 
-**VoLearn** là ứng dụng học từ vựng tiếng Anh toàn diện được thiết kế cho người Việt. Ứng dụng kết hợp nhiều phương pháp học tập khoa học bao gồm Flashcard, Trắc nghiệm, Nghe-Viết (Dictation), và Gõ từ, cùng với tính năng đọc tin tức tiếng Anh tích hợp và tra từ điển nhanh.
+**VoLearn** là web học từ vựng tiếng Anh toàn diện được thiết kế cho người Việt. Ứng dụng kết hợp nhiều phương pháp học tập khoa học bao gồm Flashcard, Trắc nghiệm, Nghe-Viết (Dictation), và Gõ từ, cùng với tính năng đọc tin tức tiếng Anh tích hợp và tra từ điển nhanh.
 
 ### Tại sao chọn VoLearn?
 
