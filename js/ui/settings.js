@@ -67,37 +67,62 @@ export function applySettings() {
 
 // ===== VOICE MANAGEMENT =====
 function loadVoices() {
-    const loadVoiceList = () => {
+    
+    const doPopulate = () => {
         const voices = speechSynthesis.getVoices();
-        if (voices.length === 0) {
-            setTimeout(loadVoiceList, 100);
-            return;
+        if (voices.length === 0) return false;
+        
+        availableVoices.us = voices.filter(v => {
+            const lang = v.lang.replace('_', '-').toLowerCase();
+            return lang === 'en-us';
+        });
+        availableVoices.uk = voices.filter(v => {
+            const lang = v.lang.replace('_', '-').toLowerCase();
+            return lang === 'en-gb';
+        });
+        availableVoices.vi = voices.filter(v => {
+            const lang = v.lang.replace('_', '-').toLowerCase();
+            return lang.startsWith('vi');
+        });
+        
+        const usSelect = document.getElementById('voice-us-select');
+        if (usSelect) {
+            populateVoiceSelect('voice-us-select', availableVoices.us, 'US English');
+            populateVoiceSelect('voice-uk-select', availableVoices.uk, 'UK English');
+            populateVoiceSelect('voice-vi-select', availableVoices.vi, 'Vietnamese');
+            return true;
         }
-        
-        availableVoices.us = voices.filter(v => 
-            v.lang === 'en-US' || v.lang === 'en_US' || v.lang.toLowerCase() === 'en-us'
-        );
-        availableVoices.uk = voices.filter(v => 
-            v.lang === 'en-GB' || v.lang === 'en_GB' || v.lang.toLowerCase() === 'en-gb'
-        );
-        availableVoices.vi = voices.filter(v => 
-            v.lang.startsWith('vi') || v.lang === 'vi-VN' || v.lang === 'vi_VN'
-        );
-        
-        populateVoiceSelect('voice-us-select', availableVoices.us, 'US English');
-        populateVoiceSelect('voice-uk-select', availableVoices.uk, 'UK English');
-        populateVoiceSelect('voice-vi-select', availableVoices.vi, 'Vietnamese');
+        return false;
+    };
+    
+    if (doPopulate()) return;
+    
+    let populated = false;
+    
+    const tryPopulate = () => {
+        if (populated) return;
+        if (doPopulate()) {
+            populated = true;
+        }
     };
     
     if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = loadVoiceList;
+        speechSynthesis.onvoiceschanged = tryPopulate;
     }
-    loadVoiceList();
+    
+    setTimeout(tryPopulate, 200);
+    setTimeout(tryPopulate, 500);
+    setTimeout(tryPopulate, 1000);
+    setTimeout(tryPopulate, 2000);
+    setTimeout(tryPopulate, 5000);
 }
 
 function populateVoiceSelect(selectId, voices, label) {
     const select = document.getElementById(selectId);
     if (!select) return;
+    
+    // Lưu lại giá trị hiện tại trước khi xóa
+    const currentValue = select.value;
     
     select.innerHTML = '';
     
@@ -152,9 +177,17 @@ function populateVoiceSelect(selectId, voices, label) {
         select.appendChild(option);
     }
     
-    const savedValue = localStorage.getItem(`volearn-voice-${selectId}`);
+    const storageKey = `volearn-voice-${selectId}`;
+    const savedValue = localStorage.getItem(storageKey);
+    
     if (savedValue && [...select.options].some(o => o.value === savedValue)) {
         select.value = savedValue;
+    } else if (currentValue && [...select.options].some(o => o.value === currentValue)) {
+        select.value = currentValue;
+    }
+    
+    if (!localStorage.getItem(storageKey) && select.value) {
+        localStorage.setItem(storageKey, select.value);
     }
 }
 
@@ -1190,4 +1223,5 @@ window.selectRestoreFile = selectRestoreFile;
 window.closeDataHelpPopup = closeDataHelpPopup;
 window.closeExportSelector = closeExportSelector;
 window.confirmExport = confirmExport;
+
 
