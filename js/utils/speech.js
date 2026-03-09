@@ -30,22 +30,30 @@ function getVoice(lang) {
         lang = 'en-US';
     }
     
-    // Normalize lang code
     lang = lang.replace('_', '-');
+    
+    // === FIX: Ưu tiên giọng user đã chọn trong Settings ===
+    const settingsKey = lang.startsWith('vi') ? 'volearn-voice-vi-select' 
+                      : lang.includes('GB') ? 'volearn-voice-uk-select' 
+                      : 'volearn-voice-us-select';
+    const savedVoiceName = localStorage.getItem(settingsKey);
+    if (savedVoiceName) {
+        const savedVoice = voices.find(v => v.name === savedVoiceName);
+        if (savedVoice) return savedVoice;
+    }
     
     // Try exact match
     let voice = voices.find(v => v.lang.replace('_', '-') === lang);
     if (voice) return voice;
     
-    // Try variations
     if (lang === 'en-GB') {
         voice = voices.find(v => 
             v.lang.includes('GB') || 
             v.lang.includes('UK') ||
             v.name.toLowerCase().includes('british') ||
             v.name.toLowerCase().includes('uk') ||
-            v.name.toLowerCase().includes('daniel') ||  // macOS UK voice
-            v.name.toLowerCase().includes('kate')       // Windows UK voice
+            v.name.toLowerCase().includes('daniel') ||
+            v.name.toLowerCase().includes('kate')
         );
         if (voice) return voice;
     }
@@ -55,13 +63,12 @@ function getVoice(lang) {
             v.lang.includes('US') || 
             v.name.toLowerCase().includes('us') ||
             v.name.toLowerCase().includes('american') ||
-            v.name.toLowerCase().includes('samantha') ||  // macOS US voice
-            v.name.toLowerCase().includes('david')        // Windows US voice
+            v.name.toLowerCase().includes('samantha') ||
+            v.name.toLowerCase().includes('david')
         );
         if (voice) return voice;
     }
     
-    // Fallback to any English
     const langPrefix = lang.split('-')[0];
     voice = voices.find(v => v.lang.startsWith(langPrefix));
     if (voice) return voice;
@@ -72,14 +79,17 @@ function getVoice(lang) {
 export function speak(text, options = {}) {
     if (!text || typeof text !== 'string') return;
     
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
     
+    // === FIX: Khi options là string, coi đó là lang code (en-US, en-GB, vi-VN) ===
+    // Trước đây code tìm theo voiceURI, không bao giờ match được
     if (typeof options === 'string') {
-        const voice = voices.find(v => v.voiceURI === options);
-        if (voice) utterance.voice = voice;
+        const voice = getVoice(options);
+        if (voice) {
+            utterance.voice = voice;
+        }
     } else if (typeof options === 'object') {
         if (options.lang) {
             const voice = getVoice(options.lang);
@@ -92,12 +102,18 @@ export function speak(text, options = {}) {
         utterance.volume = options.volume || 1;
     }
     
-    // Ensure speech synthesis is ready
+    // === FIX: Đọc tốc độ từ Settings ===
+    if (typeof options !== 'object' || !options.rate) {
+        const savedSpeed = localStorage.getItem('volearn-speed');
+        if (savedSpeed) {
+            utterance.rate = parseFloat(savedSpeed);
+        }
+    }
+    
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
     }
     
-    // Small delay to ensure cancel is processed
     setTimeout(() => {
         speechSynthesis.speak(utterance);
     }, 50);
@@ -108,7 +124,7 @@ export function speakWord(word, accentCode) {
     
     const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
     console.log(`🔊 Speaking "${word}" with accent: ${lang}`);
-    speak(word, { lang, rate: 0.9 });
+    speak(word, { lang, rate: parseFloat(localStorage.getItem('volearn-speed') || '0.9') });
 }
 
 export function speakWithAccent(text, accentCode) {
