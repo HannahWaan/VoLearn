@@ -257,7 +257,7 @@ function bindSettingsEvents() {
     
     ['voice-us-select', 'voice-uk-select', 'voice-vi-select'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', (e) => {
-            localStorage.setItem(`volearn-${id}`, e.target.value);
+            localStorage.setItem(`volearn-voice-${id}`, e.target.value);
         });
     });
     
