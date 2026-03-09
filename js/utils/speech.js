@@ -1,25 +1,32 @@
 /* ===== SPEECH MODULE ===== */
-/* VoLearn v2.2.1 - Text to Speech - Fixed voice selection */
+/* VoLearn v2.2.2 - Text to Speech - Mobile + Desktop compatible */
 
 let voices = [];
 let voicesLoaded = false;
 let voicesReadyCallbacks = [];
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+);
 
 export function initSpeech() {
-    console.log('🔊 Đang tải giọng đọc...');
+    console.log(`🔊 Đang tải giọng đọc... (mobile: ${isMobile})`);
     
     const loadVoiceList = () => {
         const newVoices = speechSynthesis.getVoices();
-        // Chỉ cập nhật khi thực sự có voices (tránh ghi đè bằng mảng rỗng)
         if (newVoices.length > 0) {
             voices = newVoices;
             voicesLoaded = true;
             console.log(`✅ Đã tải ${voices.length} giọng đọc`);
             
-            // Tự động lưu giọng mặc định nếu chưa có trong localStorage
+            // Debug: log tất cả voices trên mobile
+            if (isMobile) {
+                console.log('📱 Mobile voices:', voices.map(v => 
+                    `${v.name} [${v.lang}] ${v.localService ? 'local' : 'remote'}`
+                ));
+            }
+            
             autoSaveDefaultVoices();
             
-            // Fire callbacks cho ai đang đợi voices
             voicesReadyCallbacks.forEach(cb => {
                 try { cb(voices); } catch(e) {}
             });
@@ -33,16 +40,11 @@ export function initSpeech() {
         speechSynthesis.onvoiceschanged = loadVoiceList;
     }
     
-    // Retry cho các trình duyệt load chậm
     setTimeout(loadVoiceList, 300);
     setTimeout(loadVoiceList, 1000);
     setTimeout(loadVoiceList, 3000);
 }
 
-/**
- * Đăng ký callback khi voices sẵn sàng.
- * Nếu đã load rồi thì gọi ngay.
- */
 export function onVoicesReady(callback) {
     if (voicesLoaded && voices.length > 0) {
         callback(voices);
@@ -51,10 +53,7 @@ export function onVoicesReady(callback) {
     }
 }
 
-/**
- * Tự động lưu giọng mặc định vào localStorage 
- * nếu user chưa từng chọn giọng trong Settings.
- */
+/* ===== AUTO SAVE DEFAULT VOICES ===== */
 function autoSaveDefaultVoices() {
     const keys = [
         { key: 'volearn-voice-voice-us-select', lang: 'en-US' },
@@ -67,16 +66,12 @@ function autoSaveDefaultVoices() {
             const voice = findBestVoice(lang);
             if (voice) {
                 localStorage.setItem(key, voice.name);
-                console.log(`🔊 Auto-saved default voice for ${lang}: ${voice.name}`);
             }
         }
     });
 }
 
-/**
- * Tìm giọng tốt nhất cho một ngôn ngữ.
- * Ưu tiên: giọng user chọn > exact match > partial match > fallback.
- */
+/* ===== FIND BEST VOICE ===== */
 function findBestVoice(lang) {
     if (!voices || voices.length === 0) return null;
     
@@ -104,23 +99,21 @@ function findBestVoice(lang) {
             const vName = v.name.toLowerCase();
             return vLang.includes('us') || vName.includes('american') || 
                    vName.includes('samantha') || vName.includes('david') ||
-                   vName.includes('zira') || vName.includes('mark');
+                   vName.includes('zira') || vName.includes('mark') ||
+                   vName.includes('google us');
         });
         if (voice) return voice;
     }
     
     // Prefix match (en, vi, ...)
     const prefix = langNorm.split('-')[0];
-    voice = voices.find(v => v.lang.toLowerCase().startsWith(prefix));
+    voice = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(prefix));
     if (voice) return voice;
     
-    return null;  // Trả null, KHÔNG fallback voices[0] để tránh giọng sai ngôn ngữ
+    return null;
 }
 
-/**
- * Lấy voice cho một lang code.
- * Ưu tiên giọng user đã chọn trong Settings.
- */
+/* ===== GET VOICE ===== */
 function getVoice(lang) {
     if (!lang || typeof lang !== 'string') {
         lang = 'en-US';
@@ -129,7 +122,7 @@ function getVoice(lang) {
     lang = lang.replace('_', '-');
     const langLower = lang.toLowerCase();
     
-    // ===== Bước 1: Ưu tiên giọng user đã chọn trong Settings =====
+    // Bước 1: Ưu tiên giọng user đã chọn trong Settings
     const settingsKey = langLower.startsWith('vi') ? 'volearn-voice-voice-vi-select'
                       : langLower.includes('gb')   ? 'volearn-voice-voice-uk-select'
                       :                               'volearn-voice-voice-us-select';
@@ -140,18 +133,32 @@ function getVoice(lang) {
         if (savedVoice) return savedVoice;
     }
     
-    // ===== Bước 2: Tìm giọng tốt nhất theo lang =====
+    // Bước 2: Tìm giọng tốt nhất theo lang
     const bestVoice = findBestVoice(lang);
     if (bestVoice) return bestVoice;
     
-    // ===== Bước 3: Fallback cuối cùng — giọng tiếng Anh bất kỳ (KHÔNG dùng voices[0]) =====
-    const anyEnglish = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+    // Bước 3: Fallback — giọng tiếng Anh bất kỳ (không dùng voices[0])
+    const anyEnglish = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith('en'));
     if (anyEnglish) return anyEnglish;
     
-    // Thực sự không còn gì
     return voices[0] || null;
 }
 
+/* ===== Chuẩn hóa lang code sang BCP 47 ===== */
+function normalizeLangCode(lang) {
+    if (!lang) return 'en-US';
+    // Đổi en_US → en-US, vi_VN → vi-VN
+    lang = lang.replace('_', '-');
+    
+    // Đảm bảo format chuẩn: 2 chữ thường - 2 chữ hoa (en-US, vi-VN)
+    const parts = lang.split('-');
+    if (parts.length === 2) {
+        return parts[0].toLowerCase() + '-' + parts[1].toUpperCase();
+    }
+    return lang;
+}
+
+/* ===== SPEAK — Core function ===== */
 export function speak(text, options = {}) {
     if (!text || typeof text !== 'string') return;
     
@@ -159,38 +166,44 @@ export function speak(text, options = {}) {
     
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Xác định lang và rate
-    let lang = null;
+    // Xác định lang và rate từ options
+    let targetLang = null;
     let rate = null;
     
     if (typeof options === 'string') {
         // speak("hello", "en-US")
-        lang = options;
+        targetLang = options;
     } else if (typeof options === 'object' && options !== null) {
         // speak("hello", { lang: "en-US", rate: 0.9 })
-        lang = options.lang || null;
+        targetLang = options.lang || null;
         rate = options.rate || null;
-        utterance.pitch = options.pitch || 1;
-        utterance.volume = options.volume || 1;
+        if (options.pitch) utterance.pitch = options.pitch;
+        if (options.volume) utterance.volume = options.volume;
     }
     
-    // Set voice
-    if (lang) {
-        const voice = getVoice(lang);
-        if (voice) {
-            utterance.voice = voice;
-            utterance.lang = voice.lang;  // Đảm bảo lang khớp với voice
-        }
+    // Mặc định là en-US nếu không chỉ định
+    if (!targetLang) {
+        targetLang = 'en-US';
+    }
+    
+    // ===== CRITICAL FIX CHO MOBILE =====
+    // Trên Android Chrome: utterance.voice bị IGNORE
+    // Phải set utterance.lang = BCP 47 code → Android mới đổi ngôn ngữ
+    //
+    // Trên Desktop: utterance.voice hoạt động tốt
+    // Set cả 2 để đảm bảo hoạt động trên mọi platform
+    
+    const voice = getVoice(targetLang);
+    
+    if (voice) {
+        utterance.voice = voice;                              // Desktop dùng cái này
+        utterance.lang = normalizeLangCode(voice.lang);       // Mobile dùng cái này
     } else {
-        // Không có lang → mặc định en-US
-        const voice = getVoice('en-US');
-        if (voice) {
-            utterance.voice = voice;
-            utterance.lang = voice.lang;
-        }
+        // Không tìm được voice → vẫn set lang để mobile đọc đúng ngôn ngữ
+        utterance.lang = normalizeLangCode(targetLang);
     }
     
-    // Set rate: ưu tiên options.rate > localStorage > mặc định 1
+    // Set rate: options.rate > localStorage > mặc định 1
     if (rate) {
         utterance.rate = rate;
     } else {
@@ -198,7 +211,7 @@ export function speak(text, options = {}) {
         utterance.rate = savedSpeed ? parseFloat(savedSpeed) : 1;
     }
     
-    // Speak với delay nhỏ để đảm bảo cancel đã xử lý xong
+    // Speak
     setTimeout(() => {
         speechSynthesis.speak(utterance);
     }, 50);
