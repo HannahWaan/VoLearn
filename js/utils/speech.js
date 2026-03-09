@@ -1,248 +1,174 @@
 /* ===== SPEECH MODULE ===== */
-/* VoLearn v2.2.2 - Text to Speech - Mobile + Desktop compatible */
+/* VoLearn v2.3.0 - Single source of truth for voices */
 
 let voices = [];
 let voicesLoaded = false;
-let voicesReadyCallbacks = [];
-let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-);
+let onVoicesReadyCallbacks = [];
 
+/* ===== INIT ===== */
 export function initSpeech() {
-    console.log(`🔊 Đang tải giọng đọc... (mobile: ${isMobile})`);
+    console.log('🔊 Đang tải giọng đọc...');
     
     const loadVoiceList = () => {
-        const newVoices = speechSynthesis.getVoices();
-        if (newVoices.length > 0) {
-            voices = newVoices;
-            voicesLoaded = true;
-            console.log(`✅ Đã tải ${voices.length} giọng đọc`);
-            
-            // Debug: log tất cả voices trên mobile
-            if (isMobile) {
-                console.log('📱 Mobile voices:', voices.map(v => 
-                    `${v.name} [${v.lang}] ${v.localService ? 'local' : 'remote'}`
-                ));
-            }
-            
-            autoSaveDefaultVoices();
-            
-            voicesReadyCallbacks.forEach(cb => {
-                try { cb(voices); } catch(e) {}
-            });
-            voicesReadyCallbacks = [];
-        }
+        const v = speechSynthesis.getVoices();
+        if (v.length === 0) return;
+        
+        voices = v;
+        voicesLoaded = true;
+        console.log(`✅ Đã tải ${voices.length} giọng đọc`);
+        
+        // Fire tất cả callbacks đang chờ (bao gồm cả Settings populate)
+        const cbs = [...onVoicesReadyCallbacks];
+        onVoicesReadyCallbacks = [];
+        cbs.forEach(cb => { try { cb(voices); } catch(e) { console.error(e); } });
     };
     
+    // Gọi ngay lần 1
     loadVoiceList();
     
+    // Dùng onvoiceschanged — CHỈ set 1 lần duy nhất ở đây
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = loadVoiceList;
     }
     
-    setTimeout(loadVoiceList, 300);
-    setTimeout(loadVoiceList, 1000);
-    setTimeout(loadVoiceList, 3000);
+    // Fallback polling cho mobile
+    if (!voicesLoaded) {
+        const poll = [100, 300, 600, 1000, 2000, 4000];
+        poll.forEach(ms => setTimeout(() => { if (!voicesLoaded) loadVoiceList(); }, ms));
+    }
 }
 
+/**
+ * Đăng ký callback khi voices sẵn sàng.
+ * Nếu đã load → gọi ngay. 
+ * Cả speech.js và settings.js đều dùng hàm này.
+ */
 export function onVoicesReady(callback) {
     if (voicesLoaded && voices.length > 0) {
-        callback(voices);
+        try { callback(voices); } catch(e) { console.error(e); }
     } else {
-        voicesReadyCallbacks.push(callback);
+        onVoicesReadyCallbacks.push(callback);
     }
 }
 
-/* ===== AUTO SAVE DEFAULT VOICES ===== */
-function autoSaveDefaultVoices() {
-    const keys = [
-        { key: 'volearn-voice-voice-us-select', lang: 'en-US' },
-        { key: 'volearn-voice-voice-uk-select', lang: 'en-GB' },
-        { key: 'volearn-voice-voice-vi-select', lang: 'vi'    }
-    ];
-    
-    keys.forEach(({ key, lang }) => {
-        if (!localStorage.getItem(key)) {
-            const voice = findBestVoice(lang);
-            if (voice) {
-                localStorage.setItem(key, voice.name);
-            }
-        }
-    });
-}
-
-/* ===== FIND BEST VOICE ===== */
-function findBestVoice(lang) {
-    if (!voices || voices.length === 0) return null;
-    
-    const langNorm = (lang || 'en-US').replace('_', '-').toLowerCase();
-    
-    // Exact match
-    let voice = voices.find(v => v.lang.replace('_', '-').toLowerCase() === langNorm);
-    if (voice) return voice;
-    
-    // Partial match cho en-GB
-    if (langNorm === 'en-gb') {
-        voice = voices.find(v => {
-            const vLang = v.lang.replace('_', '-').toLowerCase();
-            const vName = v.name.toLowerCase();
-            return vLang.includes('gb') || vName.includes('british') || 
-                   vName.includes('daniel') || vName.includes('kate');
-        });
-        if (voice) return voice;
-    }
-    
-    // Partial match cho en-US
-    if (langNorm === 'en-us') {
-        voice = voices.find(v => {
-            const vLang = v.lang.replace('_', '-').toLowerCase();
-            const vName = v.name.toLowerCase();
-            return vLang.includes('us') || vName.includes('american') || 
-                   vName.includes('samantha') || vName.includes('david') ||
-                   vName.includes('zira') || vName.includes('mark') ||
-                   vName.includes('google us');
-        });
-        if (voice) return voice;
-    }
-    
-    // Prefix match (en, vi, ...)
-    const prefix = langNorm.split('-')[0];
-    voice = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(prefix));
-    if (voice) return voice;
-    
-    return null;
-}
-
-/* ===== GET VOICE ===== */
-function getVoice(lang) {
-    if (!lang || typeof lang !== 'string') {
-        lang = 'en-US';
-    }
-    
-    lang = lang.replace('_', '-');
-    const langLower = lang.toLowerCase();
-    
-    // Bước 1: Ưu tiên giọng user đã chọn trong Settings
-    const settingsKey = langLower.startsWith('vi') ? 'volearn-voice-voice-vi-select'
-                      : langLower.includes('gb')   ? 'volearn-voice-voice-uk-select'
-                      :                               'volearn-voice-voice-us-select';
-    
-    const savedVoiceName = localStorage.getItem(settingsKey);
-    if (savedVoiceName) {
-        const savedVoice = voices.find(v => v.name === savedVoiceName);
-        if (savedVoice) return savedVoice;
-    }
-    
-    // Bước 2: Tìm giọng tốt nhất theo lang
-    const bestVoice = findBestVoice(lang);
-    if (bestVoice) return bestVoice;
-    
-    // Bước 3: Fallback — giọng tiếng Anh bất kỳ (không dùng voices[0])
-    const anyEnglish = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith('en'));
-    if (anyEnglish) return anyEnglish;
-    
-    return voices[0] || null;
-}
-
-/* ===== Chuẩn hóa lang code sang BCP 47 ===== */
-function normalizeLangCode(lang) {
+/* ===== NORMALIZE LANG CODE ===== */
+function normalizeLang(lang) {
     if (!lang) return 'en-US';
-    // Đổi en_US → en-US, vi_VN → vi-VN
     lang = lang.replace('_', '-');
-    
-    // Đảm bảo format chuẩn: 2 chữ thường - 2 chữ hoa (en-US, vi-VN)
-    const parts = lang.split('-');
-    if (parts.length === 2) {
-        return parts[0].toLowerCase() + '-' + parts[1].toUpperCase();
-    }
+    const p = lang.split('-');
+    if (p.length === 2) return p[0].toLowerCase() + '-' + p[1].toUpperCase();
     return lang;
 }
 
-/* ===== SPEAK — Core function ===== */
+/* ===== FIND BEST VOICE (không dùng localStorage) ===== */
+function findBestVoice(lang) {
+    if (!voices.length) return null;
+    const lc = (lang || 'en-US').replace('_', '-').toLowerCase();
+
+    // Exact
+    let v = voices.find(x => x.lang.replace('_', '-').toLowerCase() === lc);
+    if (v) return v;
+
+    // en-GB partials
+    if (lc === 'en-gb') {
+        v = voices.find(x => {
+            const xl = x.lang.replace('_', '-').toLowerCase();
+            const xn = x.name.toLowerCase();
+            return xl.includes('gb') || xn.includes('british') || xn.includes('daniel') || xn.includes('kate');
+        });
+        if (v) return v;
+    }
+    // en-US partials
+    if (lc === 'en-us') {
+        v = voices.find(x => {
+            const xl = x.lang.replace('_', '-').toLowerCase();
+            const xn = x.name.toLowerCase();
+            return xl.includes('us') || xn.includes('american') || xn.includes('samantha') ||
+                   xn.includes('david') || xn.includes('zira') || xn.includes('mark') || xn.includes('google us');
+        });
+        if (v) return v;
+    }
+
+    // Prefix
+    const prefix = lc.split('-')[0];
+    v = voices.find(x => x.lang.replace('_', '-').toLowerCase().startsWith(prefix));
+    return v || null;
+}
+
+/* ===== GET VOICE (có tra localStorage) ===== */
+function getVoice(lang) {
+    if (!lang) lang = 'en-US';
+    lang = lang.replace('_', '-');
+    const lc = lang.toLowerCase();
+
+    // Bước 1 — Giọng user đã chọn trong Settings
+    const key = lc.startsWith('vi') ? 'volearn-voice-voice-vi-select'
+              : lc.includes('gb')   ? 'volearn-voice-voice-uk-select'
+              :                        'volearn-voice-voice-us-select';
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        const sv = voices.find(x => x.name === saved);
+        if (sv) return sv;
+    }
+
+    // Bước 2 — Tìm tốt nhất
+    const best = findBestVoice(lang);
+    if (best) return best;
+
+    // Bước 3 — Bất kỳ giọng tiếng Anh
+    const anyEn = voices.find(x => x.lang.replace('_', '-').toLowerCase().startsWith('en'));
+    if (anyEn) return anyEn;
+
+    return voices[0] || null;
+}
+
+/* ===== SPEAK ===== */
 export function speak(text, options = {}) {
     if (!text || typeof text !== 'string') return;
-    
     speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Xác định lang và rate từ options
+
+    const u = new SpeechSynthesisUtterance(text);
     let targetLang = null;
     let rate = null;
-    
+
     if (typeof options === 'string') {
-        // speak("hello", "en-US")
         targetLang = options;
-    } else if (typeof options === 'object' && options !== null) {
-        // speak("hello", { lang: "en-US", rate: 0.9 })
+    } else if (options && typeof options === 'object') {
         targetLang = options.lang || null;
         rate = options.rate || null;
-        if (options.pitch) utterance.pitch = options.pitch;
-        if (options.volume) utterance.volume = options.volume;
+        if (options.pitch)  u.pitch  = options.pitch;
+        if (options.volume) u.volume = options.volume;
     }
-    
-    // Mặc định là en-US nếu không chỉ định
-    if (!targetLang) {
-        targetLang = 'en-US';
-    }
-    
-    // ===== CRITICAL FIX CHO MOBILE =====
-    // Trên Android Chrome: utterance.voice bị IGNORE
-    // Phải set utterance.lang = BCP 47 code → Android mới đổi ngôn ngữ
-    //
-    // Trên Desktop: utterance.voice hoạt động tốt
-    // Set cả 2 để đảm bảo hoạt động trên mọi platform
-    
+
+    if (!targetLang) targetLang = 'en-US';
+
     const voice = getVoice(targetLang);
-    
     if (voice) {
-        utterance.voice = voice;                              // Desktop dùng cái này
-        utterance.lang = normalizeLangCode(voice.lang);       // Mobile dùng cái này
+        u.voice = voice;                         // Desktop
+        u.lang  = normalizeLang(voice.lang);     // Mobile (Android bắt buộc phải set)
     } else {
-        // Không tìm được voice → vẫn set lang để mobile đọc đúng ngôn ngữ
-        utterance.lang = normalizeLangCode(targetLang);
+        u.lang = normalizeLang(targetLang);      // Fallback cho mobile
     }
-    
-    // Set rate: options.rate > localStorage > mặc định 1
-    if (rate) {
-        utterance.rate = rate;
-    } else {
-        const savedSpeed = localStorage.getItem('volearn-speed');
-        utterance.rate = savedSpeed ? parseFloat(savedSpeed) : 1;
-    }
-    
-    // Speak
-    setTimeout(() => {
-        speechSynthesis.speak(utterance);
-    }, 50);
+
+    // Rate: options > localStorage > 1
+    u.rate = rate || parseFloat(localStorage.getItem('volearn-speed') || '1');
+
+    setTimeout(() => speechSynthesis.speak(u), 50);
 }
 
-export function speakWord(word, accentCode) {
+export function speakWord(word, accent) {
     if (!word) return;
-    const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
-    console.log(`🔊 Speaking "${word}" with accent: ${lang}`);
-    speak(word, { lang });
+    speak(word, { lang: accent || 'en-US' });
 }
-
-export function speakWithAccent(text, accentCode) {
+export function speakWithAccent(text, accent) {
     if (!text) return;
-    const lang = (typeof accentCode === 'string' && accentCode) ? accentCode : 'en-US';
-    speak(text, { lang });
+    speak(text, { lang: accent || 'en-US' });
 }
+export function stopSpeaking() { speechSynthesis.cancel(); }
+export function getAvailableVoices() { return [...voices]; }
+export function isVoicesLoaded() { return voicesLoaded; }
 
-export function stopSpeaking() {
-    speechSynthesis.cancel();
-}
-
-export function getAvailableVoices() {
-    return [...voices];
-}
-
-export function isVoicesLoaded() {
-    return voicesLoaded;
-}
-
-/* ===== GLOBAL EXPORTS ===== */
+/* ===== GLOBAL ===== */
 window.initSpeech = initSpeech;
 window.speak = speak;
 window.speakWord = speakWord;
