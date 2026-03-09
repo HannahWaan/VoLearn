@@ -1062,7 +1062,7 @@ export function clearWordForm() {
 function doClearWordForm() {
     currentFilledWord = '';
     editingWordId = null;
-    lastSelectedSetId = '';  
+    lastSelectedSetId = '';
     
     const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = '';
@@ -1118,13 +1118,15 @@ export function saveWord() {
         return;
     }
     
-    // === FIX: Lưu lại setId đang chọn TRƯỚC khi clear form ===
-    lastSelectedSetId = setId || '';
+    const returnToSetId = editingWordId 
+        ? (appData.vocabulary?.find(w => w.id === editingWordId)?.setId || setId)
+        : setId;
     
     const now = new Date().toISOString();
     let savedWordId = null;
     
     if (editingWordId) {
+        // Editing existing word
         const existingWord = appData.vocabulary?.find(w => w.id === editingWordId);
         if (existingWord) {
             existingWord.word = word;
@@ -1137,6 +1139,7 @@ export function saveWord() {
             showToast(`Đã cập nhật "${word}"`, 'success');
         }
     } else {
+        // Adding new word
         const newWord = {
             id: generateId(),
             word,
@@ -1162,8 +1165,11 @@ export function saveWord() {
         showToast(`Đã thêm "${word}"`, 'success');
     }
     
+    // Save to storage
     saveData(appData);
     
+    // ========== DISPATCH EVENTS ==========
+    // Dispatch cho cả window và document để các module khác nhận được
     const eventDetail = { 
         detail: { 
             word, 
@@ -1174,10 +1180,23 @@ export function saveWord() {
     
     window.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
     document.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
+    // =====================================
     
+    // Clear form
     clearWordFormSilent();
     editingWordId = null;
-
+    
+    // Navigate back to set view if applicable
+    if (returnToSetId) {
+        window.currentSetViewId = returnToSetId;
+        navigate('set-view');
+        
+        setTimeout(() => {
+            if (window.renderSetView) {
+                window.renderSetView();
+            }
+        }, 100);
+    }
 }
 
 function clearWordFormSilent() {

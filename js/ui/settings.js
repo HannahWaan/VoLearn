@@ -8,7 +8,6 @@
 import { appData, setAppData, DEFAULT_DATA } from '../core/state.js';
 import { saveData, clearData, loadData } from '../core/storage.js';
 import { showToast, showSuccess, showError, showWarning, showInfo } from './toast.js';
-import { onVoicesReady } from '../utils/speech.js';
 
 // ===== GOOGLE DRIVE CONFIG =====
 const GDRIVE_CLIENT_ID = '1053065016561-s84rn7tjsrc16a31s0b7mhs6kg140rvm.apps.googleusercontent.com';
@@ -67,148 +66,95 @@ export function applySettings() {
 }
 
 // ===== VOICE MANAGEMENT =====
-
-import { onVoicesReady } from '../utils/speech.js';
-
 function loadVoices() {
-    
-    const doPopulate = (allVoices) => {
-        availableVoices.us = allVoices.filter(v => {
-            const lang = v.lang.replace('_', '-').toLowerCase();
-            return lang === 'en-us';
-        });
-        availableVoices.uk = allVoices.filter(v => {
-            const lang = v.lang.replace('_', '-').toLowerCase();
-            return lang === 'en-gb';
-        });
-        availableVoices.vi = allVoices.filter(v => {
-            const lang = v.lang.replace('_', '-').toLowerCase();
-            return lang.startsWith('vi');
-        });
-
+    const loadVoiceList = () => {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length === 0) {
+            setTimeout(loadVoiceList, 100);
+            return;
+        }
+        
+        availableVoices.us = voices.filter(v => 
+            v.lang === 'en-US' || v.lang === 'en_US' || v.lang.toLowerCase() === 'en-us'
+        );
+        availableVoices.uk = voices.filter(v => 
+            v.lang === 'en-GB' || v.lang === 'en_GB' || v.lang.toLowerCase() === 'en-gb'
+        );
+        availableVoices.vi = voices.filter(v => 
+            v.lang.startsWith('vi') || v.lang === 'vi-VN' || v.lang === 'vi_VN'
+        );
+        
         populateVoiceSelect('voice-us-select', availableVoices.us, 'US English');
         populateVoiceSelect('voice-uk-select', availableVoices.uk, 'UK English');
         populateVoiceSelect('voice-vi-select', availableVoices.vi, 'Vietnamese');
     };
-
-    onVoicesReady(doPopulate);
     
-    const retryIfNeeded = () => {
-        const usSelect = document.getElementById('voice-us-select');
-        if (usSelect && usSelect.options.length <= 1) {
-            const allVoices = speechSynthesis.getVoices();
-            if (allVoices.length > 0) {
-                doPopulate(allVoices);
-            }
-        }
-    };
-    
-    [500, 1000, 2000, 3000, 5000, 8000].forEach(ms => {
-        setTimeout(retryIfNeeded, ms);
-    });
-    
-    window.addEventListener('volearn:navigate', (e) => {
-        if (e.detail?.to === 'settings') {
-            setTimeout(retryIfNeeded, 100);
-            setTimeout(retryIfNeeded, 500);
-        }
-    });
-
-function populateVoiceSelect(selectId, voiceList, label) {
-    const select = document.getElementById(selectId);
-    if (!select) return;  // DOM chưa có → bỏ qua, retry sau
-
-    const currentValue = select.value;
-    select.innerHTML = '';
-
-    if (!voiceList || voiceList.length === 0) {
-        // Trên mobile có thể không có nhiều voices
-        // Thử lấy từ tất cả voices theo prefix
-        const allVoices = speechSynthesis.getVoices();
-        const prefix = selectId.includes('us') ? 'en-us'
-                     : selectId.includes('uk') ? 'en-gb'
-                     : 'vi';
-        voiceList = allVoices.filter(v => 
-            v.lang.replace('_', '-').toLowerCase().startsWith(prefix) ||
-            (prefix === 'vi' && v.lang.replace('_', '-').toLowerCase().startsWith('vi'))
-        );
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoiceList;
     }
+    loadVoiceList();
+}
 
-    if (voiceList.length === 0) {
-        // Vẫn không có → hiện tên ngôn ngữ mặc định, KHÔNG disable
-        const opt = document.createElement('option');
-        const langCode = selectId.includes('us') ? 'en-US'
-                       : selectId.includes('uk') ? 'en-GB'
-                       : 'vi-VN';
-        opt.value = langCode;
-        opt.textContent = `Giọng mặc định (${label})`;
-        select.appendChild(opt);
-        select.disabled = false;  // KHÔNG disable — để user vẫn thấy có option
-        
-        // Auto-save
-        const storageKey = `volearn-voice-${selectId}`;
-        if (!localStorage.getItem(storageKey)) {
-            localStorage.setItem(storageKey, langCode);
-        }
+function populateVoiceSelect(selectId, voices, label) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    select.innerHTML = '';
+    
+    if (voices.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = `Không có giọng ${label}`;
+        select.appendChild(option);
+        select.disabled = true;
         return;
     }
-
+    
     select.disabled = false;
-
-    // Phân loại nam/nữ
-    const femaleKw = ['female','woman','girl','zira','hazel','susan','linda','samantha','karen',
-        'moira','tessa','fiona','victoria','alice','ellen','monica','paulina','helena',
-        'catherine','anna','linh','mai','huong','google us english','google uk english female'];
-    const maleKw = ['male','man','boy','david','mark','james','daniel','george','richard',
-        'alex','tom','fred','lee','oliver','ryan','nam','hung','minh','google uk english male'];
-
-    let female = null, male = null;
-    for (const voice of voiceList) {
-        const n = voice.name.toLowerCase();
-        if (!female && femaleKw.some(k => n.includes(k))) female = voice;
-        if (!male   && maleKw.some(k => n.includes(k)))   male   = voice;
-        if (female && male) break;
-    }
-    if (!female && !male) {
-        female = voiceList[0] || null;
-        male   = voiceList[1] || null;
-    } else if (!female) {
-        female = voiceList.find(v => v !== male) || null;
-    } else if (!male) {
-        male = voiceList.find(v => v !== female) || null;
-    }
-
-    const added = new Set();
     
-    const addOption = (voice, prefix) => {
-        if (!voice || added.has(voice.name)) return;
-        added.add(voice.name);
-        const opt = document.createElement('option');
-        opt.value = voice.name;
-        opt.textContent = prefix ? `${prefix} ${voice.name}` : voice.name;
-        select.appendChild(opt);
-    };
+    const femaleKeywords = ['female', 'woman', 'girl', 'zira', 'hazel', 'susan', 'linda', 'samantha', 'karen', 'moira', 'tessa', 'fiona', 'victoria', 'alice', 'ellen', 'monica', 'paulina', 'helena', 'catherine', 'anna', 'linh', 'mai', 'huong'];
+    const maleKeywords = ['male', 'man', 'boy', 'david', 'mark', 'james', 'daniel', 'george', 'richard', 'alex', 'tom', 'fred', 'lee', 'oliver', 'ryan', 'nam', 'hung', 'minh'];
     
-    if (female) addOption(female, '♀ Nữ -');
-    if (male)   addOption(male,   '♂ Nam -');
+    let femaleVoice = null;
+    let maleVoice = null;
     
-    voiceList.forEach(v => {
-        if (!added.has(v.name)) {
-            addOption(v, '');
+    for (const voice of voices) {
+        const nameLower = voice.name.toLowerCase();
+        if (!femaleVoice && femaleKeywords.some(k => nameLower.includes(k))) {
+            femaleVoice = voice;
         }
-    });
-
-    const storageKey = `volearn-voice-${selectId}`;
-    const savedValue = localStorage.getItem(storageKey);
+        if (!maleVoice && maleKeywords.some(k => nameLower.includes(k))) {
+            maleVoice = voice;
+        }
+        if (femaleVoice && maleVoice) break;
+    }
     
+    if (!femaleVoice && !maleVoice) {
+        if (voices.length >= 1) femaleVoice = voices[0];
+        if (voices.length >= 2) maleVoice = voices[1];
+    } else if (!femaleVoice) {
+        femaleVoice = voices.find(v => v !== maleVoice) || null;
+    } else if (!maleVoice) {
+        maleVoice = voices.find(v => v !== femaleVoice) || null;
+    }
+    
+    if (femaleVoice) {
+        const option = document.createElement('option');
+        option.value = femaleVoice.name;
+        option.textContent = `♀ Nữ - ${femaleVoice.name}`;
+        select.appendChild(option);
+    }
+    
+    if (maleVoice) {
+        const option = document.createElement('option');
+        option.value = maleVoice.name;
+        option.textContent = `♂ Nam - ${maleVoice.name}`;
+        select.appendChild(option);
+    }
+    
+    const savedValue = localStorage.getItem(`volearn-voice-${selectId}`);
     if (savedValue && [...select.options].some(o => o.value === savedValue)) {
         select.value = savedValue;
-    } else if (currentValue && [...select.options].some(o => o.value === currentValue)) {
-        select.value = currentValue;
-    }
-
-    if (!localStorage.getItem(storageKey) && select.value) {
-        localStorage.setItem(storageKey, select.value);
     }
 }
 
@@ -218,29 +164,26 @@ function testVoice(type) {
         showWarning('Chưa chọn giọng đọc!');
         return;
     }
-
+    
+    const voices = speechSynthesis.getVoices();
+    const voice = voices.find(v => v.name === select.value);
+    if (!voice) {
+        showError('Không tìm thấy giọng đọc!');
+        return;
+    }
+    
     speechSynthesis.cancel();
-
-    const lang = type === 'vi' ? 'vi-VN' : type === 'uk' ? 'en-GB' : 'en-US';
+    
     let testText = 'Hello, this is a voice test.';
     if (type === 'vi') testText = 'Xin chào, đây là bài kiểm tra giọng đọc.';
     else if (type === 'uk') testText = 'Hello, this is a British English voice test.';
-
-    const u = new SpeechSynthesisUtterance(testText);
     
-    const allVoices = speechSynthesis.getVoices();
-    const voice = allVoices.find(v => v.name === select.value);
-    if (voice) {
-        u.voice = voice;
-        u.lang = voice.lang.replace('_', '-'); 
-    } else {
-        u.lang = lang;  
-    }
+    const utterance = new SpeechSynthesisUtterance(testText);
+    utterance.voice = voice;
+    utterance.rate = parseFloat(document.getElementById('speed-slider')?.value || 1);
     
-    u.rate = parseFloat(document.getElementById('speed-slider')?.value || 1);
-    
-    setTimeout(() => speechSynthesis.speak(u), 50);
-    showSuccess(`Đang phát giọng: ${select.value}`);
+    speechSynthesis.speak(utterance);
+    showSuccess(`Đang phát giọng: ${voice.name}`);
 }
 
 // ===== SETTINGS MANAGEMENT =====
@@ -314,7 +257,7 @@ function bindSettingsEvents() {
     
     ['voice-us-select', 'voice-uk-select', 'voice-vi-select'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', (e) => {
-            localStorage.setItem(`volearn-voice-${id}`, e.target.value);
+            localStorage.setItem(`volearn-${id}`, e.target.value);
         });
     });
     
@@ -1247,6 +1190,4 @@ window.selectRestoreFile = selectRestoreFile;
 window.closeDataHelpPopup = closeDataHelpPopup;
 window.closeExportSelector = closeExportSelector;
 window.confirmExport = confirmExport;
-
-
 
