@@ -112,7 +112,7 @@ function saveSidebarState() {
 function loadSidebarState() {
     const saved = localStorage.getItem('volearn_sidebar_collapsed');
     
-    if (saved === '1' && window.innerWidth > 768) {
+    if (saved === '1' && window.innerWidth > 1024) {
         sidebar?.classList.add('collapsed');
         document.body.classList.add('sidebar-collapsed');
     }
