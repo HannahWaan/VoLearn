@@ -644,18 +644,19 @@ function continueSelectMeaning(data, meaning, container) {
     
     fillMeaningBlock(targetBlock, meaning);
     
-    const firstBlock = document.querySelector('.meaning-block');
-    if (firstBlock && firstBlock !== targetBlock) {
-        const firstUS = firstBlock.querySelector('.phonetic-us');
-        const firstUK = firstBlock.querySelector('.phonetic-uk');
+    // Điền phiên âm cho TẤT CẢ các block đang trống phiên âm
+    const allBlocks = document.querySelectorAll('.meaning-block');
+    allBlocks.forEach(block => {
+        const blockUS = block.querySelector('.phonetic-us');
+        const blockUK = block.querySelector('.phonetic-uk');
         
-        if (firstUS && !firstUS.value && (data.phoneticUS || meaning.phoneticUS)) {
-            firstUS.value = '/' + (data.phoneticUS || meaning.phoneticUS) + '/';
+        if (blockUS && !blockUS.value && (data.phoneticUS || meaning.phoneticUS)) {
+            blockUS.value = '/' + (data.phoneticUS || meaning.phoneticUS) + '/';
         }
-        if (firstUK && !firstUK.value && (data.phoneticUK || meaning.phoneticUK)) {
-            firstUK.value = '/' + (data.phoneticUK || meaning.phoneticUK) + '/';
+        if (blockUK && !blockUK.value && (data.phoneticUK || meaning.phoneticUK)) {
+            blockUK.value = '/' + (data.phoneticUK || meaning.phoneticUK) + '/';
         }
-    }
+    });
     
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal && !wordFormGlobal.value.trim() && data.wordForms) {
@@ -1181,22 +1182,15 @@ export function saveWord() {
     window.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
     document.dispatchEvent(new CustomEvent('volearn:wordSaved', eventDetail));
     // =====================================
-    
+
+    // Nhớ bộ từ vựng cho lần add tiếp
+    if (setId) {
+        lastSelectedSetId = setId;
+    }
     // Clear form
     clearWordFormSilent();
     editingWordId = null;
-    
-    // Navigate back to set view if applicable
-    if (returnToSetId) {
-        window.currentSetViewId = returnToSetId;
-        navigate('set-view');
-        
-        setTimeout(() => {
-            if (window.renderSetView) {
-                window.renderSetView();
-            }
-        }, 100);
-    }
+
 }
 
 function clearWordFormSilent() {
