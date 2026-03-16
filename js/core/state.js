@@ -8,6 +8,7 @@ export const DEFAULT_DATA = {
     vocabulary: [],
     sets: [],
     history: [],
+    notes: [], 
     streak: 0,
     lastStudyDate: null,
     settings: {
