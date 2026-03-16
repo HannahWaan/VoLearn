@@ -278,7 +278,7 @@
 }
 
 /* ========================================
-   PHONETIC GLOBAL (nằm trên Word Formation)
+   PHONETIC GLOBAL 
    ======================================== */
 .phonetic-global-group {
     margin-bottom: 16px;
@@ -296,12 +296,69 @@
     min-width: 160px;
 }
 
+.phonetic-row-global .phonetic-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    transition: var(--transition-fast);
+    background: var(--bg-primary);
+}
+
+.phonetic-row-global .phonetic-input-wrapper:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.1);
+}
+
+.phonetic-row-global .phonetic-input-wrapper input {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    box-shadow: none;
+}
+
+.phonetic-row-global .phonetic-input-wrapper input:focus {
+    box-shadow: none;
+}
+
+/* Nút loa trong ô phiên âm */
+.btn-speak-phonetic-global {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border-color);
+}
+
+.btn-speak-phonetic-global:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-speak-phonetic-global i {
+    font-size: 14px;
+}
+
 /* Nút Auto fill phiên âm */
 .btn-auto-phonetic {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 16px;
+    padding: 0 16px;
     background: var(--gradient-primary);
     color: white;
     border: none;
@@ -312,6 +369,7 @@
     transition: all 0.2s;
     white-space: nowrap;
     height: 42px;
+    flex-shrink: 0;
 }
 
 .btn-auto-phonetic:hover {
@@ -332,7 +390,20 @@
     animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@media (max-width: 480px) {
+    .phonetic-row-global {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .phonetic-row-global .phonetic-group {
+        min-width: 100%;
+    }
+
+    .btn-auto-phonetic {
+        width: 100%;
+        justify-content: center;
+        height: 40px;
+    }
 }
+
