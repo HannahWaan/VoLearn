@@ -1,0 +1,97 @@
+<!-- ==================== NOTES SECTION ==================== -->
+<section id="notes-section" class="section">
+
+    <!-- Header -->
+    <div class="notes-header">
+        <div class="notes-header-left">
+            <h2 class="notes-title"><i class="fas fa-sticky-note"></i> Ghi chú</h2>
+            <span class="notes-count" id="notes-count">0 ghi chú</span>
+        </div>
+        <div class="notes-header-right">
+            <div class="notes-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="notes-search-input" placeholder="Tìm ghi chú...">
+            </div>
+            <button class="btn-create-note" id="btn-create-note">
+                <i class="fas fa-plus"></i>
+                <span>Tạo mới</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="notes-view-toggle">
+        <button class="view-btn active" data-view="grid" title="Dạng lưới">
+            <i class="fas fa-th"></i>
+        </button>
+        <button class="view-btn" data-view="list" title="Dạng danh sách">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
+
+    <!-- Notes Grid -->
+    <div id="notes-container" class="notes-grid">
+        <!-- Note cards rendered here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="notes-empty" class="notes-empty" style="display:none;">
+        <i class="fas fa-pen-fancy"></i>
+        <h3>Chưa có ghi chú nào</h3>
+        <p>Nhấn "Tạo mới" để bắt đầu ghi chú</p>
+    </div>
+
+    <!-- Note Editor (full screen overlay) -->
+    <div id="note-editor" class="note-editor" style="display:none;">
+        <div class="note-editor-header">
+            <button class="btn-editor-back" id="btn-editor-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Quay lại</span>
+            </button>
+            <div class="note-editor-actions">
+                <input type="color" id="note-color-picker" class="note-color-picker" value="#ffffff" title="Màu ghi chú">
+                <button class="btn-editor-action" id="btn-note-pin" title="Ghim">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+                <button class="btn-editor-action" id="btn-note-image" title="Thêm hình ảnh">
+                    <i class="fas fa-image"></i>
+                </button>
+                <button class="btn-editor-action danger" id="btn-note-delete" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="note-editor-body">
+            <input type="text" id="note-title-input" class="note-title-input" placeholder="Tiêu đề...">
+            
+            <!-- Toolbar -->
+            <div class="note-toolbar">
+                <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
+                <button class="toolbar-btn" data-cmd="italic" title="Nghiêng"><i class="fas fa-italic"></i></button>
+                <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
+                <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
+                <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" data-cmd="formatBlock" data-value="H2" title="Tiêu đề"><i class="fas fa-heading"></i></button>
+                <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
+            </div>
+
+            <!-- Content editable area -->
+            <div id="note-content-editor" class="note-content-editor" contenteditable="true" placeholder="Bắt đầu viết ghi chú..."></div>
+
+            <!-- Images gallery -->
+            <div id="note-images" class="note-images"></div>
+        </div>
+
+        <!-- Hidden file input for images -->
+        <input type="file" id="note-image-input" accept="image/*" multiple style="display:none;">
+
+        <!-- Auto-save indicator -->
+        <div id="note-save-status" class="note-save-status">
+            <i class="fas fa-check"></i> Đã lưu
+        </div>
+    </div>
+</section>
