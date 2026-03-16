@@ -20,6 +20,7 @@ import { initSetView } from './ui/setView.js';
 import { initCalendar, renderCalendar } from './ui/calendar.js';
 import { initSettings, applySettings } from './ui/settings.js';
 import { initNews } from './ui/news.js';
+import { initNotes } from './ui/notes.js';
 import { initCambridgeWidget } from './ui/cambridgeWidget.js';
 import { initConfirmModal } from './ui/confirmModal.js';
 import { initWordLookup } from './ui/wordLookup.js';
@@ -93,6 +94,7 @@ async function initApp() {
         initCalendar();
         initSettings();
         initNews();
+        initNotes();
         initWordLookup();
         
         // Step 6: Initialize practice
