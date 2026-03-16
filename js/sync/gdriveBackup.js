@@ -2,13 +2,14 @@
 /* VoLearn v2.2.0 - Backup & Restore to Google Drive */
 
 import { getAccessToken, isGoogleSignedIn, loginGoogle } from './gdriveAuth.js';
-import { appData, setAppData } from '../core/state.js';
+import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 
 /* ===== CONFIG ===== */
 const BACKUP_FILENAME = 'volearn_backup.json';
 const BACKUP_FOLDER = 'appDataFolder';
+const STORAGE_KEY = 'volearn_data';
 
 /* ===== BACKUP ===== */
 export async function backupToDrive() {
@@ -31,6 +32,12 @@ export async function backupToDrive() {
             backupDate: new Date().toISOString(),
             version: '2.2.0'
         };
+
+        console.log('📤 Backup data:', {
+            vocabulary: backupData.vocabulary.length,
+            sets: backupData.sets.length,
+            history: backupData.history.length
+        });
 
         const existingFile = await findBackupFile();
 
@@ -71,7 +78,6 @@ export async function restoreFromDrive() {
 
         showToast('Đang tải dữ liệu...', 'info');
 
-        // Download file content
         let content;
         try {
             content = await downloadDriveFile(existingFile.id);
@@ -81,28 +87,51 @@ export async function restoreFromDrive() {
             return false;
         }
 
-        // Validate content
+        // === DEBUG: Log cấu trúc dữ liệu tải về ===
+        console.log('📥 Downloaded content type:', typeof content);
+        console.log('📥 Downloaded content keys:', content ? Object.keys(content) : 'null');
+        if (content) {
+            console.log('📥 vocabulary:', Array.isArray(content.vocabulary) ? content.vocabulary.length + ' words' : typeof content.vocabulary);
+            console.log('📥 sets:', Array.isArray(content.sets) ? content.sets.length + ' sets' : typeof content.sets);
+        }
+
+        // Validate
         if (!content || typeof content !== 'object') {
-            showToast('Dữ liệu sao lưu không hợp lệ (không phải JSON)!', 'error');
-            console.error('Invalid backup content:', content);
+            showToast('Dữ liệu sao lưu không hợp lệ!', 'error');
             return false;
         }
 
         if (!Array.isArray(content.vocabulary)) {
+            // Thử tìm dữ liệu ở vị trí khác (backup cũ có thể có cấu trúc khác)
+            console.warn('vocabulary is not array, checking nested structures...');
+            console.log('Full content keys:', JSON.stringify(Object.keys(content)));
+            
             showToast('Dữ liệu sao lưu không hợp lệ (thiếu vocabulary)!', 'error');
-            console.error('Missing vocabulary in backup:', Object.keys(content));
             return false;
         }
 
-        // Show confirm using app's confirm modal instead of native confirm()
         const backupDate = content.backupDate
             ? new Date(content.backupDate).toLocaleString('vi-VN')
-            : 'không rõ';
+            : existingFile.modifiedTime 
+                ? new Date(existingFile.modifiedTime).toLocaleString('vi-VN')
+                : 'không rõ';
 
         const wordCount = content.vocabulary.length;
         const setCount = (content.sets || []).length;
 
+        // Dùng showConfirm modal
         return new Promise((resolve) => {
+            const doRestore = () => {
+                try {
+                    applyRestoreData(content);
+                    resolve(true);
+                } catch (applyErr) {
+                    console.error('Apply restore error:', applyErr);
+                    showToast('Lỗi khi áp dụng dữ liệu: ' + applyErr.message, 'error');
+                    resolve(false);
+                }
+            };
+
             if (typeof window.showConfirm === 'function') {
                 window.showConfirm({
                     title: 'Khôi phục dữ liệu',
@@ -111,39 +140,19 @@ export async function restoreFromDrive() {
                     type: 'warning',
                     confirmText: 'Khôi phục',
                     icon: 'fas fa-cloud-download-alt',
-                    onConfirm: () => {
-                        try {
-                            applyRestoreData(content);
-                            resolve(true);
-                        } catch (applyErr) {
-                            console.error('Apply restore error:', applyErr);
-                            showToast('Lỗi khi áp dụng dữ liệu: ' + applyErr.message, 'error');
-                            resolve(false);
-                        }
-                    },
+                    onConfirm: doRestore,
                     onCancel: () => {
                         showToast('Đã hủy khôi phục', 'info');
                         resolve(false);
                     }
                 });
             } else {
-                // Fallback: native confirm
                 const confirmed = confirm(
-                    `Khôi phục dữ liệu từ ${backupDate}?\n` +
-                    `Gồm ${wordCount} từ, ${setCount} bộ.\n` +
-                    `Dữ liệu hiện tại sẽ bị thay thế.`
+                    `Khôi phục từ ${backupDate}?\n${wordCount} từ, ${setCount} bộ.\nDữ liệu hiện tại sẽ bị thay thế.`
                 );
                 if (confirmed) {
-                    try {
-                        applyRestoreData(content);
-                        resolve(true);
-                    } catch (applyErr) {
-                        console.error('Apply restore error:', applyErr);
-                        showToast('Lỗi khi áp dụng dữ liệu: ' + applyErr.message, 'error');
-                        resolve(false);
-                    }
+                    doRestore();
                 } else {
-                    showToast('Đã hủy khôi phục', 'info');
                     resolve(false);
                 }
             }
@@ -158,39 +167,64 @@ export async function restoreFromDrive() {
 
 /* ===== APPLY RESTORE DATA ===== */
 function applyRestoreData(content) {
-    // Chuẩn hóa dữ liệu — chỉ lấy các field hợp lệ
     const restored = {
         vocabulary: Array.isArray(content.vocabulary) ? content.vocabulary : [],
         sets: Array.isArray(content.sets) ? content.sets : [],
         history: Array.isArray(content.history) ? content.history : [],
-        settings: content.settings || appData.settings || {},
+        settings: content.settings || {},
         streak: content.streak || 0,
         lastStudyDate: content.lastStudyDate || null
     };
 
-    // Cách 1: Dùng Object.assign để KHÔNG mất tham chiếu
-    // (Các module khác import appData sẽ vẫn thấy dữ liệu mới)
-    Object.keys(appData).forEach(key => delete appData[key]);
-    Object.assign(appData, restored);
-
-    // Cách 2: Cũng gọi setAppData để đồng bộ window.appData
-    // setAppData sẽ gán appData = restored, nhưng ta đã assign ở trên rồi
-    // Nên chỉ cần sync window
-    try { window.appData = appData; } catch (e) {}
-
-    // Lưu vào localStorage
-    saveData(appData);
-
-    console.log('✅ Restore applied:', {
+    console.log('💾 Applying restore data:', {
         vocabulary: restored.vocabulary.length,
         sets: restored.sets.length,
         history: restored.history.length
     });
 
-    showToast(`Khôi phục thành công! (${restored.vocabulary.length} từ, ${restored.sets.length} bộ)`, 'success');
+    // === CÁCH AN TOÀN NHẤT: Ghi TRỰC TIẾP vào localStorage ===
+    // Không phụ thuộc vào saveData() hay appData reference
+    const toSave = {
+        vocabulary: restored.vocabulary,
+        sets: restored.sets,
+        history: restored.history
+    };
 
-    // Reload page để tất cả module đọc lại dữ liệu mới
-    setTimeout(() => window.location.reload(), 1500);
+    const jsonString = JSON.stringify(toSave);
+    localStorage.setItem(STORAGE_KEY, jsonString);
+
+    // Verify đã lưu thành công
+    const verification = localStorage.getItem(STORAGE_KEY);
+    const parsed = JSON.parse(verification);
+
+    console.log('✅ localStorage verification:', {
+        saved: jsonString.length + ' chars',
+        vocabulary: parsed.vocabulary?.length,
+        sets: parsed.sets?.length,
+        history: parsed.history?.length
+    });
+
+    if (!parsed.vocabulary?.length && restored.vocabulary.length > 0) {
+        console.error('❌ CRITICAL: Data was not saved correctly!');
+        showToast('Lỗi nghiêm trọng: Dữ liệu không được lưu đúng!', 'error');
+        return;
+    }
+
+    // Cũng cập nhật appData hiện tại (cho session này trước khi reload)
+    Object.keys(appData).forEach(key => delete appData[key]);
+    Object.assign(appData, restored);
+    try { window.appData = appData; } catch (e) {}
+
+    showToast(
+        `Khôi phục thành công! (${restored.vocabulary.length} từ, ${restored.sets.length} bộ). Đang tải lại...`,
+        'success'
+    );
+
+    // Reload để tất cả module đọc lại từ localStorage
+    setTimeout(() => {
+        console.log('🔄 Reloading page...');
+        window.location.reload();
+    }, 1500);
 }
 
 /* ===== DRIVE API HELPERS ===== */
@@ -201,11 +235,9 @@ async function findBackupFile() {
         `https://www.googleapis.com/drive/v3/files?` +
         `spaces=${BACKUP_FOLDER}&` +
         `q=name='${BACKUP_FILENAME}'&` +
-        `fields=files(id,name,modifiedTime)`,
+        `fields=files(id,name,modifiedTime,size)`,
         {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
+            headers: { 'Authorization': `Bearer ${accessToken}` }
         }
     );
 
@@ -216,6 +248,7 @@ async function findBackupFile() {
     }
 
     const data = await response.json();
+    console.log('🔍 Found files:', data.files?.length, data.files);
     return data.files?.[0] || null;
 }
 
@@ -236,9 +269,7 @@ async function createDriveFile(content) {
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
         {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            },
+            headers: { 'Authorization': `Bearer ${accessToken}` },
             body: form
         }
     );
@@ -279,50 +310,50 @@ async function updateDriveFile(fileId, content) {
 async function downloadDriveFile(fileId) {
     const accessToken = getAccessToken();
 
+    console.log('⬇️ Downloading file:', fileId);
+
     const response = await fetch(
         `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
         {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
+            headers: { 'Authorization': `Bearer ${accessToken}` }
         }
     );
 
+    console.log('⬇️ Download response status:', response.status);
+    console.log('⬇️ Content-Type:', response.headers.get('content-type'));
+
     if (!response.ok) {
         const errText = await response.text();
-        console.error('Download file error:', response.status, errText);
+        console.error('Download error:', response.status, errText);
         throw new Error(`Lỗi tải file (${response.status})`);
     }
 
     const text = await response.text();
+    console.log('⬇️ Raw response length:', text.length);
+    console.log('⬇️ Raw response preview:', text.substring(0, 300));
 
-    // Parse JSON an toàn
     try {
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        return parsed;
     } catch (parseErr) {
-        console.error('JSON parse error. Raw text:', text.substring(0, 500));
+        console.error('JSON parse error:', parseErr.message);
+        console.error('Raw text (first 500):', text.substring(0, 500));
         throw new Error('File sao lưu không phải JSON hợp lệ');
     }
 }
 
 /* ===== GET BACKUP INFO ===== */
 export async function getBackupInfo() {
-    if (!isGoogleSignedIn()) {
-        return null;
-    }
+    if (!isGoogleSignedIn()) return null;
 
     try {
         const file = await findBackupFile();
         if (file) {
-            return {
-                lastBackup: file.modifiedTime,
-                fileId: file.id
-            };
+            return { lastBackup: file.modifiedTime, fileId: file.id };
         }
     } catch (error) {
         console.error('Get backup info error:', error);
     }
-
     return null;
 }
 
@@ -332,8 +363,7 @@ async function updateLastBackupUI() {
     const lastBackupEl = document.getElementById('last-backup-time');
 
     if (lastBackupEl && info) {
-        const date = new Date(info.lastBackup);
-        lastBackupEl.textContent = date.toLocaleString('vi-VN');
+        lastBackupEl.textContent = new Date(info.lastBackup).toLocaleString('vi-VN');
     }
 }
 
@@ -345,6 +375,34 @@ export async function deleteBackup() {
     }
 
     return new Promise((resolve) => {
+        const doDelete = async () => {
+            try {
+                const file = await findBackupFile();
+                if (!file) {
+                    showToast('Không có bản sao lưu để xóa', 'info');
+                    resolve(false);
+                    return;
+                }
+
+                const accessToken = getAccessToken();
+                const response = await fetch(
+                    `https://www.googleapis.com/drive/v3/files/${file.id}`,
+                    {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    }
+                );
+
+                if (!response.ok) throw new Error('Delete failed');
+                showToast('Đã xóa bản sao lưu', 'success');
+                resolve(true);
+            } catch (error) {
+                console.error('Delete backup error:', error);
+                showToast('Xóa thất bại: ' + error.message, 'error');
+                resolve(false);
+            }
+        };
+
         if (typeof window.showConfirm === 'function') {
             window.showConfirm({
                 title: 'Xóa bản sao lưu',
@@ -353,50 +411,22 @@ export async function deleteBackup() {
                 type: 'danger',
                 confirmText: 'Xóa',
                 icon: 'fas fa-trash',
-                onConfirm: async () => {
-                    try {
-                        const file = await findBackupFile();
-                        if (!file) {
-                            showToast('Không có bản sao lưu để xóa', 'info');
-                            resolve(false);
-                            return;
-                        }
-
-                        const accessToken = getAccessToken();
-                        const response = await fetch(
-                            `https://www.googleapis.com/drive/v3/files/${file.id}`,
-                            {
-                                method: 'DELETE',
-                                headers: { 'Authorization': `Bearer ${accessToken}` }
-                            }
-                        );
-
-                        if (!response.ok) throw new Error('Delete failed');
-
-                        showToast('Đã xóa bản sao lưu', 'success');
-                        resolve(true);
-                    } catch (error) {
-                        console.error('Delete backup error:', error);
-                        showToast('Xóa thất bại: ' + error.message, 'error');
-                        resolve(false);
-                    }
-                }
+                onConfirm: doDelete,
+                onCancel: () => resolve(false)
             });
         } else {
-            const confirmed = confirm('Xóa bản sao lưu trên Google Drive?');
-            if (!confirmed) { resolve(false); return; }
-            // ... same delete logic
-            resolve(false);
+            if (confirm('Xóa bản sao lưu trên Google Drive?')) {
+                doDelete();
+            } else {
+                resolve(false);
+            }
         }
     });
 }
 
 /* ===== INIT ===== */
 export function initDriveBackup() {
-    window.addEventListener('volearn:googleSignedIn', () => {
-        updateLastBackupUI();
-    });
-
+    window.addEventListener('volearn:googleSignedIn', () => updateLastBackupUI());
     console.log('✅ Drive backup module initialized');
 }
 
