@@ -433,7 +433,8 @@ function exportJSON(setId = 'all') {
             exportSet: setId === 'all' ? 'Tất cả từ vựng' : (sets[0]?.name || setId),
             vocabulary: vocabulary,
             sets: sets,
-            history: setId === 'all' ? (appData.history || {}) : {}
+            history: setId === 'all' ? (appData.history || []) : [],
+            notes: setId === 'all' ? (appData.notes || []) : []
         };
         
         downloadFile(
