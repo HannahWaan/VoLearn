@@ -633,12 +633,11 @@
         font-size: 0.85rem;
     }
 
-    /* --- SPLIT VIEW: chuyển thành FULL WIDTH chồng nhau --- */
+    /* --- SPLIT VIEW → xếp dọc, danh sách trên + chi tiết dưới --- */
     .split-view-container {
         flex-direction: column;
         height: auto;
-        min-height: calc(100vh - 180px);
-        position: relative;
+        min-height: 0;
     }
 
     /* Ẩn thanh kéo resizer */
@@ -646,58 +645,55 @@
         display: none !important;
     }
 
-    /* Panel trái (danh sách từ): full width */
+    /* Danh sách từ: full width, giới hạn chiều cao, cuộn được */
     .split-left {
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        max-height: 45vh;
+        min-height: 200px;
         border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        min-height: calc(100vh - 180px);
+        border-bottom: 2px solid var(--primary-color);
     }
 
-    /* Panel phải (chi tiết từ): full width, ẩn mặc định */
+    /* Chi tiết từ: full width, luôn hiện bên dưới */
     .split-right {
-        display: none;
+        display: block !important;
         width: 100% !important;
-        min-height: calc(100vh - 180px);
+        min-height: 300px;
     }
 
-    /* Khi 1 từ được chọn: ẩn danh sách, hiện chi tiết */
+    /* Không cần ẩn/hiện qua class detail-active nữa */
     .split-view-container.detail-active .split-left {
-        display: none;
+        display: flex;
     }
-
     .split-view-container.detail-active .split-right {
         display: block;
     }
 
-    /* Nút quay lại danh sách (chỉ hiện trên mobile) */
+    /* Ẩn nút quay lại danh sách (không cần nữa) */
     .btn-back-to-list {
-        display: inline-flex !important;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        margin-bottom: 16px;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius-sm);
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: var(--transition-fast);
-    }
-
-    .btn-back-to-list:hover {
-        background: var(--primary-light);
-        border-color: var(--primary-color);
-        color: var(--primary-color);
+        display: none !important;
     }
 
     /* Detail panel */
     .word-detail-panel {
         padding: 16px;
+        height: auto;
+        overflow-y: visible;
+    }
+
+    .word-detail-placeholder {
+        height: auto;
+        padding: 40px 20px;
+    }
+
+    .word-detail-placeholder i {
+        font-size: 2.5rem;
+    }
+
+    .word-detail-placeholder h3 {
+        font-size: 1.1rem;
     }
 
     .detail-word {
@@ -724,8 +720,8 @@
 
     /* Empty message */
     .empty-message {
-        padding: 40px 16px;
-        min-height: 200px;
+        padding: 30px 16px;
+        min-height: 150px;
     }
 
     .empty-message > i {
@@ -750,9 +746,4 @@
     .empty-message .btn.btn-primary i {
         font-size: 0.75rem;
     }
-}
-
-/* Nút quay lại danh sách: ẩn trên desktop */
-.btn-back-to-list {
-    display: none !important;
 }
