@@ -50,7 +50,8 @@ function syncWindowAppData() {
 
 /* ===== SETTERS ===== */
 export function setAppData(data) {
-    appData = data;
+    Object.keys(appData).forEach(key => delete appData[key]);
+    Object.assign(appData, data);
     syncWindowAppData();
 }
 
