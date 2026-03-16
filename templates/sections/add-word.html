@@ -20,6 +20,34 @@
                 <div id="word-suggestions" class="suggestions-dropdown"></div>
             </div>
 
+            <!-- Phiên âm GLOBAL (đưa lên trên, 1 chỗ duy nhất) -->
+            <div class="form-group phonetic-global-group">
+                <label>Phiên âm</label>
+                <div class="phonetic-row-global">
+                    <div class="phonetic-group">
+                        <label>🇺🇸 US</label>
+                        <div class="phonetic-input-wrapper">
+                            <input type="text" id="phonetic-us-global" class="phonetic-us-global" placeholder="/ˈprɛzənt/">
+                            <button type="button" class="btn-speak-phonetic-global" data-accent="en-US" title="Nghe US">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="phonetic-group">
+                        <label>🇬🇧 UK</label>
+                        <div class="phonetic-input-wrapper">
+                            <input type="text" id="phonetic-uk-global" class="phonetic-uk-global" placeholder="/ˈprɛzənt/">
+                            <button type="button" class="btn-speak-phonetic-global" data-accent="en-GB" title="Nghe UK">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-auto-phonetic" class="btn-auto-phonetic" title="Tự động lấy phiên âm">
+                        <i class="fas fa-magic"></i> Auto
+                    </button>
+                </div>
+            </div>
+
             <!-- Word Formation -->
             <div class="form-group">
                 <label for="word-formation-global">Word Formation</label>
@@ -36,7 +64,7 @@
 
             <!-- Meanings Container -->
             <div id="meanings-container" class="meanings-container">
-                <!-- Meaning Block Template -->
+                <!-- Meaning Block Template (KHÔNG còn phiên âm) -->
                 <div class="meaning-block" data-index="0" draggable="true">
                     <div class="meaning-header">
                         <span class="meaning-title">Nghĩa 1</span>
@@ -52,29 +80,7 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Phiên âm US/UK -->
-                    <div class="phonetic-row">
-                        <div class="phonetic-group">
-                            <label>🇺🇸 US</label>
-                            <div class="phonetic-input-wrapper">
-                                <input type="text" class="phonetic-us" placeholder="/ˈprɛzənt/">
-                                <button type="button" class="btn-speak-phonetic" data-accent="en-US" title="Nghe US">
-                                    <i class="fas fa-volume-up"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="phonetic-group">
-                            <label>🇬🇧 UK</label>
-                            <div class="phonetic-input-wrapper">
-                                <input type="text" class="phonetic-uk" placeholder="/ˈprɛzənt/">
-                                <button type="button" class="btn-speak-phonetic" data-accent="en-GB" title="Nghe UK">
-                                    <i class="fas fa-volume-up"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
+
                     <!-- Loại từ -->
                     <div class="form-group">
                         <label>Loại từ</label>
@@ -90,7 +96,7 @@
                             <option value="interjection">Thán từ (interj)</option>
                         </select>
                     </div>
-                    
+
                     <!-- Định nghĩa tiếng Anh -->
                     <div class="form-group">
                         <label>Định nghĩa (English)</label>
@@ -101,13 +107,13 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Nghĩa tiếng Việt -->
                     <div class="form-group">
                         <label>Nghĩa (Tiếng Việt)</label>
                         <textarea class="def-vi" rows="2" placeholder="Nghĩa tiếng Việt"></textarea>
                     </div>
-                    
+
                     <!-- Ví dụ -->
                     <div class="form-group">
                         <label>Ví dụ</label>
@@ -118,7 +124,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Đồng nghĩa / Trái nghĩa -->
                     <div class="form-row">
                         <div class="form-group">
