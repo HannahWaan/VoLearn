@@ -194,6 +194,12 @@ function selectWord(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (word) {
         showWordDetail(word);
+        
+        // Mobile: chuyển sang xem chi tiết
+        if (window.innerWidth <= 768) {
+            const container = document.querySelector('.split-view-container');
+            if (container) container.classList.add('detail-active');
+        }
     }
 }
 
@@ -201,6 +207,8 @@ function selectWord(wordId) {
 function resetDetailPanel() {
     const detailPanel = document.getElementById('word-detail-panel');
     if (!detailPanel) return;
+    const container = document.querySelector('.split-view-container');
+    if (container) container.classList.remove('detail-active');
     
     detailPanel.innerHTML = `
         <div class="word-detail-placeholder">
@@ -226,6 +234,10 @@ function showWordDetail(word) {
     
     detailPanel.innerHTML = `
         <div class="word-detail-content">
+            <!-- Nút quay lại danh sách (chỉ hiện trên mobile) -->
+            <button class="btn-back-to-list" onclick="window.backToWordList()">
+                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+            </button>
             <!-- Header: Từ vựng + nút Edit/Delete bên phải -->
             <div class="detail-top-header">
                 <div class="detail-word-info">
@@ -442,6 +454,13 @@ function deleteWordInView(wordId) {
     });
 }
 
+/* ===== MOBILE: QUAY LẠI DANH SÁCH ===== */
+function backToWordList() {
+    const container = document.querySelector('.split-view-container');
+    if (container) container.classList.remove('detail-active');
+    selectedWordId = null;
+}
+
 /* ===== GLOBAL EXPORTS ===== */
 window.initSetView = initSetView;
 window.openSetDetail = openSetDetail;
@@ -452,7 +471,6 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
-
-
+window.backToWordList = backToWordList;
 
 
