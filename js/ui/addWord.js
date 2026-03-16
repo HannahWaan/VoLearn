@@ -94,6 +94,18 @@ function setupEventListeners() {
         const word = document.getElementById('word-input')?.value.trim();
         if (word) speak(word);
     });
+
+    // Auto fill phonetic
+    document.getElementById('btn-auto-phonetic')?.addEventListener('click', autoFillPhonetic);
+    
+    // Speak phonetic global
+    document.querySelectorAll('.btn-speak-phonetic-global').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const accent = btn.dataset.accent || 'en-US';
+            const word = document.getElementById('word-input')?.value.trim();
+            if (word) speak(word, accent);
+        });
+    });
     
     // Clear form
     document.getElementById('btn-clear-form')?.addEventListener('click', clearWordForm);
@@ -443,6 +455,66 @@ async function addThesaurusData(result, thesaurusData) {
     return result;
 }
 
+/* ===== AUTO FILL PHONETIC ===== */
+async function autoFillPhonetic() {
+    const word = document.getElementById('word-input')?.value.trim();
+    if (!word) {
+        showToast('Vui lòng nhập từ vựng trước', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('btn-auto-phonetic');
+    if (btn) {
+        btn.classList.add('loading');
+        btn.innerHTML = '<i class="fas fa-spinner"></i> Đang tìm...';
+    }
+    
+    try {
+        const data = await fetchLearnerAPI(word);
+        
+        let phoneticUS = '';
+        let phoneticUK = '';
+        
+        if (data && Array.isArray(data) && data.length > 0 && typeof data[0] !== 'string') {
+            for (const entry of data) {
+                if (entry.hwi?.prs) {
+                    for (const pr of entry.hwi.prs) {
+                        const ipa = pr.mw || pr.ipa || '';
+                        if (pr.l && pr.l.includes('British')) {
+                            if (!phoneticUK) phoneticUK = ipa;
+                        } else {
+                            if (!phoneticUS) phoneticUS = ipa;
+                        }
+                    }
+                }
+                if (phoneticUS && phoneticUK) break;
+            }
+        }
+        
+        if (!phoneticUK) phoneticUK = phoneticUS;
+        if (!phoneticUS) phoneticUS = phoneticUK;
+        
+        const usInput = document.getElementById('phonetic-us-global');
+        const ukInput = document.getElementById('phonetic-uk-global');
+        
+        if (phoneticUS || phoneticUK) {
+            if (usInput) usInput.value = '/' + phoneticUS + '/';
+            if (ukInput) ukInput.value = '/' + phoneticUK + '/';
+            showToast('Đã điền phiên âm', 'success');
+        } else {
+            showToast('Không tìm thấy phiên âm cho từ này', 'warning');
+        }
+    } catch (error) {
+        console.error('Auto phonetic error:', error);
+        showToast('Lỗi khi lấy phiên âm', 'error');
+    } finally {
+        if (btn) {
+            btn.classList.remove('loading');
+            btn.innerHTML = '<i class="fas fa-magic"></i> Auto';
+        }
+    }
+}
+
 /* ===== FETCH WORD DATA ===== */
 export async function fetchWordData(word) {
     if (!word || word.length < 2) {
@@ -644,19 +716,16 @@ function continueSelectMeaning(data, meaning, container) {
     
     fillMeaningBlock(targetBlock, meaning);
     
-    // Điền phiên âm cho TẤT CẢ các block đang trống phiên âm
-    const allBlocks = document.querySelectorAll('.meaning-block');
-    allBlocks.forEach(block => {
-        const blockUS = block.querySelector('.phonetic-us');
-        const blockUK = block.querySelector('.phonetic-uk');
-        
-        if (blockUS && !blockUS.value && (data.phoneticUS || meaning.phoneticUS)) {
-            blockUS.value = '/' + (data.phoneticUS || meaning.phoneticUS) + '/';
-        }
-        if (blockUK && !blockUK.value && (data.phoneticUK || meaning.phoneticUK)) {
-            blockUK.value = '/' + (data.phoneticUK || meaning.phoneticUK) + '/';
-        }
-    });
+    // Điền phiên âm vào ô global (trên cùng)
+    const globalUS = document.getElementById('phonetic-us-global');
+    const globalUK = document.getElementById('phonetic-uk-global');
+    
+    if (globalUS && !globalUS.value && (data.phoneticUS || meaning.phoneticUS)) {
+        globalUS.value = '/' + (data.phoneticUS || meaning.phoneticUS) + '/';
+    }
+    if (globalUK && !globalUK.value && (data.phoneticUK || meaning.phoneticUK)) {
+        globalUK.value = '/' + (data.phoneticUK || meaning.phoneticUK) + '/';
+    }
     
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal && !wordFormGlobal.value.trim() && data.wordForms) {
@@ -668,19 +737,7 @@ function continueSelectMeaning(data, meaning, container) {
     targetBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function fillMeaningBlock(block, meaning) {
-    const phoneticUS = block.querySelector('.phonetic-us');
-    if (phoneticUS && meaning.phoneticUS) {
-        phoneticUS.value = '/' + meaning.phoneticUS + '/';
-    }
-    
-    const phoneticUK = block.querySelector('.phonetic-uk');
-    if (phoneticUK && meaning.phoneticUK) {
-        phoneticUK.value = '/' + meaning.phoneticUK + '/';
-    } else if (phoneticUK && meaning.phoneticUS) {
-        phoneticUK.value = '/' + meaning.phoneticUS + '/';
-    }
-    
+function fillMeaningBlock(block, meaning) {    
     const posSelect = block.querySelector('.pos-select');
     if (posSelect && meaning.posEn) {
         for (let i = 0; i < posSelect.options.length; i++) {
@@ -755,27 +812,6 @@ function getMeaningBlockHTML(number) {
             </div>
         </div>
         
-        <div class="phonetic-row">
-            <div class="phonetic-group">
-                <label>🇺🇸 US</label>
-                <div class="phonetic-input-wrapper">
-                    <input type="text" class="phonetic-us" placeholder="/ˈprɛzənt/">
-                    <button type="button" class="btn-speak-phonetic" data-accent="en-US" title="Nghe US">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="phonetic-group">
-                <label>🇬🇧 UK</label>
-                <div class="phonetic-input-wrapper">
-                    <input type="text" class="phonetic-uk" placeholder="/ˈprɛzənt/">
-                    <button type="button" class="btn-speak-phonetic" data-accent="en-GB" title="Nghe UK">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
         <div class="form-group">
             <label>Loại từ</label>
             <select class="pos-select">
@@ -833,7 +869,7 @@ function getMeaningBlockHTML(number) {
 function clearMeaningBlock(block) {
     if (!block) return;
     
-    const hasContent = ['.phonetic-us', '.phonetic-uk', '.def-en', '.def-vi', 
+    const hasContent = ['.def-en', '.def-vi', 
         '.example-input', '.synonyms-input', '.antonyms-input'
     ].some(selector => {
         const field = block.querySelector(selector);
@@ -866,7 +902,7 @@ function clearMeaningBlock(block) {
 }
 
 function doClearMeaningBlock(block) {
-    ['.phonetic-us', '.phonetic-uk', '.pos-select', '.def-en', '.def-vi', 
+    ['.pos-select', '.def-en', '.def-vi', 
      '.example-input', '.synonyms-input', '.antonyms-input'
     ].forEach(selector => {
         const field = block.querySelector(selector);
@@ -1016,7 +1052,7 @@ function clearAllMeaningBlocks() {
         const title = firstBlock.querySelector('.meaning-title');
         if (title) title.textContent = 'Nghĩa 1';
         
-        ['.phonetic-us', '.phonetic-uk', '.pos-select', '.def-en', '.def-vi', 
+        ['.pos-select', '.def-en', '.def-vi', 
         '.example-input', '.synonyms-input', '.antonyms-input'
         ].forEach(selector => {
             const field = firstBlock.querySelector(selector);
@@ -1028,6 +1064,10 @@ function clearAllMeaningBlocks() {
     
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal) wordFormGlobal.value = '';
+    const phoneticUSGlobal = document.getElementById('phonetic-us-global');
+    if (phoneticUSGlobal) phoneticUSGlobal.value = '';
+    const phoneticUKGlobal = document.getElementById('phonetic-uk-global');
+    if (phoneticUKGlobal) phoneticUKGlobal.value = '';
 }
 
 /* ===== CLEAR WORD FORM ===== */
@@ -1097,9 +1137,12 @@ export function saveWord() {
     const meanings = [];
     const meaningBlocks = document.querySelectorAll('.meaning-block');
     
+    const globalPhoneticUS = document.getElementById('phonetic-us-global')?.value?.trim() || '';
+    const globalPhoneticUK = document.getElementById('phonetic-uk-global')?.value?.trim() || '';
+    
     meaningBlocks.forEach((block) => {
-        const phoneticUS = block.querySelector('.phonetic-us')?.value?.trim() || '';
-        const phoneticUK = block.querySelector('.phonetic-uk')?.value?.trim() || '';
+        const phoneticUS = globalPhoneticUS;
+        const phoneticUK = globalPhoneticUK;
         const pos = block.querySelector('.pos-select')?.value || '';
         const defEn = block.querySelector('.def-en')?.value?.trim() || '';
         const defVi = block.querySelector('.def-vi')?.value?.trim() || '';
