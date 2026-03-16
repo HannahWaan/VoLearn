@@ -3,11 +3,6 @@
    Load HTML templates dynamically
    ======================================== */
 
-/**
- * Load một template HTML từ file
- * @param {string} path - Đường dẫn đến file template
- * @returns {Promise<string>} - Nội dung HTML
- */
 export async function loadTemplate(path) {
     try {
         const response = await fetch(path);
@@ -72,6 +67,7 @@ export async function loadAllSections() {
         'set-view',
         'practice',
         'news',
+        'notes',
         'calendar',
         'settings'
     ];
