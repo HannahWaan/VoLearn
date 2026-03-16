@@ -26,6 +26,7 @@ export async function backupToDrive() {
             vocabulary: appData.vocabulary || [],
             sets: appData.sets || [],
             history: appData.history || [],
+            notes: appData.notes || [], 
             settings: appData.settings || {},
             streak: appData.streak || 0,
             lastStudyDate: appData.lastStudyDate || null,
@@ -171,6 +172,7 @@ function applyRestoreData(content) {
         vocabulary: Array.isArray(content.vocabulary) ? content.vocabulary : [],
         sets: Array.isArray(content.sets) ? content.sets : [],
         history: Array.isArray(content.history) ? content.history : [],
+        notes: Array.isArray(content.notes) ? content.notes : [], 
         settings: content.settings || {},
         streak: content.streak || 0,
         lastStudyDate: content.lastStudyDate || null
