@@ -608,23 +608,136 @@
     box-shadow: 0 5px 20px rgba(233, 30, 140, 0.4);
 }
 
-/* ===== RESPONSIVE - Mobile nhỏ hơn ===== */
+/* ========================================
+   RESPONSIVE - MOBILE
+   ======================================== */
 @media (max-width: 768px) {
+
+    #set-view-section.section.active {
+        padding: 12px;
+    }
+
+    /* --- HEADER --- */
+    .set-view-header {
+        gap: 12px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+    }
+
+    .set-view-title {
+        font-size: 1.1rem;
+    }
+
+    .btn-back-set {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    /* --- SPLIT VIEW: chuyển thành FULL WIDTH chồng nhau --- */
+    .split-view-container {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 180px);
+        position: relative;
+    }
+
+    /* Ẩn thanh kéo resizer */
+    .split-resizer {
+        display: none !important;
+    }
+
+    /* Panel trái (danh sách từ): full width */
+    .split-left {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        min-height: calc(100vh - 180px);
+    }
+
+    /* Panel phải (chi tiết từ): full width, ẩn mặc định */
+    .split-right {
+        display: none;
+        width: 100% !important;
+        min-height: calc(100vh - 180px);
+    }
+
+    /* Khi 1 từ được chọn: ẩn danh sách, hiện chi tiết */
+    .split-view-container.detail-active .split-left {
+        display: none;
+    }
+
+    .split-view-container.detail-active .split-right {
+        display: block;
+    }
+
+    /* Nút quay lại danh sách (chỉ hiện trên mobile) */
+    .btn-back-to-list {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .btn-back-to-list:hover {
+        background: var(--primary-light);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    /* Detail panel */
+    .word-detail-panel {
+        padding: 16px;
+    }
+
+    .detail-word {
+        font-size: 1.6rem;
+    }
+
+    .detail-top-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .detail-top-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .detail-phonetics {
+        gap: 12px;
+    }
+
+    .detail-meaning-block {
+        padding: 14px;
+    }
+
+    /* Empty message */
     .empty-message {
         padding: 40px 16px;
         min-height: 200px;
     }
-    
+
     .empty-message > i {
         font-size: 2.5rem;
         margin-bottom: 12px;
     }
-    
+
     .empty-message p {
         font-size: 0.85rem;
         margin-bottom: 16px;
     }
-    
+
     .empty-message .btn-add-word,
     .empty-message .btn.btn-primary {
         padding: 8px 16px;
@@ -632,61 +745,14 @@
         gap: 6px;
         border-radius: 8px;
     }
-    
+
     .empty-message .btn-add-word i,
     .empty-message .btn.btn-primary i {
         font-size: 0.75rem;
     }
 }
-/* ===== NÚT THÊM TỪ MỚI - ĐẸPCHỈNH ===== */
-.empty-message .btn-add-word {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 28px;
-    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
-}
 
-.empty-message .btn-add-word:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(233, 30, 140, 0.4);
+/* Nút quay lại danh sách: ẩn trên desktop */
+.btn-back-to-list {
+    display: none !important;
 }
-
-.empty-message .btn-add-word:active {
-    transform: translateY(0);
-}
-
-.empty-message .btn-add-word i {
-    font-size: 1.1rem;
-}
-
-/* Fix cho btn btn-primary nếu dùng */
-.empty-message .btn.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 28px;
-    background: var(--gradient-primary, linear-gradient(135deg, #e91e8c 0%, #c71585 100%));
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(233, 30, 140, 0.3);
-}
-
-.empty-message .btn.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(233, 30, 140, 0.4);
-}
-
