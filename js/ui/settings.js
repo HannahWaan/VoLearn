@@ -583,7 +583,8 @@ function importJSON(content) {
                     ...DEFAULT_DATA, 
                     vocabulary: data.vocabulary || [], 
                     sets: data.sets || [], 
-                    history: data.history || {} 
+                    history: data.history || {},
+                    notes: data.notes || []
                 });
                 saveData();
                 showSuccess('Đã nhập dữ liệu!');
@@ -892,7 +893,8 @@ async function backupToGoogleDrive() {
             backupAt: new Date().toISOString(),
             vocabulary: appData.vocabulary || [],
             sets: appData.sets || [],
-            history: appData.history || {}
+            history: appData.history || [],
+            notes: appData.notes || []
         };
         
         const fileName = getBackupFileName();
@@ -1079,6 +1081,7 @@ async function selectRestoreFile(fileId, token) {
         
         const wordCount = (data.vocabulary || []).length;
         const setCount = (data.sets || []).length;
+        const noteCount = (data.notes || []).length;
         
         window.showConfirm({
             title: 'Khôi phục từ Google Drive',
@@ -1092,7 +1095,8 @@ async function selectRestoreFile(fileId, token) {
                     ...DEFAULT_DATA,
                     vocabulary: data.vocabulary || [],
                     sets: data.sets || [],
-                    history: data.history || {}
+                    history: data.history || {},
+                    notes: data.notes || []
                 });
                 saveData();
                 showSuccess('Đã khôi phục thành công!');
