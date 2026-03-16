@@ -12,6 +12,7 @@ const sectionIdMap = {
     'practice': 'practice-section',
     'calendar': 'calendar-section',
     'news': 'news-section',
+    'notes': 'notes-section', 
     'settings': 'settings-section'
 };
 
@@ -22,6 +23,7 @@ const pageTitles = {
     'set-view': 'Chi tiết bộ từ',
     'practice': 'Luyện tập',
     'news': 'Tin Tức',
+    'notes': 'Ghi chú',
     'calendar': 'Lịch học',
     'news': 'Tin Tức',
     'settings': 'Cài đặt'
