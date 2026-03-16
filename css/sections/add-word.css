@@ -276,3 +276,63 @@
     color: white;
     border-color: var(--primary-color);
 }
+
+/* ========================================
+   PHONETIC GLOBAL (nằm trên Word Formation)
+   ======================================== */
+.phonetic-global-group {
+    margin-bottom: 16px;
+}
+
+.phonetic-row-global {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.phonetic-row-global .phonetic-group {
+    flex: 1;
+    min-width: 160px;
+}
+
+/* Nút Auto fill phiên âm */
+.btn-auto-phonetic {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 42px;
+}
+
+.btn-auto-phonetic:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-auto-phonetic:active {
+    transform: translateY(0);
+}
+
+.btn-auto-phonetic.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.btn-auto-phonetic.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
