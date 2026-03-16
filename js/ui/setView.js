@@ -1,11 +1,13 @@
 /* ===== SET VIEW MODULE ===== */
-/* VoLearn v2.1.0 - Xem bộ từ vựng */
+/* VoLearn v2.2.0 - Xem bộ từ vựng */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
 import { showToast, showSuccess } from './toast.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, generateId } from '../utils/helpers.js';
 import { navigate } from '../core/router.js';
+import { openModal, closeModal } from './modalEngine.js';
+import { renderShelves, populateSetSelect } from './bookshelf.js';
 
 /* ===== STATE ===== */
 let currentSetId = null;
@@ -194,12 +196,6 @@ function selectWord(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (word) {
         showWordDetail(word);
-        
-        // Mobile: chuyển sang xem chi tiết
-        if (window.innerWidth <= 768) {
-            const container = document.querySelector('.split-view-container');
-            if (container) container.classList.add('detail-active');
-        }
     }
 }
 
@@ -207,8 +203,6 @@ function selectWord(wordId) {
 function resetDetailPanel() {
     const detailPanel = document.getElementById('word-detail-panel');
     if (!detailPanel) return;
-    const container = document.querySelector('.split-view-container');
-    if (container) container.classList.remove('detail-active');
     
     detailPanel.innerHTML = `
         <div class="word-detail-placeholder">
@@ -217,6 +211,31 @@ function resetDetailPanel() {
             <p>Nhấn vào từ vựng bên trái để xem chi tiết</p>
         </div>
     `;
+}
+
+/* ===== GET OTHER SETS (trừ bộ hiện tại) ===== */
+function getOtherSets(excludeSetId) {
+    return (appData.sets || []).filter(s => s.id !== excludeSetId);
+}
+
+/* ===== BUILD SET OPTIONS HTML ===== */
+function buildSetOptionsHtml(excludeSetId) {
+    const sets = getOtherSets(excludeSetId);
+    if (sets.length === 0) {
+        return '<option value="" disabled>Chưa có bộ từ nào khác</option>';
+    }
+    let html = '<option value="" disabled selected>-- Chọn bộ từ --</option>';
+    
+    // Thêm option "Tất cả (không thuộc bộ nào)" nếu từ đang thuộc một bộ
+    if (excludeSetId && excludeSetId !== 'all') {
+        html += '<option value="__none__">Tất cả (không thuộc bộ nào)</option>';
+    }
+    
+    sets.forEach(set => {
+        const count = (appData.vocabulary || []).filter(w => w.setId === set.id).length;
+        html += `<option value="${set.id}">${escapeHtml(set.name)} (${count} từ)</option>`;
+    });
+    return html;
 }
 
 /* ===== SHOW WORD DETAIL ===== */
@@ -228,17 +247,12 @@ function showWordDetail(word) {
     const isMastered = word.mastered || false;
     const isBookmarked = word.bookmarked || false;
     
-    // Get phonetics
     const phoneticUS = word.phoneticUS || word.phonetic || '';
     const phoneticUK = word.phoneticUK || word.phonetic || '';
     
     detailPanel.innerHTML = `
         <div class="word-detail-content">
-            <!-- Nút quay lại danh sách (chỉ hiện trên mobile) -->
-            <button class="btn-back-to-list" onclick="window.backToWordList()">
-                <i class="fas fa-arrow-left"></i> Quay lại danh sách
-            </button>
-            <!-- Header: Từ vựng + nút Edit/Delete bên phải -->
+            <!-- Header: Từ vựng + nút actions bên phải -->
             <div class="detail-top-header">
                 <div class="detail-word-info">
                     <h2 class="detail-word">${escapeHtml(word.word || '')}</h2>
@@ -252,16 +266,26 @@ function showWordDetail(word) {
                             onclick="window.toggleMasteredInView('${word.id}')" title="Đã thuộc">
                         <i class="fa${isMastered ? 's' : 'r'} fa-check-circle"></i>
                     </button>
-                    <button class="btn-icon-sm edit" onclick="window.editWordInView('${word.id}')" title="Chỉnh sửa">
+                    <button class="btn-icon-sm clone" 
+                            onclick="window.openCloneWordModal('${word.id}')" title="Nhân bản sang bộ khác">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn-icon-sm move" 
+                            onclick="window.openMoveWordModal('${word.id}')" title="Chuyển sang bộ khác">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    <button class="btn-icon-sm edit" 
+                            onclick="window.editWordInView('${word.id}')" title="Chỉnh sửa">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon-sm delete" onclick="window.deleteWordInView('${word.id}')" title="Xóa">
+                    <button class="btn-icon-sm delete" 
+                            onclick="window.deleteWordInView('${word.id}')" title="Xóa">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Phonetics với 2 nút loa US/UK -->
+            <!-- Phonetics -->
             <div class="detail-phonetics">
                 <div class="phonetic-item">
                     <span class="phonetic-label">US</span>
@@ -279,7 +303,7 @@ function showWordDetail(word) {
                 </div>
             </div>
             
-            <!-- Word Formation nếu có -->
+            <!-- Word Formation -->
             ${word.formation ? `
                 <div class="detail-formation">
                     <span class="formation-label">Word Formation:</span>
@@ -341,7 +365,7 @@ function showWordDetail(word) {
                 `).join('')}
             </div>
             
-            <!-- Notes nếu có -->
+            <!-- Notes -->
             ${word.notes ? `
                 <div class="detail-notes">
                     <span class="notes-label">Ghi chú:</span>
@@ -352,7 +376,7 @@ function showWordDetail(word) {
     `;
 }
 
-/* ===== TOGGLE MASTERED - Không re-render toàn bộ ===== */
+/* ===== TOGGLE MASTERED ===== */
 export function toggleMasteredInView(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (!word) return;
@@ -362,12 +386,11 @@ export function toggleMasteredInView(wordId) {
     
     showToast(word.mastered ? 'Đã đánh dấu thuộc!' : 'Đã bỏ đánh dấu thuộc', 'success');
     
-    // Chỉ update UI, không reset detail panel
     updateWordItemUI(wordId);
     showWordDetail(word);
 }
 
-/* ===== TOGGLE BOOKMARK - Không re-render toàn bộ ===== */
+/* ===== TOGGLE BOOKMARK ===== */
 export function toggleBookmarkInView(wordId) {
     const word = (appData.vocabulary || []).find(w => w.id === wordId);
     if (!word) return;
@@ -377,7 +400,6 @@ export function toggleBookmarkInView(wordId) {
     
     showToast(word.bookmarked ? 'Đã đánh dấu!' : 'Đã bỏ đánh dấu', 'success');
     
-    // Chỉ update UI, không reset detail panel
     updateWordItemUI(wordId);
     showWordDetail(word);
 }
@@ -403,17 +425,14 @@ function updateWordItemUI(wordId) {
 
 /* ===== EDIT WORD ===== */
 function editWordInView(wordId) {
-    // Lưu ID từ cần edit
     window.editingWordId = wordId;
     
-    // Navigate đến trang add-word (section ID là 'add-section')
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     const addSection = document.getElementById('add-section');
     if (addSection) {
         addSection.classList.add('active');
     }
     
-    // Update nav
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.section === 'add-word') {
@@ -421,7 +440,6 @@ function editWordInView(wordId) {
         }
     });
     
-    // Load từ vựng vào form để edit
     setTimeout(() => {
         if (window.loadWordForEdit) {
             window.loadWordForEdit(wordId);
@@ -454,11 +472,175 @@ function deleteWordInView(wordId) {
     });
 }
 
-/* ===== MOBILE: QUAY LẠI DANH SÁCH ===== */
-function backToWordList() {
-    const container = document.querySelector('.split-view-container');
-    if (container) container.classList.remove('detail-active');
-    selectedWordId = null;
+/* ========================================
+   CLONE WORD - Nhân bản từ sang bộ khác
+   ======================================== */
+
+function openCloneWordModal(wordId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    const setOptions = buildSetOptionsHtml(word.setId);
+    
+    // Tạo modal động
+    let modal = document.getElementById('clone-word-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'clone-word-modal';
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-copy"></i> Nhân bản từ vựng</h3>
+                <button class="modal-close" data-modal="clone-word-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px;">Nhân bản từ <strong>"${escapeHtml(word.word)}"</strong> sang bộ:</p>
+                <div class="form-group">
+                    <select id="clone-target-set" class="form-select">
+                        ${setOptions}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel" data-modal="clone-word-modal">Hủy</button>
+                <button id="btn-confirm-clone" class="btn-primary">
+                    <i class="fas fa-copy"></i> Nhân bản
+                </button>
+            </div>
+        </div>
+    `;
+    
+    openModal('clone-word-modal');
+    
+    // Bind confirm
+    const confirmBtn = document.getElementById('btn-confirm-clone');
+    confirmBtn.onclick = () => {
+        const targetSetId = document.getElementById('clone-target-set').value;
+        if (!targetSetId) {
+            showToast('Vui lòng chọn bộ từ đích', 'error');
+            return;
+        }
+        
+        cloneWord(wordId, targetSetId);
+        closeModal('clone-word-modal');
+    };
+}
+
+function cloneWord(wordId, targetSetId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    // Deep clone và tạo ID mới
+    const cloned = JSON.parse(JSON.stringify(word));
+    cloned.id = generateId();
+    cloned.setId = targetSetId === '__none__' ? null : targetSetId;
+    cloned.createdAt = new Date().toISOString();
+    
+    // Reset tiến trình SRS cho bản sao
+    cloned.mastered = false;
+    cloned.srs = null;
+    
+    appData.vocabulary.push(cloned);
+    saveData(appData);
+    
+    const targetSet = targetSetId === '__none__' 
+        ? 'Tất cả' 
+        : (appData.sets || []).find(s => s.id === targetSetId)?.name || 'bộ từ khác';
+    
+    showSuccess(`Đã nhân bản "${word.word}" sang "${targetSet}"!`);
+    
+    // Cập nhật bookshelf nếu cần
+    if (typeof renderShelves === 'function') renderShelves();
+    if (typeof populateSetSelect === 'function') populateSetSelect();
+}
+
+/* ========================================
+   MOVE WORD - Chuyển từ sang bộ khác
+   ======================================== */
+
+function openMoveWordModal(wordId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    const setOptions = buildSetOptionsHtml(word.setId);
+    
+    // Tạo modal động
+    let modal = document.getElementById('move-word-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'move-word-modal';
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-exchange-alt"></i> Chuyển từ vựng</h3>
+                <button class="modal-close" data-modal="move-word-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px;">Chuyển từ <strong>"${escapeHtml(word.word)}"</strong> sang bộ:</p>
+                <div class="form-group">
+                    <select id="move-target-set" class="form-select">
+                        ${setOptions}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-cancel" data-modal="move-word-modal">Hủy</button>
+                <button id="btn-confirm-move" class="btn-primary">
+                    <i class="fas fa-exchange-alt"></i> Chuyển
+                </button>
+            </div>
+        </div>
+    `;
+    
+    openModal('move-word-modal');
+    
+    const confirmBtn = document.getElementById('btn-confirm-move');
+    confirmBtn.onclick = () => {
+        const targetSetId = document.getElementById('move-target-set').value;
+        if (!targetSetId) {
+            showToast('Vui lòng chọn bộ từ đích', 'error');
+            return;
+        }
+        
+        moveWord(wordId, targetSetId);
+        closeModal('move-word-modal');
+    };
+}
+
+function moveWord(wordId, targetSetId) {
+    const word = (appData.vocabulary || []).find(w => w.id === wordId);
+    if (!word) return;
+    
+    const oldSetName = word.setId 
+        ? ((appData.sets || []).find(s => s.id === word.setId)?.name || 'bộ cũ')
+        : 'Tất cả';
+    
+    word.setId = targetSetId === '__none__' ? null : targetSetId;
+    saveData(appData);
+    
+    const newSetName = targetSetId === '__none__'
+        ? 'Tất cả'
+        : (appData.sets || []).find(s => s.id === targetSetId)?.name || 'bộ mới';
+    
+    showSuccess(`Đã chuyển "${word.word}" từ "${oldSetName}" sang "${newSetName}"!`);
+    
+    // Re-render set view (từ đã rời khỏi bộ hiện tại nên cần refresh)
+    renderSetView();
+    
+    if (typeof renderShelves === 'function') renderShelves();
+    if (typeof populateSetSelect === 'function') populateSetSelect();
 }
 
 /* ===== GLOBAL EXPORTS ===== */
@@ -471,6 +653,5 @@ window.toggleBookmarkInView = toggleBookmarkInView;
 window.editWordInView = editWordInView;
 window.deleteWordInView = deleteWordInView;
 window.renderSetView = renderSetView;
-window.backToWordList = backToWordList;
-
-
+window.openCloneWordModal = openCloneWordModal;
+window.openMoveWordModal = openMoveWordModal;
