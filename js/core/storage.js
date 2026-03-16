@@ -9,7 +9,8 @@ const STORAGE_KEY = 'volearn_data';
 const DEFAULT_DATA = {
     vocabulary: [],
     sets: [],
-    history: []
+    history: [],
+    notes: []
 };
 
 /* ===== SANITIZE DATA ===== */
@@ -19,7 +20,8 @@ function sanitizeLoadedData(data) {
     const sanitized = {
         vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary : [],
         sets: Array.isArray(data.sets) ? data.sets : [],
-        history: Array.isArray(data.history) ? data.history : []
+        history: Array.isArray(data.history) ? data.history : [],
+        notes: Array.isArray(data.notes) ? data.notes : [] 
     };
     
     // Normalize practice-history durations
@@ -87,7 +89,8 @@ export function saveData(data) {
         const toSave = {
             vocabulary: source.vocabulary || [],
             sets: source.sets || [],
-            history: source.history || []
+            history: source.history || [],
+            notes: source.notes || []
         };
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
