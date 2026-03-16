@@ -36,6 +36,7 @@
 @import './sections/practice.css';
 @import './sections/calendar.css';
 @import './sections/settings.css';
+@import './sections/notes.css';
 
 /* ===== UTILITIES ===== */
 @import './utilities/responsive.css';
