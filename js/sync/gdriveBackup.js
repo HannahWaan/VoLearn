@@ -119,6 +119,7 @@ export async function restoreFromDrive() {
 
         const wordCount = content.vocabulary.length;
         const setCount = (content.sets || []).length;
+        const noteCount = (content.notes || []).length;
 
         // Dùng showConfirm modal
         return new Promise((resolve) => {
@@ -137,7 +138,7 @@ export async function restoreFromDrive() {
                 window.showConfirm({
                     title: 'Khôi phục dữ liệu',
                     message: `Khôi phục từ bản sao lưu ngày ${backupDate}?`,
-                    submessage: `Gồm ${wordCount} từ vựng, ${setCount} bộ từ.\nDữ liệu hiện tại sẽ bị thay thế.`,
+                    submessage: `Gồm ${wordCount} từ vựng, ${setCount} bộ từ, ${noteCount} ghi chú.\nDữ liệu hiện tại sẽ bị thay thế.`,
                     type: 'warning',
                     confirmText: 'Khôi phục',
                     icon: 'fas fa-cloud-download-alt',
@@ -184,12 +185,11 @@ function applyRestoreData(content) {
         history: restored.history.length
     });
 
-    // === CÁCH AN TOÀN NHẤT: Ghi TRỰC TIẾP vào localStorage ===
-    // Không phụ thuộc vào saveData() hay appData reference
     const toSave = {
         vocabulary: restored.vocabulary,
         sets: restored.sets,
-        history: restored.history
+        history: restored.history,
+        notes: restored.notes
     };
 
     const jsonString = JSON.stringify(toSave);
@@ -203,7 +203,8 @@ function applyRestoreData(content) {
         saved: jsonString.length + ' chars',
         vocabulary: parsed.vocabulary?.length,
         sets: parsed.sets?.length,
-        history: parsed.history?.length
+        history: parsed.history?.length,
+        notes: parsed.notes?.length
     });
 
     if (!parsed.vocabulary?.length && restored.vocabulary.length > 0) {
@@ -218,7 +219,7 @@ function applyRestoreData(content) {
     try { window.appData = appData; } catch (e) {}
 
     showToast(
-        `Khôi phục thành công! (${restored.vocabulary.length} từ, ${restored.sets.length} bộ). Đang tải lại...`,
+        `Khôi phục thành công! (${restored.vocabulary.length} từ, ${restored.sets.length} bộ, ${restored.notes.length} ghi chú). Đang tải lại...`,
         'success'
     );
 
