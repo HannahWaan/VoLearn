@@ -103,7 +103,7 @@ function setupEventListeners() {
         btn.addEventListener('click', () => {
             const accent = btn.dataset.accent || 'en-US';
             const word = document.getElementById('word-input')?.value.trim();
-            if (word) speak(word, accent);
+            if (word) speak(word, { lang: accent, rate: 0.9 });
         });
     });
     
@@ -142,20 +142,6 @@ function setupEventListeners() {
                 const block = removeBtn.closest('.meaning-block');
                 if (block) {
                     removeMeaningBlock(block);
-                }
-                return;
-            }
-            
-            // Nút phát âm phonetic
-            const speakPhoneticBtn = target.closest('.btn-speak-phonetic');
-            if (speakPhoneticBtn) {
-                e.preventDefault();
-                const accent = speakPhoneticBtn.dataset.accent || 'en-US';
-                const wrapper = speakPhoneticBtn.closest('.phonetic-input-wrapper');
-                const input = wrapper?.querySelector('input');
-                const word = document.getElementById('word-input')?.value.trim();
-                if (word) {
-                    speak(word, accent);
                 }
                 return;
             }
