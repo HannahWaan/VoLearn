@@ -10,8 +10,7 @@ import { renderShelves, populateSetSelect } from './bookshelf.js';
 import { navigate } from '../core/router.js';
 
 /* ===== CONSTANTS ===== */
-const MW_LEARNER_KEY = env.MW_LEARNER_KEY;
-const MW_THESAURUS_KEY = env.MW_THESAURUS_KEY;
+const API_BASE = 'https://volearn.asstrayca.workers.dev';
 
 const POS_MAPPING = {
     'noun': 'Danh từ',
