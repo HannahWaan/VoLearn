@@ -81,10 +81,13 @@ export function loadData() {
 /* ===== SAVE DATA ===== */
 export function saveData(data) {
     try {
+        // Nếu không truyền data, dùng appData hiện tại
+        const source = data || appData;
+        
         const toSave = {
-            vocabulary: data.vocabulary || [],
-            sets: data.sets || [],
-            history: data.history || []
+            vocabulary: source.vocabulary || [],
+            sets: source.sets || [],
+            history: source.history || []
         };
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
