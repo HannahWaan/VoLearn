@@ -269,33 +269,30 @@ export function confirmDeleteSet(setId) {
     const set = appData.sets?.find(s => s.id === setId);
     if (!set) return;
     
+    const wordCount = (appData.vocabulary || []).filter(w => w.setId === setId).length;
+    
     window.showConfirm({
         title: 'Xóa bộ từ vựng',
         message: `Bạn có chắc muốn xóa bộ từ "${set.name}"?`,
-        submessage: 'Các từ trong bộ sẽ được chuyển về "Tất cả từ vựng".',
+        submessage: wordCount > 0 
+            ? `⚠️ Tất cả ${wordCount} từ vựng trong bộ này cũng sẽ bị XÓA VĨNH VIỄN.`
+            : 'Bộ từ này không có từ vựng nào.',
         type: 'danger',
-        confirmText: 'Xóa',
+        confirmText: `Xóa bộ và ${wordCount} từ`,
         icon: 'fas fa-trash',
         onConfirm: () => deleteSet(setId)
     });
 }
 
 export function deleteSet(setId) {
-    // Chuyển các từ trong bộ về "Tất cả"
-    appData.vocabulary?.forEach(word => {
-        if (word.setId === setId) {
-            word.setId = null;
-        }
-    });
-    
-    // Xóa bộ từ
+    appData.vocabulary = (appData.vocabulary || []).filter(w => w.setId !== setId);
     appData.sets = appData.sets?.filter(s => s.id !== setId) || [];
     
     // Lưu và cập nhật UI
     saveData(appData);
     renderShelves();
     populateSetSelect();
-    showToast('Đã xóa bộ từ', 'success');
+    showToast('Đã xóa bộ từ và tất cả từ vựng trong bộ', 'success');
 }
 
 /* ===== GLOBAL EXPORTS ===== */
