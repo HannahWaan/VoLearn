@@ -10,8 +10,8 @@ import { renderShelves, populateSetSelect } from './bookshelf.js';
 import { navigate } from '../core/router.js';
 
 /* ===== CONSTANTS ===== */
-const MW_LEARNER_KEY = '21fc7831-faa6-4831-93a3-cddbe57d78bf';
-const MW_THESAURUS_KEY = '74724826-02fe-4e5d-a402-1139eece1765';
+const MW_LEARNER_KEY = env.MW_LEARNER_KEY;
+const MW_THESAURUS_KEY = env.MW_THESAURUS_KEY;
 
 const POS_MAPPING = {
     'noun': 'Danh từ',
