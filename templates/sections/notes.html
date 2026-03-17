@@ -30,9 +30,7 @@
     </div>
 
     <!-- Notes Grid -->
-    <div id="notes-container" class="notes-grid">
-        <!-- Note cards rendered here -->
-    </div>
+    <div id="notes-container" class="notes-grid"></div>
 
     <!-- Empty State -->
     <div id="notes-empty" class="notes-empty" style="display:none;">
@@ -41,7 +39,7 @@
         <p>Nhấn "Tạo mới" để bắt đầu ghi chú</p>
     </div>
 
-    <!-- Note Editor (full screen overlay) -->
+    <!-- ===== NOTE EDITOR (full screen overlay) ===== -->
     <div id="note-editor" class="note-editor" style="display:none;">
         <div class="note-editor-header">
             <button class="btn-editor-back" id="btn-editor-back">
@@ -56,7 +54,7 @@
                 <button class="btn-editor-action" id="btn-note-image" title="Thêm hình ảnh">
                     <i class="fas fa-image"></i>
                 </button>
-                <button class="btn-editor-action danger" id="btn-note-delete" title="Xóa">
+                <button class="btn-editor-action danger" id="btn-note-delete" title="Xóa ghi chú">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -64,7 +62,7 @@
 
         <div class="note-editor-body">
             <input type="text" id="note-title-input" class="note-title-input" placeholder="Tiêu đề...">
-            
+
             <!-- Toolbar -->
             <div class="note-toolbar">
                 <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
@@ -72,11 +70,20 @@
                 <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
                 <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
                 <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" data-cmd="hiliteColor" data-value="#fff176" title="Highlight"><i class="fas fa-highlighter"></i></button>
+                <button class="toolbar-btn" id="btn-remove-highlight" title="Xóa highlight"><i class="fas fa-eraser"></i></button>
+                <span class="toolbar-divider"></span>
                 <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
                 <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
+                <button class="toolbar-btn" id="btn-todo-list" title="To-do list"><i class="fas fa-tasks"></i></button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" data-cmd="indent" title="Thụt đầu dòng"><i class="fas fa-indent"></i></button>
+                <button class="toolbar-btn" data-cmd="outdent" title="Bớt thụt"><i class="fas fa-outdent"></i></button>
                 <span class="toolbar-divider"></span>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="H2" title="Tiêu đề"><i class="fas fa-heading"></i></button>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" id="btn-insert-table" title="Chèn bảng"><i class="fas fa-table"></i></button>
             </div>
 
             <!-- Content editable area -->
@@ -86,7 +93,7 @@
             <div id="note-images" class="note-images"></div>
         </div>
 
-        <!-- Hidden file input for images -->
+        <!-- Hidden file input -->
         <input type="file" id="note-image-input" accept="image/*" multiple style="display:none;">
 
         <!-- Auto-save indicator -->
@@ -94,4 +101,49 @@
             <i class="fas fa-check"></i> Đã lưu
         </div>
     </div>
+
+    <!-- ===== TABLE CREATOR MODAL ===== -->
+    <div id="table-creator-modal" class="note-modal-overlay" style="display:none;">
+        <div class="note-modal">
+            <div class="note-modal-header">
+                <h4><i class="fas fa-table"></i> Tạo bảng</h4>
+                <button class="note-modal-close" id="btn-close-table-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="note-modal-body">
+                <div class="table-size-inputs">
+                    <div class="table-size-group">
+                        <label>Số dòng</label>
+                        <input type="number" id="table-rows-input" value="3" min="1" max="20">
+                    </div>
+                    <span class="table-size-x">×</span>
+                    <div class="table-size-group">
+                        <label>Số cột</label>
+                        <input type="number" id="table-cols-input" value="3" min="1" max="10">
+                    </div>
+                </div>
+                <div class="table-preview-label">Xem trước:</div>
+                <div id="table-preview" class="table-preview"></div>
+            </div>
+            <div class="note-modal-footer">
+                <button class="btn-secondary" id="btn-cancel-table">Hủy</button>
+                <button class="btn-primary" id="btn-confirm-table"><i class="fas fa-check"></i> Chèn bảng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== IMAGE LIGHTBOX ===== -->
+    <div id="note-lightbox" class="note-lightbox" style="display:none;">
+        <div class="lightbox-backdrop"></div>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="">
+            <div class="lightbox-controls">
+                <button class="lightbox-btn" id="lightbox-zoom-in" title="Phóng to"><i class="fas fa-search-plus"></i></button>
+                <button class="lightbox-btn" id="lightbox-zoom-out" title="Thu nhỏ"><i class="fas fa-search-minus"></i></button>
+                <button class="lightbox-btn" id="lightbox-reset" title="Kích thước gốc"><i class="fas fa-expand"></i></button>
+                <button class="lightbox-btn danger" id="lightbox-delete" title="Xóa ảnh"><i class="fas fa-trash"></i></button>
+                <button class="lightbox-btn" id="lightbox-close" title="Đóng"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
 </section>
