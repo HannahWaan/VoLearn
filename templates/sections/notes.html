@@ -9,7 +9,6 @@
       <div class="notes-view-toggle">
         <button class="view-btn active" data-view="grid" title="Lưới"><i class="fas fa-th"></i></button>
         <button class="view-btn" data-view="list" title="Danh sách"><i class="fas fa-list"></i></button>
-        <button class="view-btn" id="split-view-btn" title="Chia đôi màn hình"><i class="fas fa-columns"></i></button>
       </div>
       <div class="notes-search">
         <i class="fas fa-search"></i>
@@ -27,34 +26,6 @@
     <i class="fas fa-sticky-note"></i>
     <p>Chưa có ghi chú nào</p>
     <span>Nhấn "Tạo mới" để bắt đầu</span>
-  </div>
-
-  <!-- ===== SPLIT VIEW CONTAINER ===== -->
-  <div class="split-view-container" id="split-view-container" style="display:none;">
-    <!-- LEFT / TOP pane -->
-    <div class="split-pane" id="split-pane-left">
-      <div class="split-pane-header">
-        <span class="split-pane-label">Ghi chú 1</span>
-        <select class="split-note-select" id="split-select-left"><option value="">-- Chọn ghi chú --</option></select>
-        <button class="split-pane-close" data-pane="left" title="Đóng"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="split-pane-body" id="split-body-left">
-        <div class="split-pane-placeholder"><i class="fas fa-hand-pointer"></i><p>Chọn một ghi chú</p></div>
-      </div>
-    </div>
-    <!-- DIVIDER -->
-    <div class="split-divider" id="split-divider"></div>
-    <!-- RIGHT / BOTTOM pane -->
-    <div class="split-pane" id="split-pane-right">
-      <div class="split-pane-header">
-        <span class="split-pane-label">Ghi chú 2</span>
-        <select class="split-note-select" id="split-select-right"><option value="">-- Chọn ghi chú --</option></select>
-        <button class="split-pane-close" data-pane="right" title="Đóng"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="split-pane-body" id="split-body-right">
-        <div class="split-pane-placeholder"><i class="fas fa-hand-pointer"></i><p>Chọn một ghi chú</p></div>
-      </div>
-    </div>
   </div>
 
   <!-- ===== NOTE EDITOR (full screen) ===== -->
@@ -76,69 +47,56 @@
 
       <!-- TOOLBAR -->
       <div class="editor-toolbar" id="editor-toolbar">
-        <!-- Undo / Redo -->
         <button class="toolbar-btn" id="toolbar-undo" title="Hoàn tác"><i class="fas fa-undo"></i></button>
         <button class="toolbar-btn" id="toolbar-redo" title="Làm lại"><i class="fas fa-redo"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Format Painter -->
         <button class="toolbar-btn" id="toolbar-format-painter" title="Sao chép định dạng"><i class="fas fa-paint-roller"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Basic formatting -->
         <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
         <button class="toolbar-btn" data-cmd="italic" title="Nghiêng"><i class="fas fa-italic"></i></button>
         <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
         <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Font color -->
         <div class="toolbar-color-group">
           <button class="toolbar-btn" id="toolbar-font-color" title="Màu chữ"><i class="fas fa-font"></i><span class="color-indicator" id="font-color-indicator"></span></button>
           <input type="color" class="toolbar-color-input" id="font-color-picker" value="#ff0000">
         </div>
 
-        <!-- Highlight -->
         <div class="toolbar-highlight-group">
           <button class="toolbar-btn" id="toolbar-highlight" title="Tô sáng"><i class="fas fa-highlighter"></i><span class="color-indicator" id="highlight-color-indicator"></span></button>
           <input type="color" class="toolbar-color-input" id="highlight-color-picker" value="#ffff00">
         </div>
         <span class="toolbar-sep"></span>
 
-        <!-- Alignment -->
         <button class="toolbar-btn" data-cmd="justifyLeft" title="Căn trái"><i class="fas fa-align-left"></i></button>
         <button class="toolbar-btn" data-cmd="justifyCenter" title="Căn giữa"><i class="fas fa-align-center"></i></button>
         <button class="toolbar-btn" data-cmd="justifyRight" title="Căn phải"><i class="fas fa-align-right"></i></button>
         <button class="toolbar-btn" data-cmd="justifyFull" title="Căn đều"><i class="fas fa-align-justify"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Lists -->
         <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
         <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
         <button class="toolbar-btn" id="toolbar-todo" title="Danh sách việc"><i class="fas fa-tasks"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Indent -->
         <button class="toolbar-btn" data-cmd="indent" title="Thụt vào"><i class="fas fa-indent"></i></button>
         <button class="toolbar-btn" data-cmd="outdent" title="Thụt ra"><i class="fas fa-outdent"></i></button>
         <span class="toolbar-sep"></span>
 
-        <!-- Headings -->
         <button class="toolbar-btn toolbar-heading" data-heading="H1" title="Tiêu đề 1">H1</button>
         <button class="toolbar-btn toolbar-heading" data-heading="H2" title="Tiêu đề 2">H2</button>
         <button class="toolbar-btn toolbar-heading" data-heading="H3" title="Tiêu đề 3">H3</button>
         <button class="toolbar-btn toolbar-heading" data-heading="P" title="Văn bản thường">P</button>
         <span class="toolbar-sep"></span>
 
-        <!-- Blockquote -->
         <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
-
-        <!-- Table -->
         <button class="toolbar-btn" id="toolbar-table" title="Chèn bảng"><i class="fas fa-table"></i></button>
       </div>
 
       <div class="note-content-editor" id="note-content-editor" contenteditable="true" data-placeholder="Nội dung ghi chú..."></div>
-
       <div class="note-images" id="note-images"></div>
     </div>
 
