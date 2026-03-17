@@ -1,7 +1,6 @@
 /* ============================================
-   VoLearn – Notes Module v2.6.1
-   Split-view, full toolbar, tables, images
-   ES Module export
+   VoLearn – Notes Module v2.5.2
+   Full toolbar, tables, images – ES Module
    ============================================ */
 
 /* ---------- state ---------- */
@@ -12,27 +11,16 @@ let autoSaveTimer = null;
 let highlightColor = '#ffff00';
 let fontColor = '#ff0000';
 
-// Format painter
 let formatPainterActive = false;
 let formatPainterStyles = null;
 
-// Table resize
 let resizingCol = null;
 let resizingRow = null;
 let resizeStart = 0;
 let resizeInitial = 0;
 
-// Table context
 let contextCell = null;
 
-// Split view
-let splitActive = false;
-let splitDragging = false;
-let splitStart = 0;
-let splitInitialLeft = 0;
-let splitNotes = { left: null, right: null };
-
-// Lightbox
 let lightboxZoom = 1;
 let currentLightboxIndex = -1;
 
@@ -42,7 +30,9 @@ const DARK_COLORS = {
   '#2d132c': true, '#3a0ca3': true
 };
 
-/* ---------- init ---------- */
+/* ==========================================
+   INIT
+   ========================================== */
 function initNotes() {
   if (!window.appData) window.appData = {};
   if (!window.appData.notes) window.appData.notes = [];
@@ -83,40 +73,26 @@ function cleanTableHtml(html) {
    EVENT BINDING
    ========================================== */
 function bindNotesEvents() {
+
   /* --- clicks --- */
   document.addEventListener('click', function (e) {
     const t = e.target;
 
-    // Create note
     if (t.closest('#create-note-btn')) { createNewNote(); return; }
 
-    // View toggle (grid/list)
-    if (t.closest('.view-btn') && !t.closest('#split-view-btn')) {
+    if (t.closest('.view-btn')) {
       const btn = t.closest('.view-btn');
       const v = btn.dataset.view;
-      if (v) { switchView(v); deactivateSplitView(); }
+      if (v) switchView(v);
       return;
     }
 
-    // Split view toggle
-    if (t.closest('#split-view-btn')) { toggleSplitView(); return; }
-
-    // Split pane close
-    if (t.closest('.split-pane-close')) { deactivateSplitView(); return; }
-
-    // Editor back
     if (t.closest('#editor-back-btn')) { closeEditor(); return; }
-
-    // Editor pin
     if (t.closest('#editor-pin-btn')) { togglePin(); return; }
-
-    // Editor delete
     if (t.closest('#editor-delete-btn')) {
       if (currentNoteId && confirm('Xóa ghi chú này?')) deleteNote(currentNoteId);
       return;
     }
-
-    // Editor image
     if (t.closest('#editor-image-btn')) {
       document.getElementById('note-image-input').click();
       return;
@@ -129,35 +105,31 @@ function bindNotesEvents() {
     // Format painter
     if (t.closest('#toolbar-format-painter')) { activateFormatPainter(); return; }
 
-    // Font color btn
+    // Font color
     if (t.closest('#toolbar-font-color')) {
       document.getElementById('font-color-picker').click();
       return;
     }
 
-    // Highlight btn
+    // Highlight
     if (t.closest('#toolbar-highlight')) {
       document.execCommand('hiliteColor', false, highlightColor);
       scheduleAutoSave();
       return;
     }
 
-    // Todo toggle
+    // Todo
     if (t.closest('#toolbar-todo')) { toggleTodoList(); return; }
 
-    // Table btn
+    // Table
     if (t.closest('#toolbar-table')) { openTableCreator(); return; }
-
-    // Table modal cancel
     if (t.closest('#table-cancel-btn')) { closeTableCreator(); return; }
-    // Table modal confirm
     if (t.closest('#table-confirm-btn')) { confirmInsertTable(); return; }
 
     // Heading buttons
     const headBtn = t.closest('.toolbar-heading');
     if (headBtn) {
-      const tag = headBtn.dataset.heading;
-      document.execCommand('formatBlock', false, tag);
+      document.execCommand('formatBlock', false, headBtn.dataset.heading);
       scheduleAutoSave();
       return;
     }
@@ -165,49 +137,32 @@ function bindNotesEvents() {
     // Generic toolbar commands
     const cmdBtn = t.closest('.toolbar-btn[data-cmd]');
     if (cmdBtn) {
-      const cmd = cmdBtn.dataset.cmd;
-      const val = cmdBtn.dataset.value || null;
-      document.execCommand(cmd, false, val);
+      document.execCommand(cmdBtn.dataset.cmd, false, cmdBtn.dataset.value || null);
       scheduleAutoSave();
       return;
     }
 
-    // Note card open
+    // Note card
     const card = t.closest('.note-card');
-    if (card && !t.closest('.note-card-actions')) {
-      openNote(card.dataset.id);
-      return;
-    }
-
-    // Note card pin
-    if (t.closest('.card-pin-btn')) {
-      const id = t.closest('.note-card').dataset.id;
-      togglePinById(id);
-      return;
-    }
-
-    // Note card delete
+    if (card && !t.closest('.note-card-actions')) { openNote(card.dataset.id); return; }
+    if (t.closest('.card-pin-btn')) { togglePinById(t.closest('.note-card').dataset.id); return; }
     if (t.closest('.card-delete-btn')) {
       const id = t.closest('.note-card').dataset.id;
       if (confirm('Xóa ghi chú này?')) deleteNote(id);
       return;
     }
 
-    // Remove image in editor
+    // Images
     if (t.closest('.remove-img')) {
-      const idx = parseInt(t.closest('.note-img-wrapper').dataset.index);
-      removeNoteImage(idx);
+      removeNoteImage(parseInt(t.closest('.note-img-wrapper').dataset.index));
       return;
     }
-
-    // Image click → lightbox
     if (t.closest('.note-img-wrapper img')) {
-      const idx = parseInt(t.closest('.note-img-wrapper').dataset.index);
-      openLightbox(idx);
+      openLightbox(parseInt(t.closest('.note-img-wrapper').dataset.index));
       return;
     }
 
-    // Lightbox controls
+    // Lightbox
     if (t.closest('#lightbox-zoom-in')) { lightboxZoom = Math.min(lightboxZoom + 0.3, 5); applyLightboxZoom(); return; }
     if (t.closest('#lightbox-zoom-out')) { lightboxZoom = Math.max(lightboxZoom - 0.3, 0.3); applyLightboxZoom(); return; }
     if (t.closest('#lightbox-reset')) { lightboxZoom = 1; applyLightboxZoom(); return; }
@@ -218,22 +173,19 @@ function bindNotesEvents() {
     const ctxBtn = t.closest('.table-context-menu button');
     if (ctxBtn) { handleTableContextAction(ctxBtn.dataset.action); return; }
 
-    // Clicking outside hides context menu
+    // Hide context menu
     hideTableContextMenu();
 
     // Format painter apply
-    if (formatPainterActive) {
-      applyFormatPainter();
-      return;
-    }
+    if (formatPainterActive) { applyFormatPainter(); return; }
 
-    // Click on lightbox bg → close
+    // Lightbox bg close
     if (t.closest('.note-lightbox') && !t.closest('.lightbox-controls') && !t.closest('.lightbox-image')) {
       closeLightbox();
     }
   });
 
-  /* --- context menu on table cells --- */
+  /* --- context menu --- */
   document.addEventListener('contextmenu', function (e) {
     const cell = e.target.closest('#note-content-editor td, #note-content-editor th');
     if (cell) {
@@ -243,7 +195,7 @@ function bindNotesEvents() {
     }
   });
 
-  /* --- input / content changes --- */
+  /* --- input --- */
   document.addEventListener('input', function (e) {
     if (e.target.closest('#note-content-editor') || e.target.closest('#note-title-input')) {
       scheduleAutoSave();
@@ -257,7 +209,7 @@ function bindNotesEvents() {
     }
   });
 
-  /* --- color pickers --- */
+  /* --- change --- */
   document.addEventListener('change', function (e) {
     if (e.target.id === 'font-color-picker') {
       fontColor = e.target.value;
@@ -281,17 +233,12 @@ function bindNotesEvents() {
       handleImageUpload(e.target.files);
       e.target.value = '';
     }
-    if (e.target.id === 'split-select-left') {
-      loadSplitNote('left', e.target.value);
+    if (e.target.closest('.todo-item input[type="checkbox"]')) {
+      const item = e.target.closest('.todo-item');
+      if (e.target.checked) item.classList.add('checked');
+      else item.classList.remove('checked');
+      scheduleAutoSave();
     }
-    if (e.target.id === 'split-select-right') {
-      loadSplitNote('right', e.target.value);
-    }
-  });
-
-  /* --- paste --- */
-  document.addEventListener('paste', function (e) {
-    // allow default rich paste in editor
   });
 
   /* --- keyboard --- */
@@ -302,7 +249,6 @@ function bindNotesEvents() {
       if (document.getElementById('table-creator-modal').style.display !== 'none') { closeTableCreator(); return; }
       hideTableContextMenu();
       if (document.getElementById('note-editor').style.display !== 'none') { closeEditor(); return; }
-      if (splitActive) { deactivateSplitView(); return; }
     }
     if (e.key === 'Tab' && e.target.closest('#note-content-editor td, #note-content-editor th')) {
       e.preventDefault();
@@ -310,71 +256,29 @@ function bindNotesEvents() {
     }
   });
 
-  /* --- mouse events for table col/row resize & split divider --- */
+  /* --- mouse: table resize --- */
   document.addEventListener('mousedown', function (e) {
     const cell = e.target.closest('#note-content-editor th, #note-content-editor td');
     if (cell) {
       const rect = cell.getBoundingClientRect();
       if (Math.abs(e.clientX - rect.right) < 6) {
-        e.preventDefault();
-        initColumnResize(cell, e.clientX);
-        return;
+        e.preventDefault(); initColumnResize(cell, e.clientX); return;
       }
       if (Math.abs(e.clientY - rect.bottom) < 6) {
-        e.preventDefault();
-        initRowResize(cell, e.clientY);
-        return;
+        e.preventDefault(); initRowResize(cell, e.clientY); return;
       }
-    }
-    const divider = e.target.closest('#split-divider');
-    if (divider && splitActive) {
-      e.preventDefault();
-      splitDragging = true;
-      divider.classList.add('dragging');
-      const isMobile = window.innerWidth <= 768;
-      splitStart = isMobile ? e.clientY : e.clientX;
-      const leftPane = document.getElementById('split-pane-left');
-      splitInitialLeft = isMobile ? leftPane.offsetHeight : leftPane.offsetWidth;
     }
   });
 
   document.addEventListener('mousemove', function (e) {
     if (resizingCol) {
-      const diff = e.clientX - resizeStart;
-      resizingCol.style.width = Math.max(40, resizeInitial + diff) + 'px';
+      resizingCol.style.width = Math.max(40, resizeInitial + e.clientX - resizeStart) + 'px';
       return;
     }
     if (resizingRow) {
-      const diff = e.clientY - resizeStart;
-      resizingRow.style.height = Math.max(20, resizeInitial + diff) + 'px';
+      resizingRow.style.height = Math.max(20, resizeInitial + e.clientY - resizeStart) + 'px';
       return;
     }
-    if (splitDragging) {
-      const isMobile = window.innerWidth <= 768;
-      const container = document.getElementById('split-view-container');
-      const leftPane = document.getElementById('split-pane-left');
-      const rightPane = document.getElementById('split-pane-right');
-      const dividerSize = 6;
-      if (isMobile) {
-        const diff = e.clientY - splitStart;
-        const total = container.offsetHeight - dividerSize;
-        const newLeft = clamp(splitInitialLeft + diff, 100, total - 100);
-        leftPane.style.flex = 'none';
-        rightPane.style.flex = 'none';
-        leftPane.style.height = newLeft + 'px';
-        rightPane.style.height = (total - newLeft) + 'px';
-      } else {
-        const diff = e.clientX - splitStart;
-        const total = container.offsetWidth - dividerSize;
-        const newLeft = clamp(splitInitialLeft + diff, 150, total - 150);
-        leftPane.style.flex = 'none';
-        rightPane.style.flex = 'none';
-        leftPane.style.width = newLeft + 'px';
-        rightPane.style.width = (total - newLeft) + 'px';
-      }
-      return;
-    }
-    // Cursor hint for cell edges
     const cell = e.target.closest('#note-content-editor th, #note-content-editor td');
     if (cell) {
       const rect = cell.getBoundingClientRect();
@@ -387,115 +291,7 @@ function bindNotesEvents() {
   document.addEventListener('mouseup', function () {
     if (resizingCol) { resizingCol = null; scheduleAutoSave(); }
     if (resizingRow) { resizingRow = null; scheduleAutoSave(); }
-    if (splitDragging) {
-      splitDragging = false;
-      document.getElementById('split-divider').classList.remove('dragging');
-    }
   });
-
-  /* --- Todo checkbox change --- */
-  document.addEventListener('change', function (e) {
-    if (e.target.closest('.todo-item input[type="checkbox"]')) {
-      const item = e.target.closest('.todo-item');
-      if (e.target.checked) item.classList.add('checked');
-      else item.classList.remove('checked');
-      scheduleAutoSave();
-    }
-  });
-}
-
-/* ==========================================
-   SPLIT VIEW
-   ========================================== */
-function toggleSplitView() {
-  if (splitActive) deactivateSplitView();
-  else activateSplitView();
-}
-
-function activateSplitView() {
-  splitActive = true;
-  document.getElementById('split-view-btn').classList.add('active');
-  document.getElementById('notes-container').style.display = 'none';
-  document.getElementById('notes-empty').style.display = 'none';
-  document.querySelectorAll('.view-btn:not(#split-view-btn)').forEach(b => b.classList.remove('active'));
-
-  const sc = document.getElementById('split-view-container');
-  sc.style.display = '';
-
-  const leftPane = document.getElementById('split-pane-left');
-  const rightPane = document.getElementById('split-pane-right');
-  leftPane.style.flex = '1';
-  leftPane.style.width = '';
-  leftPane.style.height = '';
-  rightPane.style.flex = '1';
-  rightPane.style.width = '';
-  rightPane.style.height = '';
-
-  populateSplitSelects();
-}
-
-function deactivateSplitView() {
-  splitActive = false;
-  document.getElementById('split-view-btn').classList.remove('active');
-  document.getElementById('split-view-container').style.display = 'none';
-  splitNotes = { left: null, right: null };
-
-  document.getElementById('notes-container').style.display = '';
-  renderNotesList();
-
-  document.querySelectorAll('.view-btn[data-view]').forEach(b => {
-    b.classList.toggle('active', b.dataset.view === currentView);
-  });
-}
-
-function populateSplitSelects() {
-  const notes = appData.notes || [];
-  ['split-select-left', 'split-select-right'].forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">-- Chọn ghi chú --</option>';
-    notes.forEach(n => {
-      const opt = document.createElement('option');
-      opt.value = n.id;
-      opt.textContent = n.title || 'Không tiêu đề';
-      sel.appendChild(opt);
-    });
-  });
-}
-
-function loadSplitNote(pane, noteId) {
-  const bodyEl = document.getElementById('split-body-' + pane);
-  splitNotes[pane] = noteId || null;
-
-  if (!noteId) {
-    bodyEl.innerHTML = '<div class="split-pane-placeholder"><i class="fas fa-hand-pointer"></i><p>Chọn một ghi chú</p></div>';
-    return;
-  }
-
-  const note = appData.notes.find(n => n.id === noteId);
-  if (!note) {
-    bodyEl.innerHTML = '<div class="split-pane-placeholder"><p>Không tìm thấy ghi chú</p></div>';
-    return;
-  }
-
-  let html = '';
-  if (note.title) html += '<h2 style="margin-top:0">' + escapeHtml(note.title) + '</h2>';
-  html += '<div>' + (cleanTableHtml(note.content) || '<em>Trống</em>') + '</div>';
-
-  if (note.images && note.images.length) {
-    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">';
-    note.images.forEach(src => {
-      html += '<img src="' + src + '" style="max-width:120px;border-radius:8px;cursor:pointer" onclick="window.open(this.src)">';
-    });
-    html += '</div>';
-  }
-
-  bodyEl.innerHTML = html;
-}
-
-function escapeHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
 }
 
 /* ==========================================
@@ -504,16 +300,12 @@ function escapeHtml(str) {
 function activateFormatPainter() {
   const sel = window.getSelection();
   if (!sel.rangeCount || sel.isCollapsed) return;
-
   const node = sel.anchorNode.parentElement;
   const cs = window.getComputedStyle(node);
   formatPainterStyles = {
-    fontWeight: cs.fontWeight,
-    fontStyle: cs.fontStyle,
-    textDecoration: cs.textDecoration,
-    color: cs.color,
-    backgroundColor: cs.backgroundColor,
-    fontSize: cs.fontSize
+    fontWeight: cs.fontWeight, fontStyle: cs.fontStyle,
+    textDecoration: cs.textDecoration, color: cs.color,
+    backgroundColor: cs.backgroundColor, fontSize: cs.fontSize
   };
   formatPainterActive = true;
   document.getElementById('toolbar-format-painter').classList.add('active');
@@ -522,21 +314,11 @@ function activateFormatPainter() {
 
 function applyFormatPainter() {
   const sel = window.getSelection();
-  if (!sel.rangeCount || sel.isCollapsed || !formatPainterStyles) {
-    cancelFormatPainter();
-    return;
-  }
+  if (!sel.rangeCount || sel.isCollapsed || !formatPainterStyles) { cancelFormatPainter(); return; }
   const range = sel.getRangeAt(0);
   const span = document.createElement('span');
-  Object.assign(span.style, {
-    fontWeight: formatPainterStyles.fontWeight,
-    fontStyle: formatPainterStyles.fontStyle,
-    textDecoration: formatPainterStyles.textDecoration,
-    color: formatPainterStyles.color,
-    backgroundColor: formatPainterStyles.backgroundColor,
-    fontSize: formatPainterStyles.fontSize
-  });
-  try { range.surroundContents(span); } catch (ex) { /* complex selection */ }
+  Object.assign(span.style, formatPainterStyles);
+  try { range.surroundContents(span); } catch (ex) {}
   cancelFormatPainter();
   scheduleAutoSave();
 }
@@ -545,8 +327,8 @@ function cancelFormatPainter() {
   formatPainterActive = false;
   formatPainterStyles = null;
   document.getElementById('toolbar-format-painter').classList.remove('active');
-  const editor = document.getElementById('note-content-editor');
-  if (editor) editor.style.cursor = '';
+  const ed = document.getElementById('note-content-editor');
+  if (ed) ed.style.cursor = '';
 }
 
 /* ==========================================
@@ -555,7 +337,6 @@ function cancelFormatPainter() {
 function toggleTodoList() {
   const sel = window.getSelection();
   if (!sel.rangeCount) return;
-
   const node = sel.anchorNode;
   const todoItem = (node.nodeType === 3 ? node.parentElement : node).closest('.todo-item');
 
@@ -565,10 +346,8 @@ function toggleTodoList() {
     p.textContent = text;
     todoItem.replaceWith(p);
     const r = document.createRange();
-    r.selectNodeContents(p);
-    r.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(r);
+    r.selectNodeContents(p); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
   } else {
     const div = document.createElement('div');
     div.className = 'todo-item';
@@ -582,8 +361,7 @@ function toggleTodoList() {
     const textSpan = div.querySelector('.todo-text');
     const r = document.createRange();
     r.selectNodeContents(textSpan);
-    sel.removeAllRanges();
-    sel.addRange(r);
+    sel.removeAllRanges(); sel.addRange(r);
   }
   scheduleAutoSave();
 }
@@ -595,7 +373,6 @@ function openTableCreator() {
   document.getElementById('table-creator-modal').style.display = '';
   updateTablePreview();
 }
-
 function closeTableCreator() {
   document.getElementById('table-creator-modal').style.display = 'none';
 }
@@ -603,16 +380,16 @@ function closeTableCreator() {
 function updateTablePreview() {
   const rows = clamp(parseInt(document.getElementById('table-rows-input').value) || 3, 1, 20);
   const cols = clamp(parseInt(document.getElementById('table-cols-input').value) || 3, 1, 10);
-  let html = '<table><thead><tr>';
-  for (let c = 0; c < cols; c++) html += '<th>Cột ' + (c + 1) + '</th>';
-  html += '</tr></thead><tbody>';
+  let h = '<table><thead><tr>';
+  for (let c = 0; c < cols; c++) h += '<th>Cột ' + (c + 1) + '</th>';
+  h += '</tr></thead><tbody>';
   for (let r = 0; r < rows - 1; r++) {
-    html += '<tr>';
-    for (let c = 0; c < cols; c++) html += '<td></td>';
-    html += '</tr>';
+    h += '<tr>';
+    for (let c = 0; c < cols; c++) h += '<td></td>';
+    h += '</tr>';
   }
-  html += '</tbody></table>';
-  document.getElementById('table-creator-preview').innerHTML = html;
+  h += '</tbody></table>';
+  document.getElementById('table-creator-preview').innerHTML = h;
 }
 
 function confirmInsertTable() {
@@ -624,72 +401,59 @@ function confirmInsertTable() {
 
 function insertTable(rows, cols) {
   const editor = document.getElementById('note-content-editor');
-  let html = '<div class="note-table-wrapper"><table style="width:100%;table-layout:fixed;border-collapse:collapse"><thead><tr>';
-  for (let c = 0; c < cols; c++) html += '<th contenteditable="true" style="min-width:60px">Tiêu đề</th>';
-  html += '</tr></thead><tbody>';
+  let h = '<div class="note-table-wrapper"><table style="width:100%;table-layout:fixed;border-collapse:collapse"><thead><tr>';
+  for (let c = 0; c < cols; c++) h += '<th contenteditable="true" style="min-width:60px">Tiêu đề</th>';
+  h += '</tr></thead><tbody>';
   for (let r = 0; r < rows - 1; r++) {
-    html += '<tr>';
-    for (let c = 0; c < cols; c++) html += '<td contenteditable="true"></td>';
-    html += '</tr>';
+    h += '<tr>';
+    for (let c = 0; c < cols; c++) h += '<td contenteditable="true"></td>';
+    h += '</tr>';
   }
-  html += '</tbody></table></div><p><br></p>';
+  h += '</tbody></table></div><p><br></p>';
 
   const sel = window.getSelection();
   if (sel.rangeCount) {
-    const range = sel.getRangeAt(0);
-    range.collapse(false);
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
+    const range = sel.getRangeAt(0); range.collapse(false);
+    const tmp = document.createElement('div'); tmp.innerHTML = h;
     const frag = document.createDocumentFragment();
-    while (temp.firstChild) frag.appendChild(temp.firstChild);
+    while (tmp.firstChild) frag.appendChild(tmp.firstChild);
     range.insertNode(frag);
   } else {
-    editor.insertAdjacentHTML('beforeend', html);
+    editor.insertAdjacentHTML('beforeend', h);
   }
   scheduleAutoSave();
 }
 
-function navigateTableCell(currentCell, reverse) {
-  const table = currentCell.closest('table');
+function navigateTableCell(cell, reverse) {
+  const table = cell.closest('table');
   if (!table) return;
   const cells = Array.from(table.querySelectorAll('td, th'));
-  let idx = cells.indexOf(currentCell);
-  idx = reverse ? idx - 1 : idx + 1;
+  let idx = cells.indexOf(cell) + (reverse ? -1 : 1);
   if (idx >= 0 && idx < cells.length) {
     cells[idx].focus();
     const sel = window.getSelection();
     const r = document.createRange();
-    r.selectNodeContents(cells[idx]);
-    r.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(r);
+    r.selectNodeContents(cells[idx]); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
   }
 }
 
 function initColumnResize(cell, startX) {
-  resizingCol = cell;
-  resizeStart = startX;
-  resizeInitial = cell.offsetWidth;
+  resizingCol = cell; resizeStart = startX; resizeInitial = cell.offsetWidth;
 }
-
 function initRowResize(cell, startY) {
-  resizingRow = cell.closest('tr');
-  resizeStart = startY;
-  resizeInitial = resizingRow.offsetHeight;
+  resizingRow = cell.closest('tr'); resizeStart = startY; resizeInitial = resizingRow.offsetHeight;
 }
 
 function showTableContextMenu(x, y) {
   const menu = document.getElementById('table-context-menu');
-  menu.style.display = 'block';
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
+  menu.style.display = 'block'; menu.style.left = x + 'px'; menu.style.top = y + 'px';
   requestAnimationFrame(() => {
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
     if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
   });
 }
-
 function hideTableContextMenu() {
   document.getElementById('table-context-menu').style.display = 'none';
 }
@@ -697,71 +461,37 @@ function hideTableContextMenu() {
 function handleTableContextAction(action) {
   hideTableContextMenu();
   if (!contextCell) return;
-
   const table = contextCell.closest('table');
   const tr = contextCell.closest('tr');
   if (!table || !tr) return;
-  const cellIndex = Array.from(tr.children).indexOf(contextCell);
+  const ci = Array.from(tr.children).indexOf(contextCell);
 
   switch (action) {
-    case 'insertRowAbove': {
-      const newTr = createEmptyRow(tr.children.length);
-      tr.parentNode.insertBefore(newTr, tr);
-      break;
-    }
-    case 'insertRowBelow': {
-      const newTr = createEmptyRow(tr.children.length);
-      tr.parentNode.insertBefore(newTr, tr.nextSibling);
-      break;
-    }
-    case 'insertColLeft': {
+    case 'insertRowAbove': tr.parentNode.insertBefore(createEmptyRow(tr.children.length), tr); break;
+    case 'insertRowBelow': tr.parentNode.insertBefore(createEmptyRow(tr.children.length), tr.nextSibling); break;
+    case 'insertColLeft':
       table.querySelectorAll('tr').forEach(row => {
-        const ref = row.children[cellIndex];
-        const isHeader = row.closest('thead');
-        const cell = document.createElement(isHeader ? 'th' : 'td');
-        cell.contentEditable = 'true';
-        row.insertBefore(cell, ref);
-      });
-      break;
-    }
-    case 'insertColRight': {
+        const c = document.createElement(row.closest('thead') ? 'th' : 'td');
+        c.contentEditable = 'true'; row.insertBefore(c, row.children[ci]);
+      }); break;
+    case 'insertColRight':
       table.querySelectorAll('tr').forEach(row => {
-        const ref = row.children[cellIndex];
-        const isHeader = row.closest('thead');
-        const cell = document.createElement(isHeader ? 'th' : 'td');
-        cell.contentEditable = 'true';
-        row.insertBefore(cell, ref ? ref.nextSibling : null);
-      });
+        const ref = row.children[ci];
+        const c = document.createElement(row.closest('thead') ? 'th' : 'td');
+        c.contentEditable = 'true'; row.insertBefore(c, ref ? ref.nextSibling : null);
+      }); break;
+    case 'deleteRow':
+      if (table.querySelectorAll('tr').length <= 1) { (table.closest('.note-table-wrapper') || table).remove(); }
+      else tr.remove();
       break;
-    }
-    case 'deleteRow': {
-      if (table.querySelectorAll('tr').length <= 1) {
-        (table.closest('.note-table-wrapper') || table).remove();
-        break;
-      }
-      tr.remove();
-      break;
-    }
     case 'deleteCol': {
-      const totalCols = table.querySelector('tr').children.length;
-      if (totalCols <= 1) {
-        (table.closest('.note-table-wrapper') || table).remove();
-        break;
-      }
-      table.querySelectorAll('tr').forEach(row => {
-        if (row.children[cellIndex]) row.children[cellIndex].remove();
-      });
+      const total = table.querySelector('tr').children.length;
+      if (total <= 1) { (table.closest('.note-table-wrapper') || table).remove(); }
+      else table.querySelectorAll('tr').forEach(row => { if (row.children[ci]) row.children[ci].remove(); });
       break;
     }
-    case 'clearCell': {
-      contextCell.innerHTML = '';
-      break;
-    }
-    case 'deleteTable': {
-      const wrapper = table.closest('.note-table-wrapper');
-      if (wrapper) wrapper.remove(); else table.remove();
-      break;
-    }
+    case 'clearCell': contextCell.innerHTML = ''; break;
+    case 'deleteTable': (table.closest('.note-table-wrapper') || table).remove(); break;
   }
   contextCell = null;
   scheduleAutoSave();
@@ -771,8 +501,7 @@ function createEmptyRow(colCount) {
   const tr = document.createElement('tr');
   for (let i = 0; i < colCount; i++) {
     const td = document.createElement('td');
-    td.contentEditable = 'true';
-    tr.appendChild(td);
+    td.contentEditable = 'true'; tr.appendChild(td);
   }
   return tr;
 }
@@ -785,7 +514,6 @@ function handleImageUpload(files) {
   const note = appData.notes.find(n => n.id === currentNoteId);
   if (!note) return;
   if (!note.images) note.images = [];
-
   Array.from(files).forEach(file => {
     if (!file.type.startsWith('image/')) return;
     compressImage(file, 800, 0.8, function (dataUrl) {
@@ -822,11 +550,10 @@ function renderNoteImages(images) {
   if (!container) return;
   container.innerHTML = '';
   (images || []).forEach((src, i) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'note-img-wrapper';
-    wrapper.dataset.index = i;
-    wrapper.innerHTML = '<img src="' + src + '" alt="Note image"><button class="remove-img"><i class="fas fa-times"></i></button>';
-    container.appendChild(wrapper);
+    const w = document.createElement('div');
+    w.className = 'note-img-wrapper'; w.dataset.index = i;
+    w.innerHTML = '<img src="' + src + '" alt=""><button class="remove-img"><i class="fas fa-times"></i></button>';
+    container.appendChild(w);
   });
 }
 
@@ -846,22 +573,18 @@ function openLightbox(index) {
   if (!currentNoteId) return;
   const note = appData.notes.find(n => n.id === currentNoteId);
   if (!note || !note.images || !note.images[index]) return;
-  currentLightboxIndex = index;
-  lightboxZoom = 1;
+  currentLightboxIndex = index; lightboxZoom = 1;
   document.getElementById('lightbox-image').src = note.images[index];
   document.getElementById('note-lightbox').style.display = '';
   applyLightboxZoom();
 }
-
 function closeLightbox() {
   document.getElementById('note-lightbox').style.display = 'none';
   currentLightboxIndex = -1;
 }
-
 function applyLightboxZoom() {
   document.getElementById('lightbox-image').style.transform = 'scale(' + lightboxZoom + ')';
 }
-
 function deleteLightboxImage() {
   if (currentLightboxIndex < 0 || !currentNoteId) return;
   const note = appData.notes.find(n => n.id === currentNoteId);
@@ -876,15 +599,9 @@ function deleteLightboxImage() {
    NOTE CRUD
    ========================================== */
 function createNewNote() {
-  if (splitActive) deactivateSplitView();
-
   const note = {
-    id: 'note_' + Date.now(),
-    title: '',
-    content: '',
-    color: '#1a1a2e',
-    pinned: false,
-    images: [],
+    id: 'note_' + Date.now(), title: '', content: '',
+    color: '#1a1a2e', pinned: false, images: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -895,18 +612,12 @@ function createNewNote() {
 function openNote(id) {
   const note = appData.notes.find(n => n.id === id);
   if (!note) return;
-
-  if (splitActive) deactivateSplitView();
-
   currentNoteId = id;
   document.getElementById('note-title-input').value = note.title || '';
   document.getElementById('note-content-editor').innerHTML = cleanTableHtml(note.content) || '';
   document.getElementById('note-color-input').value = note.color || '#1a1a2e';
   applyEditorColor(note.color || '#1a1a2e');
-
-  const pinBtn = document.getElementById('editor-pin-btn');
-  pinBtn.classList.toggle('pinned', !!note.pinned);
-
+  document.getElementById('editor-pin-btn').classList.toggle('pinned', !!note.pinned);
   renderNoteImages(note.images);
   document.getElementById('note-editor').style.display = '';
 }
@@ -916,7 +627,6 @@ function closeEditor() {
   document.getElementById('note-editor').style.display = 'none';
   currentNoteId = null;
   renderNotesList();
-  if (splitActive) populateSplitSelects();
 }
 
 function saveCurrentNote() {
@@ -949,15 +659,13 @@ function deleteNote(id) {
     currentNoteId = null;
   }
   renderNotesList();
-  if (splitActive) populateSplitSelects();
 }
 
 function togglePin() {
   if (!currentNoteId) return;
   togglePinById(currentNoteId);
-  const pinBtn = document.getElementById('editor-pin-btn');
   const note = appData.notes.find(n => n.id === currentNoteId);
-  pinBtn.classList.toggle('pinned', note && note.pinned);
+  document.getElementById('editor-pin-btn').classList.toggle('pinned', note && note.pinned);
 }
 
 function togglePinById(id) {
@@ -977,13 +685,8 @@ function applyEditorColor(color) {
   if (!editor) return;
   const isDark = DARK_COLORS[color] || isColorDark(color);
   editor.style.background = color;
-  if (isDark) {
-    editor.style.color = '#e0e0e0';
-    document.getElementById('note-title-input').style.color = '#ffffff';
-  } else {
-    editor.style.color = '#1a1a2e';
-    document.getElementById('note-title-input').style.color = '#1a1a2e';
-  }
+  document.getElementById('note-title-input').style.color = isDark ? '#ffffff' : '#1a1a2e';
+  editor.style.color = isDark ? '#e0e0e0' : '#1a1a2e';
 }
 
 function isColorDark(hex) {
@@ -1000,13 +703,10 @@ function isColorDark(hex) {
 function switchView(view) {
   currentView = view;
   localStorage.setItem('notesView', view);
-  const container = document.getElementById('notes-container');
-  container.classList.toggle('list-view', view === 'list');
-
+  document.getElementById('notes-container').classList.toggle('list-view', view === 'list');
   document.querySelectorAll('.view-btn[data-view]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
-  document.getElementById('split-view-btn').classList.remove('active');
 }
 
 function renderNotesList() {
@@ -1022,7 +722,6 @@ function renderNotesList() {
       stripHtml(n.content || '').toLowerCase().includes(searchQuery)
     );
   }
-
   notes.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return new Date(b.updatedAt) - new Date(a.updatedAt);
@@ -1040,12 +739,11 @@ function renderNotesList() {
   grid.innerHTML = notes.map(note => {
     const preview = stripHtml(note.content || '').substring(0, 120);
     const date = formatRelativeDate(note.updatedAt);
-    const imgThumb = (note.images && note.images.length)
-      ? '<img class="note-card-image" src="' + note.images[0] + '" alt="">'
-      : '';
+    const img = (note.images && note.images.length)
+      ? '<img class="note-card-image" src="' + note.images[0] + '" alt="">' : '';
     return `
       <div class="note-card${note.pinned ? ' pinned' : ''}" data-id="${note.id}" style="border-left:4px solid ${note.color || '#1a1a2e'}">
-        ${imgThumb}
+        ${img}
         <div class="note-card-body">
           <div class="note-card-title">${escapeHtml(note.title || 'Không tiêu đề')}</div>
           <div class="note-card-preview">${escapeHtml(preview) || 'Trống'}</div>
@@ -1064,6 +762,12 @@ function renderNotesList() {
 /* ==========================================
    UTILITIES
    ========================================== */
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
 function stripHtml(html) {
   const d = document.createElement('div');
   d.innerHTML = html;
