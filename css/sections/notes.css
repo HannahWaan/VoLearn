@@ -2,6 +2,17 @@
    NOTES SECTION – VoLearn v2.5.2
    ============================================ */
 
+#notes-section {
+  display: none;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#notes-section.active {
+  display: block;
+}
+
 /* ---------- Header ---------- */
 .notes-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
 .notes-header-left{display:flex;align-items:center;gap:12px}
