@@ -624,57 +624,395 @@
 }
 
 /* ========================================
+   TO-DO LIST
+   ======================================== */
+.todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    line-height: 1.6;
+}
+
+.todo-item.checked .todo-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.todo-checkbox {
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    user-select: none;
+}
+
+.todo-checkbox:hover {
+    color: var(--primary-dark);
+}
+
+.todo-text {
+    flex: 1;
+    outline: none;
+    min-width: 0;
+}
+
+/* ========================================
+   NOTE TABLE
+   ======================================== */
+.note-table-wrapper {
+    margin: 16px 0;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.note-table-wrapper .table-actions {
+    display: flex;
+    gap: 4px;
+    padding: 6px 8px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.table-act-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+}
+
+.table-act-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.table-act-btn.danger:hover {
+    background: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+.note-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.note-table-wrapper th,
+.note-table-wrapper td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 0.9rem;
+    min-width: 60px;
+    outline: none;
+    vertical-align: top;
+}
+
+.note-table-wrapper th {
+    background: var(--bg-tertiary);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.note-table-wrapper td {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.note-table-wrapper td:focus,
+.note-table-wrapper th:focus {
+    background: var(--primary-light);
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+}
+
+/* ========================================
+   TABLE CREATOR MODAL
+   ======================================== */
+.note-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-modal {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.note-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.note-modal-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.note-modal-header h4 i {
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+.note-modal-close {
+    width: 32px; height: 32px;
+    border: none; border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+
+.note-modal-close:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+.note-modal-body {
+    padding: 20px;
+}
+
+.table-size-inputs {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.table-size-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.table-size-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.table-size-group input {
+    width: 80px;
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    text-align: center;
+    font-weight: 700;
+}
+
+.table-size-group input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.table-size-x {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding-bottom: 8px;
+}
+
+.table-preview-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.table-preview {
+    max-height: 160px;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.table-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.table-preview th,
+.table-preview td {
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    text-align: center;
+}
+
+.table-preview th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+}
+
+.note-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.note-modal-footer .btn-secondary {
+    padding: 8px 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.note-modal-footer .btn-primary {
+    padding: 8px 20px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* ========================================
+   LIGHTBOX
+   ======================================== */
+.note-lightbox {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+}
+
+.lightbox-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.lightbox-content img {
+    max-width: 90vw;
+    max-height: 75vh;
+    object-fit: contain;
+    border-radius: var(--border-radius);
+    transition: transform 0.2s ease;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-controls {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 14px;
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-btn {
+    width: 40px; height: 40px;
+    border: none; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.lightbox-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-btn.danger:hover {
+    background: var(--danger-color);
+}
+
+/* ========================================
+   HIGHLIGHT in editor
+   ======================================== */
+.note-content-editor mark,
+.note-content-editor span[style*="background"] {
+    border-radius: 3px;
+    padding: 1px 3px;
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 768px) {
-    .notes-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
+    .note-toolbar {
+        gap: 2px;
+        padding: 6px;
     }
 
-    .notes-header-right {
-        flex-direction: column;
-        gap: 8px;
+    .toolbar-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
     }
 
-    .notes-search input {
-        width: 100%;
+    .toolbar-divider {
+        height: 20px;
+        margin: 0 2px;
     }
 
-    .btn-create-note {
-        width: 100%;
-        justify-content: center;
+    .note-table-wrapper .table-actions {
+        gap: 2px;
+        padding: 4px 6px;
     }
 
-    .notes-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 10px;
+    .table-act-btn {
+        padding: 3px 6px;
+        font-size: 10px;
     }
 
-    .note-editor-body {
-        padding: 16px;
+    .note-modal {
+        width: 95vw;
     }
 
-    .note-title-input {
-        font-size: 1.3rem;
-    }
-
-    .note-editor-header {
-        padding: 10px 14px;
-    }
-
-    .note-editor-actions {
-        gap: 4px;
-    }
-
-    .btn-editor-action {
-        width: 32px;
-        height: 32px;
-    }
-
-    .note-img-wrapper img {
-        max-width: 140px;
-        max-height: 140px;
+    .lightbox-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
     }
 }
