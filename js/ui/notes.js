@@ -1,5 +1,5 @@
 /* ===== NOTES MODULE ===== */
-/* VoLearn v2.4.0 - Ghi chú nâng cao */
+/* VoLearn v2.5.0 - Ghi chú - Table giống Word */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
@@ -15,6 +15,11 @@ let eventsBound = false;
 let lightboxCurrentSrc = null;
 let lightboxZoom = 1;
 let highlightColor = '#fff176';
+
+/* Table state */
+let ctxTargetCell = null;   // cell (td/th) that was right-clicked
+let resizingCol = null;     // { table, colIndex, startX, startWidths[] }
+let resizingRow = null;     // { table, rowIndex, startY, startHeight }
 
 /* ===== COLORS ===== */
 const NOTE_COLORS_DARK = {
@@ -37,7 +42,11 @@ export function initNotes() {
 /* ===== BIND EVENTS ===== */
 function bindNotesEvents() {
 
+    /* ---------- CLICK ---------- */
     document.addEventListener('click', (e) => {
+        // Hide context menu on any click outside it
+        hideTableContextMenu();
+
         // --- Header / Editor buttons ---
         if (e.target.closest('#btn-create-note')) return createNewNote();
         if (e.target.closest('#btn-editor-back')) return closeEditor();
@@ -46,18 +55,10 @@ function bindNotesEvents() {
         if (e.target.closest('#btn-note-image')) return document.getElementById('note-image-input')?.click();
 
         // --- Undo / Redo ---
-        if (e.target.closest('#btn-undo')) {
-            document.execCommand('undo', false, null);
-            scheduleAutoSave();
-            return;
-        }
-        if (e.target.closest('#btn-redo')) {
-            document.execCommand('redo', false, null);
-            scheduleAutoSave();
-            return;
-        }
+        if (e.target.closest('#btn-undo')) { document.execCommand('undo'); scheduleAutoSave(); return; }
+        if (e.target.closest('#btn-redo')) { document.execCommand('redo'); scheduleAutoSave(); return; }
 
-        // --- Highlight with custom color ---
+        // --- Highlight ---
         if (e.target.closest('#btn-highlight')) {
             document.execCommand('hiliteColor', false, highlightColor);
             document.getElementById('note-content-editor')?.focus();
@@ -72,7 +73,7 @@ function bindNotesEvents() {
             return;
         }
 
-        // --- Note card ---
+        // --- Note card actions ---
         if (e.target.closest('.note-card-pin')) {
             e.stopPropagation();
             const card = e.target.closest('.note-card');
@@ -99,16 +100,16 @@ function bindNotesEvents() {
             return;
         }
 
-        // --- Image click → lightbox ---
+        // --- Image → lightbox ---
         if (e.target.closest('.note-img-wrapper img')) {
             const img = e.target.closest('.note-img-wrapper img');
             if (img) openLightbox(img.src, img.closest('.note-img-wrapper'));
             return;
         }
 
-        // --- Toolbar: standard execCommand (exclude special buttons) ---
-        const specialBtnIds = ['#btn-todo-list', '#btn-insert-table', '#btn-remove-highlight', '#btn-highlight', '#btn-undo', '#btn-redo'];
-        const isSpecial = specialBtnIds.some(sel => e.target.closest(sel));
+        // --- Toolbar: standard execCommand ---
+        const specialIds = ['#btn-todo-list', '#btn-insert-table', '#btn-remove-highlight', '#btn-highlight', '#btn-undo', '#btn-redo'];
+        const isSpecial = specialIds.some(sel => e.target.closest(sel));
         if (e.target.closest('.toolbar-btn') && !isSpecial) {
             const btn = e.target.closest('.toolbar-btn');
             const cmd = btn.dataset.cmd;
@@ -130,28 +131,16 @@ function bindNotesEvents() {
         }
 
         // --- Toolbar: To-do list ---
-        if (e.target.closest('#btn-todo-list')) {
-            insertTodoItem();
-            return;
-        }
+        if (e.target.closest('#btn-todo-list')) { insertTodoItem(); return; }
 
         // --- Toolbar: Insert table ---
-        if (e.target.closest('#btn-insert-table')) {
-            openTableCreator();
-            return;
-        }
+        if (e.target.closest('#btn-insert-table')) { openTableCreator(); return; }
 
         // --- Table creator modal ---
-        if (e.target.closest('#btn-close-table-modal') || e.target.closest('#btn-cancel-table')) {
-            closeTableCreator();
-            return;
-        }
-        if (e.target.closest('#btn-confirm-table')) {
-            confirmInsertTable();
-            return;
-        }
+        if (e.target.closest('#btn-close-table-modal') || e.target.closest('#btn-cancel-table')) { closeTableCreator(); return; }
+        if (e.target.closest('#btn-confirm-table')) { confirmInsertTable(); return; }
 
-        // --- Todo checkbox click ---
+        // --- Todo checkbox ---
         if (e.target.closest('.todo-checkbox')) {
             const cb = e.target.closest('.todo-checkbox');
             const item = cb.closest('.todo-item');
@@ -165,15 +154,12 @@ function bindNotesEvents() {
             return;
         }
 
-        // --- Table context buttons ---
-        if (e.target.closest('.table-add-row')) { tableAddRow(e.target.closest('.note-table-wrapper')); return; }
-        if (e.target.closest('.table-add-col')) { tableAddCol(e.target.closest('.note-table-wrapper')); return; }
-        if (e.target.closest('.table-del-row')) { tableDelRow(e.target.closest('.note-table-wrapper')); return; }
-        if (e.target.closest('.table-del-col')) { tableDelCol(e.target.closest('.note-table-wrapper')); return; }
-        if (e.target.closest('.table-delete')) { e.target.closest('.note-table-wrapper')?.remove(); scheduleAutoSave(); return; }
-
-        // --- Table resize handle double-click reset ---
-        // (handled in mousedown below)
+        // --- Context menu item ---
+        if (e.target.closest('.ctx-item')) {
+            const action = e.target.closest('.ctx-item').dataset.action;
+            if (action) handleTableContextAction(action);
+            return;
+        }
 
         // --- Lightbox ---
         if (e.target.closest('#lightbox-zoom-in')) { lightboxZoomIn(); return; }
@@ -183,36 +169,42 @@ function bindNotesEvents() {
         if (e.target.closest('#lightbox-close') || e.target.closest('.lightbox-backdrop')) { closeLightbox(); return; }
     });
 
-    // Search
+    /* ---------- CONTEXT MENU (right click) on table cells ---------- */
+    document.addEventListener('contextmenu', (e) => {
+        const cell = e.target.closest('.note-table-wrapper td, .note-table-wrapper th');
+        if (!cell) return;
+        // Only inside note editor
+        if (!cell.closest('#note-content-editor')) return;
+
+        e.preventDefault();
+        ctxTargetCell = cell;
+        showTableContextMenu(e.clientX, e.clientY);
+    });
+
+    /* ---------- INPUT ---------- */
     document.addEventListener('input', (e) => {
         if (e.target.id === 'notes-search-input') {
             searchQuery = e.target.value.trim().toLowerCase();
             renderNotesList();
         }
-        // Table creator preview
         if (e.target.id === 'table-rows-input' || e.target.id === 'table-cols-input') {
             updateTablePreview();
         }
-        // Color picker (note background)
         if (e.target.id === 'note-color-picker') {
             applyEditorColor(e.target.value);
             scheduleAutoSave();
         }
-        // Highlight color picker
         if (e.target.id === 'highlight-color-picker') {
             highlightColor = e.target.value;
             updateHighlightBtnIndicator();
         }
-    });
-
-    // Content change → auto-save
-    document.addEventListener('input', (e) => {
+        // Auto-save on content change
         if (e.target.id === 'note-title-input' || e.target.id === 'note-content-editor' || e.target.closest('#note-content-editor')) {
             scheduleAutoSave();
         }
     });
 
-    // Image input
+    /* ---------- IMAGE INPUT ---------- */
     document.addEventListener('change', (e) => {
         if (e.target.id === 'note-image-input') {
             handleImageUpload(e.target.files);
@@ -220,7 +212,7 @@ function bindNotesEvents() {
         }
     });
 
-    // Paste images
+    /* ---------- PASTE ---------- */
     document.addEventListener('paste', (e) => {
         if (e.target.id === 'note-content-editor' || e.target.closest('#note-content-editor')) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -234,91 +226,283 @@ function bindNotesEvents() {
         }
     });
 
-    // Keyboard shortcuts
+    /* ---------- KEYDOWN ---------- */
     document.addEventListener('keydown', (e) => {
-        // ESC to close lightbox / table modal
         if (e.key === 'Escape') {
+            const ctxMenu = document.getElementById('table-context-menu');
+            if (ctxMenu && ctxMenu.style.display !== 'none') { hideTableContextMenu(); return; }
             const lb = document.getElementById('note-lightbox');
             if (lb && lb.style.display !== 'none') { closeLightbox(); return; }
             const tm = document.getElementById('table-creator-modal');
             if (tm && tm.style.display !== 'none') { closeTableCreator(); return; }
         }
-    });
 
-    // --- Table column resize via drag on <th> right edge ---
-    document.addEventListener('mousedown', (e) => {
-        const th = e.target.closest('.note-table-wrapper th');
-        if (!th) return;
-        const rect = th.getBoundingClientRect();
-        // Only trigger when clicking within 6px of the right edge
-        if (e.clientX < rect.right - 6) return;
+        // Tab inside table cell → move to next cell
+        if (e.key === 'Tab') {
+            const cell = e.target.closest?.('.note-table-wrapper td, .note-table-wrapper th');
+            if (cell && cell.closest('#note-content-editor')) {
+                e.preventDefault();
+                const row = cell.parentElement;
+                const table = cell.closest('table');
+                if (!table) return;
 
-        e.preventDefault();
-        const table = th.closest('table');
-        if (!table) return;
-
-        const startX = e.clientX;
-        const startWidth = th.offsetWidth;
-        const colIndex = th.cellIndex;
-
-        // Temporarily set table to fixed layout for manual column widths
-        table.style.tableLayout = 'fixed';
-        // Initialize all column widths if not set
-        const allThs = table.rows[0].cells;
-        for (let i = 0; i < allThs.length; i++) {
-            if (!allThs[i].style.width) {
-                allThs[i].style.width = allThs[i].offsetWidth + 'px';
+                if (e.shiftKey) {
+                    // Previous cell
+                    if (cell.previousElementSibling) {
+                        cell.previousElementSibling.focus();
+                    } else if (row.previousElementSibling) {
+                        const prevRow = row.previousElementSibling;
+                        const lastCell = prevRow.cells[prevRow.cells.length - 1];
+                        if (lastCell) lastCell.focus();
+                    }
+                } else {
+                    // Next cell
+                    if (cell.nextElementSibling) {
+                        cell.nextElementSibling.focus();
+                    } else if (row.nextElementSibling) {
+                        const nextRow = row.nextElementSibling;
+                        const firstCell = nextRow.cells[0];
+                        if (firstCell) firstCell.focus();
+                    } else {
+                        // Last cell of last row → add new row
+                        const cols = table.rows[0]?.cells.length || 1;
+                        const newRow = table.insertRow();
+                        for (let c = 0; c < cols; c++) {
+                            const td = newRow.insertCell();
+                            td.contentEditable = 'true';
+                        }
+                        newRow.cells[0]?.focus();
+                        scheduleAutoSave();
+                    }
+                }
             }
         }
-
-        const onMouseMove = (ev) => {
-            const diff = ev.clientX - startX;
-            const newWidth = Math.max(40, startWidth + diff);
-            th.style.width = newWidth + 'px';
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            scheduleAutoSave();
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
     });
 
-    // --- Table overall resize via wrapper bottom-right corner drag ---
+    /* ---------- MOUSEDOWN: column & row resize ---------- */
     document.addEventListener('mousedown', (e) => {
-        const handle = e.target.closest('.table-resize-handle');
-        if (!handle) return;
-        e.preventDefault();
+        // Only in note editor tables
+        const cell = e.target.closest?.('#note-content-editor .note-table-wrapper td, #note-content-editor .note-table-wrapper th');
+        if (!cell) return;
 
-        const wrapper = handle.closest('.note-table-wrapper');
-        if (!wrapper) return;
-        const table = wrapper.querySelector('table');
+        const rect = cell.getBoundingClientRect();
+        const table = cell.closest('table');
         if (!table) return;
 
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startW = table.offsetWidth;
-        const startH = table.offsetHeight;
+        const nearRight = e.clientX >= rect.right - 5;
+        const nearBottom = e.clientY >= rect.bottom - 5;
 
-        const onMouseMove = (ev) => {
-            const newW = Math.max(150, startW + (ev.clientX - startX));
-            const newH = Math.max(60, startH + (ev.clientY - startY));
-            table.style.width = newW + 'px';
-            table.style.height = newH + 'px';
-        };
+        // Column resize: near right border of any cell
+        if (nearRight) {
+            e.preventDefault();
+            initColumnResize(e, cell, table);
+            return;
+        }
 
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            scheduleAutoSave();
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        // Row resize: near bottom border of any cell
+        if (nearBottom) {
+            e.preventDefault();
+            initRowResize(e, cell, table);
+            return;
+        }
     });
+}
+
+/* ========================================
+   TABLE COLUMN / ROW RESIZE
+   ======================================== */
+
+function initColumnResize(e, cell, table) {
+    // Ensure table-layout fixed and all cols have explicit widths
+    table.style.tableLayout = 'fixed';
+    const headerCells = table.rows[0]?.cells;
+    if (!headerCells) return;
+
+    const widths = [];
+    for (let i = 0; i < headerCells.length; i++) {
+        widths.push(headerCells[i].offsetWidth);
+    }
+    // Set explicit widths
+    for (let i = 0; i < headerCells.length; i++) {
+        headerCells[i].style.width = widths[i] + 'px';
+    }
+
+    const colIndex = cell.cellIndex;
+    const startX = e.clientX;
+    const startWidth = widths[colIndex];
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+        const diff = ev.clientX - startX;
+        const newW = Math.max(30, startWidth + diff);
+        headerCells[colIndex].style.width = newW + 'px';
+    };
+
+    const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        scheduleAutoSave();
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+function initRowResize(e, cell, table) {
+    const row = cell.parentElement;
+    const rowIndex = row.rowIndex;
+    const startY = e.clientY;
+    const startHeight = row.offsetHeight;
+
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+        const diff = ev.clientY - startY;
+        const newH = Math.max(24, startHeight + diff);
+        row.style.height = newH + 'px';
+    };
+
+    const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        scheduleAutoSave();
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
+/* ========================================
+   TABLE CONTEXT MENU (Word-like right click)
+   ======================================== */
+
+function showTableContextMenu(x, y) {
+    const menu = document.getElementById('table-context-menu');
+    if (!menu) return;
+
+    menu.style.display = 'block';
+
+    // Position: ensure menu stays within viewport
+    const menuW = 220;
+    const menuH = menu.offsetHeight || 300;
+    const maxX = window.innerWidth - menuW - 10;
+    const maxY = window.innerHeight - menuH - 10;
+
+    menu.style.left = Math.min(x, maxX) + 'px';
+    menu.style.top = Math.min(y, maxY) + 'px';
+}
+
+function hideTableContextMenu() {
+    const menu = document.getElementById('table-context-menu');
+    if (menu) menu.style.display = 'none';
+}
+
+function handleTableContextAction(action) {
+    hideTableContextMenu();
+    if (!ctxTargetCell) return;
+
+    const table = ctxTargetCell.closest('table');
+    const wrapper = ctxTargetCell.closest('.note-table-wrapper');
+    if (!table) return;
+
+    const rowIndex = ctxTargetCell.parentElement.rowIndex;
+    const colIndex = ctxTargetCell.cellIndex;
+    const totalRows = table.rows.length;
+    const totalCols = table.rows[0]?.cells.length || 0;
+
+    switch (action) {
+        case 'insert-row-above':
+            insertRowAt(table, rowIndex, totalCols);
+            break;
+        case 'insert-row-below':
+            insertRowAt(table, rowIndex + 1, totalCols);
+            break;
+        case 'insert-col-left':
+            insertColAt(table, colIndex);
+            break;
+        case 'insert-col-right':
+            insertColAt(table, colIndex + 1);
+            break;
+        case 'delete-row':
+            if (totalRows <= 1) {
+                // Only one row → delete entire table
+                if (wrapper) wrapper.remove();
+            } else {
+                table.deleteRow(rowIndex);
+            }
+            break;
+        case 'delete-col':
+            if (totalCols <= 1) {
+                if (wrapper) wrapper.remove();
+            } else {
+                for (let r = 0; r < table.rows.length; r++) {
+                    if (colIndex < table.rows[r].cells.length) {
+                        table.rows[r].deleteCell(colIndex);
+                    }
+                }
+                // Update header widths
+                recalcColWidths(table);
+            }
+            break;
+        case 'clear-cell':
+            ctxTargetCell.innerHTML = '';
+            break;
+        case 'delete-table':
+            if (wrapper) wrapper.remove();
+            break;
+    }
+
+    ctxTargetCell = null;
+    scheduleAutoSave();
+}
+
+function insertRowAt(table, atIndex, totalCols) {
+    const newRow = table.insertRow(atIndex);
+    for (let c = 0; c < totalCols; c++) {
+        const cell = newRow.insertCell();
+        cell.contentEditable = 'true';
+    }
+}
+
+function insertColAt(table, atIndex) {
+    for (let r = 0; r < table.rows.length; r++) {
+        const row = table.rows[r];
+        const isHeader = (r === 0);
+        const cell = document.createElement(isHeader ? 'th' : 'td');
+        cell.contentEditable = 'true';
+        if (isHeader) cell.textContent = 'Mới';
+
+        if (atIndex >= row.cells.length) {
+            row.appendChild(cell);
+        } else {
+            row.insertBefore(cell, row.cells[atIndex]);
+        }
+    }
+    recalcColWidths(table);
+}
+
+function recalcColWidths(table) {
+    // After adding/removing columns, reset to auto widths then re-fix
+    const headerCells = table.rows[0]?.cells;
+    if (!headerCells) return;
+    // Temporarily auto
+    table.style.tableLayout = 'auto';
+    for (let i = 0; i < headerCells.length; i++) {
+        headerCells[i].style.width = '';
+    }
+    // Force reflow, then fix
+    void table.offsetWidth;
+    table.style.tableLayout = 'fixed';
+    for (let i = 0; i < headerCells.length; i++) {
+        headerCells[i].style.width = headerCells[i].offsetWidth + 'px';
+    }
 }
 
 /* ===== HIGHLIGHT INDICATOR ===== */
@@ -467,16 +651,14 @@ function togglePinCurrentNote() {
 function insertTodoItem() {
     const editor = document.getElementById('note-content-editor');
     if (!editor) return;
-
     const todoHtml = `<div class="todo-item"><span class="todo-checkbox" contenteditable="false"><i class="far fa-square"></i></span><span class="todo-text" contenteditable="true">Việc cần làm</span></div>`;
-
     editor.focus();
     document.execCommand('insertHTML', false, todoHtml);
     scheduleAutoSave();
 }
 
 /* ========================================
-   TABLE
+   TABLE - CREATE
    ======================================== */
 
 function openTableCreator() {
@@ -523,84 +705,25 @@ function insertTable(rows, cols) {
     const editor = document.getElementById('note-content-editor');
     if (!editor) return;
 
-    let tableHtml = '<div class="note-table-wrapper" contenteditable="false">';
-    tableHtml += '<div class="table-actions">';
-    tableHtml += '<button class="table-act-btn table-add-row" title="Thêm dòng"><i class="fas fa-plus"></i> Dòng</button>';
-    tableHtml += '<button class="table-act-btn table-add-col" title="Thêm cột"><i class="fas fa-plus"></i> Cột</button>';
-    tableHtml += '<button class="table-act-btn table-del-row" title="Xóa dòng cuối"><i class="fas fa-minus"></i> Dòng</button>';
-    tableHtml += '<button class="table-act-btn table-del-col" title="Xóa cột cuối"><i class="fas fa-minus"></i> Cột</button>';
-    tableHtml += '<button class="table-act-btn danger table-delete" title="Xóa bảng"><i class="fas fa-trash"></i></button>';
-    tableHtml += '</div>';
-    tableHtml += '<div class="table-scroll-container">';
-    tableHtml += '<table style="table-layout:fixed;">';
-    const defaultColWidth = Math.max(80, Math.floor(700 / cols));
+    const defaultColWidth = Math.max(60, Math.floor(700 / cols));
+
+    let html = '<div class="note-table-wrapper">';
+    html += '<table style="table-layout:fixed;">';
     for (let r = 0; r < rows; r++) {
-        tableHtml += '<tr>';
+        html += '<tr>';
         for (let c = 0; c < cols; c++) {
             if (r === 0) {
-                tableHtml += `<th contenteditable="true" style="width:${defaultColWidth}px;">Tiêu đề</th>`;
+                html += `<th contenteditable="true" style="width:${defaultColWidth}px;">Tiêu đề</th>`;
             } else {
-                tableHtml += `<td contenteditable="true"></td>`;
+                html += '<td contenteditable="true"></td>';
             }
         }
-        tableHtml += '</tr>';
+        html += '</tr>';
     }
-    tableHtml += '</table>';
-    tableHtml += '</div>'; // end table-scroll-container
-    tableHtml += '<div class="table-resize-handle" title="Kéo để thay đổi kích thước bảng"><i class="fas fa-expand-alt"></i></div>';
-    tableHtml += '</div><p><br></p>';
+    html += '</table></div><p><br></p>';
 
     editor.focus();
-    document.execCommand('insertHTML', false, tableHtml);
-    scheduleAutoSave();
-}
-
-function tableAddRow(wrapper) {
-    if (!wrapper) return;
-    const table = wrapper.querySelector('table');
-    if (!table) return;
-    const cols = table.rows[0]?.cells.length || 1;
-    const row = table.insertRow();
-    for (let c = 0; c < cols; c++) {
-        const cell = row.insertCell();
-        cell.contentEditable = 'true';
-    }
-    scheduleAutoSave();
-}
-
-function tableAddCol(wrapper) {
-    if (!wrapper) return;
-    const table = wrapper.querySelector('table');
-    if (!table) return;
-    for (let r = 0; r < table.rows.length; r++) {
-        const cell = r === 0 ? document.createElement('th') : document.createElement('td');
-        cell.contentEditable = 'true';
-        if (r === 0) {
-            cell.textContent = 'Mới';
-            cell.style.width = '80px';
-        }
-        table.rows[r].appendChild(cell);
-    }
-    scheduleAutoSave();
-}
-
-function tableDelRow(wrapper) {
-    if (!wrapper) return;
-    const table = wrapper.querySelector('table');
-    if (!table || table.rows.length <= 1) return;
-    table.deleteRow(table.rows.length - 1);
-    scheduleAutoSave();
-}
-
-function tableDelCol(wrapper) {
-    if (!wrapper) return;
-    const table = wrapper.querySelector('table');
-    if (!table) return;
-    const cols = table.rows[0]?.cells.length || 0;
-    if (cols <= 1) return;
-    for (let r = 0; r < table.rows.length; r++) {
-        table.rows[r].deleteCell(table.rows[r].cells.length - 1);
-    }
+    document.execCommand('insertHTML', false, html);
     scheduleAutoSave();
 }
 
@@ -660,7 +783,7 @@ function renderNoteImages(images, container) {
 }
 
 /* ========================================
-   LIGHTBOX (zoom in/out + delete)
+   LIGHTBOX
    ======================================== */
 
 let lightboxWrapperRef = null;
