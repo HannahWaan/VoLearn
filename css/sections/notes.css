@@ -1,5 +1,5 @@
 /* ========================================
-   VoLearn - Notes Section
+   VoLearn - Notes Section v2.5.0
    ======================================== */
 
 /* ===== HEADER ===== */
@@ -268,7 +268,7 @@
     color: var(--danger-color);
 }
 
-/* List view adjustments */
+/* List view */
 .notes-list .note-card {
     flex-direction: row;
     align-items: center;
@@ -330,14 +330,11 @@
 }
 
 /* ========================================
-   NOTE EDITOR (full overlay)
+   NOTE EDITOR
    ======================================== */
 .note-editor {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     z-index: 1000;
     background: var(--bg-primary);
     display: flex;
@@ -393,14 +390,8 @@
     appearance: none;
 }
 
-.note-color-picker::-webkit-color-swatch-wrapper {
-    padding: 2px;
-}
-
-.note-color-picker::-webkit-color-swatch {
-    border: none;
-    border-radius: 50%;
-}
+.note-color-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+.note-color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
 
 .btn-editor-action {
     width: 36px;
@@ -462,9 +453,7 @@
     box-sizing: border-box;
 }
 
-.note-title-input::placeholder {
-    color: var(--text-muted);
-}
+.note-title-input::placeholder { color: var(--text-muted); }
 
 /* ===== TOOLBAR ===== */
 .note-toolbar {
@@ -502,11 +491,8 @@
     color: var(--primary-color);
 }
 
-.toolbar-btn:active {
-    background: var(--primary-light);
-}
+.toolbar-btn:active { background: var(--primary-light); }
 
-/* Heading text buttons (H1 H2 H3) */
 .toolbar-btn.toolbar-heading {
     font-weight: 800;
     font-size: 13px;
@@ -526,7 +512,6 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    position: relative;
 }
 
 .highlight-color-input {
@@ -539,19 +524,11 @@
     background: none;
     -webkit-appearance: none;
     appearance: none;
-    vertical-align: middle;
 }
 
-.highlight-color-input::-webkit-color-swatch-wrapper {
-    padding: 1px;
-}
+.highlight-color-input::-webkit-color-swatch-wrapper { padding: 1px; }
+.highlight-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
 
-.highlight-color-input::-webkit-color-swatch {
-    border: none;
-    border-radius: 3px;
-}
-
-/* Highlight button bottom indicator */
 #btn-highlight {
     position: relative;
     border-bottom: 3px solid #fff176;
@@ -610,9 +587,7 @@
     margin: 8px 0;
 }
 
-.note-content-editor li {
-    margin-bottom: 4px;
-}
+.note-content-editor li { margin-bottom: 4px; }
 
 /* ===== NOTE IMAGES ===== */
 .note-images {
@@ -656,9 +631,7 @@
     transition: opacity 0.2s;
 }
 
-.note-img-wrapper:hover .note-img-remove {
-    opacity: 1;
-}
+.note-img-wrapper:hover .note-img-remove { opacity: 1; }
 
 /* ===== SAVE STATUS ===== */
 .note-save-status {
@@ -673,15 +646,8 @@
     transition: all 0.3s;
 }
 
-.note-save-status.saved {
-    background: var(--success-color);
-    color: white;
-}
-
-.note-save-status.saving {
-    background: var(--warning-color);
-    color: white;
-}
+.note-save-status.saved { background: var(--success-color); color: white; }
+.note-save-status.saving { background: var(--warning-color); color: white; }
 
 /* ========================================
    TO-DO LIST
@@ -708,9 +674,7 @@
     user-select: none;
 }
 
-.todo-checkbox:hover {
-    color: var(--primary-dark);
-}
+.todo-checkbox:hover { color: var(--primary-dark); }
 
 .todo-text {
     flex: 1;
@@ -719,61 +683,21 @@
 }
 
 /* ========================================
-   NOTE TABLE
+   NOTE TABLE (Word-like)
    ======================================== */
 .note-table-wrapper {
     margin: 16px 0;
     border-radius: var(--border-radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
+    overflow: visible;
     position: relative;
-}
-
-.note-table-wrapper .table-actions {
-    display: flex;
-    gap: 4px;
-    padding: 6px 8px;
-    background: var(--bg-tertiary);
-    border-bottom: 1px solid var(--border-color);
-    flex-wrap: wrap;
-}
-
-.table-act-btn {
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.15s;
-}
-
-.table-act-btn:hover {
-    background: var(--primary-light);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.table-act-btn.danger:hover {
-    background: var(--danger-color);
-    border-color: var(--danger-color);
-    color: white;
-}
-
-/* Scrollable table container */
-.table-scroll-container {
-    overflow-x: auto;
-    overflow-y: hidden;
     max-width: 100%;
+    overflow-x: auto;
 }
 
 .note-table-wrapper table {
     border-collapse: collapse;
-    min-width: 100%;
+    min-width: 100px;
+    width: 100%;
 }
 
 .note-table-wrapper th,
@@ -782,28 +706,17 @@
     padding: 8px 12px;
     text-align: left;
     font-size: 0.9rem;
-    min-width: 40px;
+    min-width: 30px;
     outline: none;
     vertical-align: top;
     position: relative;
+    word-break: break-word;
 }
 
 .note-table-wrapper th {
     background: var(--bg-tertiary);
     font-weight: 700;
     color: var(--text-primary);
-    cursor: default;
-}
-
-/* Right-edge resize cursor on th */
-.note-table-wrapper th::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    cursor: col-resize;
 }
 
 .note-table-wrapper td {
@@ -811,6 +724,7 @@
     color: var(--text-primary);
 }
 
+/* Focus highlight for active cell */
 .note-table-wrapper td:focus,
 .note-table-wrapper th:focus {
     background: var(--primary-light);
@@ -818,24 +732,79 @@
     outline-offset: -2px;
 }
 
-/* Table overall resize handle (bottom-right corner) */
-.table-resize-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 20px;
-    background: var(--bg-tertiary);
-    border-top: 1px solid var(--border-color);
-    cursor: nwse-resize;
-    color: var(--text-muted);
-    font-size: 10px;
-    user-select: none;
-    transition: background 0.15s;
+/* Resize cursor zones: right edge of every cell = col resize */
+.note-table-wrapper th,
+.note-table-wrapper td {
+    cursor: text;
 }
 
-.table-resize-handle:hover {
+/* Right 5px = col-resize cursor */
+/* Bottom 5px = row-resize cursor */
+/* These are visual hints; actual resize is handled by JS mousedown detecting proximity */
+
+/* ========================================
+   TABLE CONTEXT MENU (Word-like right click)
+   ======================================== */
+.table-context-menu {
+    position: fixed;
+    z-index: 2000;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+    padding: 6px 0;
+    min-width: 210px;
+    overflow: hidden;
+}
+
+.table-context-menu .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.12s;
+    text-align: left;
+}
+
+.table-context-menu .ctx-item:hover {
     background: var(--primary-light);
     color: var(--primary-color);
+}
+
+.table-context-menu .ctx-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.table-context-menu .ctx-item:hover i {
+    color: var(--primary-color);
+}
+
+.table-context-menu .ctx-danger {
+    color: var(--danger-color);
+}
+
+.table-context-menu .ctx-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.table-context-menu .ctx-danger i {
+    color: var(--danger-color);
+}
+
+.table-context-menu .ctx-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 12px;
 }
 
 /* ========================================
@@ -889,14 +858,9 @@
     transition: all 0.2s;
 }
 
-.note-modal-close:hover {
-    background: var(--danger-color);
-    color: white;
-}
+.note-modal-close:hover { background: var(--danger-color); color: white; }
 
-.note-modal-body {
-    padding: 20px;
-}
+.note-modal-body { padding: 20px; }
 
 .table-size-inputs {
     display: flex;
@@ -1060,13 +1024,8 @@
     transition: all 0.2s;
 }
 
-.lightbox-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.lightbox-btn.danger:hover {
-    background: var(--danger-color);
-}
+.lightbox-btn:hover { background: rgba(255, 255, 255, 0.3); }
+.lightbox-btn.danger:hover { background: var(--danger-color); }
 
 /* ========================================
    HIGHLIGHT in editor
@@ -1092,9 +1051,7 @@
         flex-wrap: wrap;
     }
 
-    .notes-search input {
-        width: 100%;
-    }
+    .notes-search input { width: 100%; }
 
     .note-toolbar {
         gap: 2px;
@@ -1107,9 +1064,7 @@
         font-size: 12px;
     }
 
-    .toolbar-btn.toolbar-heading {
-        font-size: 11px;
-    }
+    .toolbar-btn.toolbar-heading { font-size: 11px; }
 
     .toolbar-divider {
         height: 20px;
@@ -1121,24 +1076,7 @@
         height: 18px;
     }
 
-    .note-table-wrapper .table-actions {
-        gap: 2px;
-        padding: 4px 6px;
-    }
-
-    .table-act-btn {
-        padding: 3px 6px;
-        font-size: 10px;
-    }
-
-    .table-resize-handle {
-        height: 24px;
-        font-size: 12px;
-    }
-
-    .note-modal {
-        width: 95vw;
-    }
+    .note-modal { width: 95vw; }
 
     .lightbox-btn {
         width: 36px;
@@ -1146,11 +1084,15 @@
         font-size: 14px;
     }
 
-    .note-editor-body {
-        padding: 16px;
+    .note-editor-body { padding: 16px; }
+    .note-title-input { font-size: 1.3rem; }
+
+    .table-context-menu {
+        min-width: 180px;
     }
 
-    .note-title-input {
-        font-size: 1.3rem;
+    .table-context-menu .ctx-item {
+        padding: 8px 12px;
+        font-size: 0.8rem;
     }
 }
