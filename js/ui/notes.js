@@ -1,5 +1,5 @@
 /* ===== NOTES MODULE ===== */
-/* VoLearn v2.3.0 - Ghi chú nâng cao */
+/* VoLearn v2.4.0 - Ghi chú nâng cao */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
@@ -14,6 +14,7 @@ let autoSaveTimer = null;
 let eventsBound = false;
 let lightboxCurrentSrc = null;
 let lightboxZoom = 1;
+let highlightColor = '#fff176';
 
 /* ===== COLORS ===== */
 const NOTE_COLORS_DARK = {
@@ -43,6 +44,26 @@ function bindNotesEvents() {
         if (e.target.closest('#btn-note-delete')) return deleteCurrentNote();
         if (e.target.closest('#btn-note-pin')) return togglePinCurrentNote();
         if (e.target.closest('#btn-note-image')) return document.getElementById('note-image-input')?.click();
+
+        // --- Undo / Redo ---
+        if (e.target.closest('#btn-undo')) {
+            document.execCommand('undo', false, null);
+            scheduleAutoSave();
+            return;
+        }
+        if (e.target.closest('#btn-redo')) {
+            document.execCommand('redo', false, null);
+            scheduleAutoSave();
+            return;
+        }
+
+        // --- Highlight with custom color ---
+        if (e.target.closest('#btn-highlight')) {
+            document.execCommand('hiliteColor', false, highlightColor);
+            document.getElementById('note-content-editor')?.focus();
+            scheduleAutoSave();
+            return;
+        }
 
         // --- View toggle ---
         if (e.target.closest('.view-btn')) {
@@ -85,8 +106,10 @@ function bindNotesEvents() {
             return;
         }
 
-        // --- Toolbar: standard execCommand ---
-        if (e.target.closest('.toolbar-btn') && !e.target.closest('#btn-todo-list') && !e.target.closest('#btn-insert-table') && !e.target.closest('#btn-remove-highlight')) {
+        // --- Toolbar: standard execCommand (exclude special buttons) ---
+        const specialBtnIds = ['#btn-todo-list', '#btn-insert-table', '#btn-remove-highlight', '#btn-highlight', '#btn-undo', '#btn-redo'];
+        const isSpecial = specialBtnIds.some(sel => e.target.closest(sel));
+        if (e.target.closest('.toolbar-btn') && !isSpecial) {
             const btn = e.target.closest('.toolbar-btn');
             const cmd = btn.dataset.cmd;
             const value = btn.dataset.value || null;
@@ -149,6 +172,9 @@ function bindNotesEvents() {
         if (e.target.closest('.table-del-col')) { tableDelCol(e.target.closest('.note-table-wrapper')); return; }
         if (e.target.closest('.table-delete')) { e.target.closest('.note-table-wrapper')?.remove(); scheduleAutoSave(); return; }
 
+        // --- Table resize handle double-click reset ---
+        // (handled in mousedown below)
+
         // --- Lightbox ---
         if (e.target.closest('#lightbox-zoom-in')) { lightboxZoomIn(); return; }
         if (e.target.closest('#lightbox-zoom-out')) { lightboxZoomOut(); return; }
@@ -167,10 +193,15 @@ function bindNotesEvents() {
         if (e.target.id === 'table-rows-input' || e.target.id === 'table-cols-input') {
             updateTablePreview();
         }
-        // Color picker
+        // Color picker (note background)
         if (e.target.id === 'note-color-picker') {
             applyEditorColor(e.target.value);
             scheduleAutoSave();
+        }
+        // Highlight color picker
+        if (e.target.id === 'highlight-color-picker') {
+            highlightColor = e.target.value;
+            updateHighlightBtnIndicator();
         }
     });
 
@@ -203,8 +234,9 @@ function bindNotesEvents() {
         }
     });
 
-    // ESC to close lightbox
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+        // ESC to close lightbox / table modal
         if (e.key === 'Escape') {
             const lb = document.getElementById('note-lightbox');
             if (lb && lb.style.display !== 'none') { closeLightbox(); return; }
@@ -212,6 +244,87 @@ function bindNotesEvents() {
             if (tm && tm.style.display !== 'none') { closeTableCreator(); return; }
         }
     });
+
+    // --- Table column resize via drag on <th> right edge ---
+    document.addEventListener('mousedown', (e) => {
+        const th = e.target.closest('.note-table-wrapper th');
+        if (!th) return;
+        const rect = th.getBoundingClientRect();
+        // Only trigger when clicking within 6px of the right edge
+        if (e.clientX < rect.right - 6) return;
+
+        e.preventDefault();
+        const table = th.closest('table');
+        if (!table) return;
+
+        const startX = e.clientX;
+        const startWidth = th.offsetWidth;
+        const colIndex = th.cellIndex;
+
+        // Temporarily set table to fixed layout for manual column widths
+        table.style.tableLayout = 'fixed';
+        // Initialize all column widths if not set
+        const allThs = table.rows[0].cells;
+        for (let i = 0; i < allThs.length; i++) {
+            if (!allThs[i].style.width) {
+                allThs[i].style.width = allThs[i].offsetWidth + 'px';
+            }
+        }
+
+        const onMouseMove = (ev) => {
+            const diff = ev.clientX - startX;
+            const newWidth = Math.max(40, startWidth + diff);
+            th.style.width = newWidth + 'px';
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            scheduleAutoSave();
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // --- Table overall resize via wrapper bottom-right corner drag ---
+    document.addEventListener('mousedown', (e) => {
+        const handle = e.target.closest('.table-resize-handle');
+        if (!handle) return;
+        e.preventDefault();
+
+        const wrapper = handle.closest('.note-table-wrapper');
+        if (!wrapper) return;
+        const table = wrapper.querySelector('table');
+        if (!table) return;
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = table.offsetWidth;
+        const startH = table.offsetHeight;
+
+        const onMouseMove = (ev) => {
+            const newW = Math.max(150, startW + (ev.clientX - startX));
+            const newH = Math.max(60, startH + (ev.clientY - startY));
+            table.style.width = newW + 'px';
+            table.style.height = newH + 'px';
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            scheduleAutoSave();
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+/* ===== HIGHLIGHT INDICATOR ===== */
+function updateHighlightBtnIndicator() {
+    const btn = document.getElementById('btn-highlight');
+    if (btn) btn.style.borderBottom = `3px solid ${highlightColor}`;
 }
 
 /* ========================================
@@ -250,6 +363,7 @@ function openNote(noteId) {
     if (imagesContainer) renderNoteImages(note.images || [], imagesContainer);
 
     applyEditorColor(note.color || '#ffffff');
+    updateHighlightBtnIndicator();
     editor.style.display = 'flex';
     updateSaveStatus('saved');
 
@@ -417,19 +531,24 @@ function insertTable(rows, cols) {
     tableHtml += '<button class="table-act-btn table-del-col" title="Xóa cột cuối"><i class="fas fa-minus"></i> Cột</button>';
     tableHtml += '<button class="table-act-btn danger table-delete" title="Xóa bảng"><i class="fas fa-trash"></i></button>';
     tableHtml += '</div>';
-    tableHtml += '<table>';
+    tableHtml += '<div class="table-scroll-container">';
+    tableHtml += '<table style="table-layout:fixed;">';
+    const defaultColWidth = Math.max(80, Math.floor(700 / cols));
     for (let r = 0; r < rows; r++) {
         tableHtml += '<tr>';
         for (let c = 0; c < cols; c++) {
             if (r === 0) {
-                tableHtml += `<th contenteditable="true">Tiêu đề</th>`;
+                tableHtml += `<th contenteditable="true" style="width:${defaultColWidth}px;">Tiêu đề</th>`;
             } else {
                 tableHtml += `<td contenteditable="true"></td>`;
             }
         }
         tableHtml += '</tr>';
     }
-    tableHtml += '</table></div><p><br></p>';
+    tableHtml += '</table>';
+    tableHtml += '</div>'; // end table-scroll-container
+    tableHtml += '<div class="table-resize-handle" title="Kéo để thay đổi kích thước bảng"><i class="fas fa-expand-alt"></i></div>';
+    tableHtml += '</div><p><br></p>';
 
     editor.focus();
     document.execCommand('insertHTML', false, tableHtml);
@@ -456,7 +575,10 @@ function tableAddCol(wrapper) {
     for (let r = 0; r < table.rows.length; r++) {
         const cell = r === 0 ? document.createElement('th') : document.createElement('td');
         cell.contentEditable = 'true';
-        if (r === 0) cell.textContent = 'Mới';
+        if (r === 0) {
+            cell.textContent = 'Mới';
+            cell.style.width = '80px';
+        }
         table.rows[r].appendChild(cell);
     }
     scheduleAutoSave();
