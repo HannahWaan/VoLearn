@@ -1037,6 +1037,87 @@
 }
 
 /* ========================================
+   FONT COLOR GROUP (giống highlight group)
+   ======================================== */
+.toolbar-color-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.font-color-input {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.font-color-input::-webkit-color-swatch-wrapper { padding: 1px; }
+.font-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+#btn-font-color {
+    position: relative;
+    border-bottom: 3px solid #e91e8c;
+    border-radius: 6px 6px 2px 2px;
+}
+
+/* ========================================
+   FORMAT PAINTER
+   ======================================== */
+#btn-format-painter.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.note-content-editor.format-painter-cursor {
+    cursor: crosshair !important;
+}
+
+.note-content-editor.format-painter-cursor * {
+    cursor: crosshair !important;
+}
+
+/* ========================================
+   NESTED LIST STYLES (sub-bullets)
+   ======================================== */
+.note-content-editor ul {
+    list-style-type: disc;
+}
+
+.note-content-editor ul ul {
+    list-style-type: circle;
+}
+
+.note-content-editor ul ul ul {
+    list-style-type: square;
+}
+
+.note-content-editor ul ul ul ul {
+    list-style-type: disc;
+}
+
+.note-content-editor ol {
+    list-style-type: decimal;
+}
+
+.note-content-editor ol ol {
+    list-style-type: lower-alpha;
+}
+
+.note-content-editor ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.note-content-editor ol ol ol ol {
+    list-style-type: decimal;
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 768px) {
@@ -1096,3 +1177,8 @@
         font-size: 0.8rem;
     }
 }
+
+    .font-color-input {
+        width: 18px;
+        height: 18px;
+    }
