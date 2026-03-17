@@ -39,7 +39,7 @@
         <p>Nhấn "Tạo mới" để bắt đầu ghi chú</p>
     </div>
 
-    <!-- ===== NOTE EDITOR (full screen overlay) ===== -->
+    <!-- ===== NOTE EDITOR ===== -->
     <div id="note-editor" class="note-editor" style="display:none;">
         <div class="note-editor-header">
             <button class="btn-editor-back" id="btn-editor-back">
@@ -65,53 +65,78 @@
 
             <!-- Toolbar -->
             <div class="note-toolbar">
-                <button class="toolbar-btn" id="btn-undo" title="Hoàn tác (Ctrl+Z)"><i class="fas fa-undo"></i></button>
-                <button class="toolbar-btn" id="btn-redo" title="Làm lại (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                <!-- Undo/Redo -->
+                <button class="toolbar-btn" id="btn-undo" title="Hoàn tác"><i class="fas fa-undo"></i></button>
+                <button class="toolbar-btn" id="btn-redo" title="Làm lại"><i class="fas fa-redo"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Format Painter -->
+                <button class="toolbar-btn" id="btn-format-painter" title="Sao chép định dạng"><i class="fas fa-paint-roller"></i></button>
+                <span class="toolbar-divider"></span>
+
+                <!-- Text style -->
                 <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
                 <button class="toolbar-btn" data-cmd="italic" title="Nghiêng"><i class="fas fa-italic"></i></button>
                 <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
                 <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Font color -->
+                <div class="toolbar-color-group">
+                    <button class="toolbar-btn" id="btn-font-color" title="Màu chữ"><i class="fas fa-font"></i></button>
+                    <input type="color" id="font-color-picker" class="font-color-input" value="#e91e8c" title="Chọn màu chữ">
+                </div>
+
+                <!-- Highlight -->
                 <div class="toolbar-highlight-group">
                     <button class="toolbar-btn" id="btn-highlight" title="Highlight"><i class="fas fa-highlighter"></i></button>
                     <input type="color" id="highlight-color-picker" class="highlight-color-input" value="#fff176" title="Chọn màu highlight">
                 </div>
                 <button class="toolbar-btn" id="btn-remove-highlight" title="Xóa highlight"><i class="fas fa-eraser"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Alignment -->
+                <button class="toolbar-btn" data-cmd="justifyLeft" title="Căn trái"><i class="fas fa-align-left"></i></button>
+                <button class="toolbar-btn" data-cmd="justifyCenter" title="Căn giữa"><i class="fas fa-align-center"></i></button>
+                <button class="toolbar-btn" data-cmd="justifyRight" title="Căn phải"><i class="fas fa-align-right"></i></button>
+                <button class="toolbar-btn" data-cmd="justifyFull" title="Căn đều"><i class="fas fa-align-justify"></i></button>
+                <span class="toolbar-divider"></span>
+
+                <!-- Lists -->
                 <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
                 <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
                 <button class="toolbar-btn" id="btn-todo-list" title="To-do list"><i class="fas fa-tasks"></i></button>
                 <span class="toolbar-divider"></span>
-                <button class="toolbar-btn" data-cmd="indent" title="Thụt đầu dòng"><i class="fas fa-indent"></i></button>
+
+                <!-- Indent -->
+                <button class="toolbar-btn" data-cmd="indent" title="Thụt vào"><i class="fas fa-indent"></i></button>
                 <button class="toolbar-btn" data-cmd="outdent" title="Bớt thụt"><i class="fas fa-outdent"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Headings -->
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H1" title="Tiêu đề 1">H1</button>
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H2" title="Tiêu đề 2">H2</button>
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H3" title="Tiêu đề 3">H3</button>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
-                <button class="toolbar-btn" data-cmd="formatBlock" data-value="P" title="Đoạn văn thường"><i class="fas fa-paragraph"></i></button>
+                <button class="toolbar-btn" data-cmd="formatBlock" data-value="P" title="Văn bản thường"><i class="fas fa-paragraph"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Table -->
                 <button class="toolbar-btn" id="btn-insert-table" title="Chèn bảng"><i class="fas fa-table"></i></button>
             </div>
 
-            <!-- Content editable area -->
             <div id="note-content-editor" class="note-content-editor" contenteditable="true" placeholder="Bắt đầu viết ghi chú..."></div>
-
-            <!-- Images gallery -->
             <div id="note-images" class="note-images"></div>
         </div>
 
-        <!-- Hidden file input -->
         <input type="file" id="note-image-input" accept="image/*" multiple style="display:none;">
 
-        <!-- Auto-save indicator -->
         <div id="note-save-status" class="note-save-status">
             <i class="fas fa-check"></i> Đã lưu
         </div>
     </div>
 
-    <!-- ===== TABLE CREATOR MODAL ===== -->
+    <!-- TABLE CREATOR MODAL -->
     <div id="table-creator-modal" class="note-modal-overlay" style="display:none;">
         <div class="note-modal">
             <div class="note-modal-header">
@@ -140,7 +165,7 @@
         </div>
     </div>
 
-    <!-- ===== TABLE CONTEXT MENU ===== -->
+    <!-- TABLE CONTEXT MENU -->
     <div id="table-context-menu" class="table-context-menu" style="display:none;">
         <button class="ctx-item" data-action="insert-row-above"><i class="fas fa-arrow-up"></i> Thêm dòng phía trên</button>
         <button class="ctx-item" data-action="insert-row-below"><i class="fas fa-arrow-down"></i> Thêm dòng phía dưới</button>
@@ -154,7 +179,7 @@
         <button class="ctx-item ctx-danger" data-action="delete-table"><i class="fas fa-trash"></i> Xóa toàn bộ bảng</button>
     </div>
 
-    <!-- ===== IMAGE LIGHTBOX ===== -->
+    <!-- IMAGE LIGHTBOX -->
     <div id="note-lightbox" class="note-lightbox" style="display:none;">
         <div class="lightbox-backdrop"></div>
         <div class="lightbox-content">
