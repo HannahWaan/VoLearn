@@ -65,24 +65,46 @@
 
             <!-- Toolbar -->
             <div class="note-toolbar">
+                <!-- Undo / Redo -->
+                <button class="toolbar-btn" id="btn-undo" title="Hoàn tác (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                <button class="toolbar-btn" id="btn-redo" title="Làm lại (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                <span class="toolbar-divider"></span>
+
+                <!-- Text format -->
                 <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
                 <button class="toolbar-btn" data-cmd="italic" title="Nghiêng"><i class="fas fa-italic"></i></button>
                 <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
                 <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
                 <span class="toolbar-divider"></span>
-                <button class="toolbar-btn" data-cmd="hiliteColor" data-value="#fff176" title="Highlight"><i class="fas fa-highlighter"></i></button>
+
+                <!-- Highlight with color picker -->
+                <div class="toolbar-highlight-group">
+                    <button class="toolbar-btn" id="btn-highlight" title="Highlight"><i class="fas fa-highlighter"></i></button>
+                    <input type="color" id="highlight-color-picker" class="highlight-color-input" value="#fff176" title="Chọn màu highlight">
+                </div>
                 <button class="toolbar-btn" id="btn-remove-highlight" title="Xóa highlight"><i class="fas fa-eraser"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Lists -->
                 <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
                 <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
                 <button class="toolbar-btn" id="btn-todo-list" title="To-do list"><i class="fas fa-tasks"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Indent -->
                 <button class="toolbar-btn" data-cmd="indent" title="Thụt đầu dòng"><i class="fas fa-indent"></i></button>
                 <button class="toolbar-btn" data-cmd="outdent" title="Bớt thụt"><i class="fas fa-outdent"></i></button>
                 <span class="toolbar-divider"></span>
-                <button class="toolbar-btn" data-cmd="formatBlock" data-value="H2" title="Tiêu đề"><i class="fas fa-heading"></i></button>
+
+                <!-- Headings H1, H2, H3 -->
+                <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H1" title="Tiêu đề 1">H1</button>
+                <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H2" title="Tiêu đề 2">H2</button>
+                <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H3" title="Tiêu đề 3">H3</button>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
+                <button class="toolbar-btn" data-cmd="formatBlock" data-value="P" title="Đoạn văn thường"><i class="fas fa-paragraph"></i></button>
                 <span class="toolbar-divider"></span>
+
+                <!-- Table -->
                 <button class="toolbar-btn" id="btn-insert-table" title="Chèn bảng"><i class="fas fa-table"></i></button>
             </div>
 
