@@ -1,5 +1,5 @@
 /* ===== NOTES MODULE ===== */
-/* VoLearn v2.5.0 - Ghi chú - Table giống Word */
+/* VoLearn v2.5.1 - Ghi chú - Table giống Word + migration */
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
@@ -15,11 +15,7 @@ let eventsBound = false;
 let lightboxCurrentSrc = null;
 let lightboxZoom = 1;
 let highlightColor = '#fff176';
-
-/* Table state */
-let ctxTargetCell = null;   // cell (td/th) that was right-clicked
-let resizingCol = null;     // { table, colIndex, startX, startWidths[] }
-let resizingRow = null;     // { table, rowIndex, startY, startHeight }
+let ctxTargetCell = null;
 
 /* ===== COLORS ===== */
 const NOTE_COLORS_DARK = {
@@ -31,6 +27,7 @@ const NOTE_COLORS_DARK = {
 /* ===== INIT ===== */
 export function initNotes() {
     if (!appData.notes) appData.notes = [];
+    migrateOldTables();
     if (!eventsBound) {
         bindNotesEvents();
         eventsBound = true;
@@ -39,13 +36,85 @@ export function initNotes() {
     console.log('✅ Notes initialized');
 }
 
+/* ========================================
+   MIGRATE OLD TABLE HTML
+   Cleans up legacy table structures saved
+   in note.content from previous versions
+   ======================================== */
+function migrateOldTables() {
+    if (!appData.notes || !appData.notes.length) return;
+    let changed = false;
+
+    appData.notes.forEach(note => {
+        if (!note.content) return;
+
+        // Check if content has old table structures
+        if (!note.content.includes('table-actions') &&
+            !note.content.includes('table-scroll-container') &&
+            !note.content.includes('table-resize-handle')) return;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = note.content;
+
+        temp.querySelectorAll('.note-table-wrapper').forEach(wrapper => {
+            // Extract the actual <table> element
+            const table = wrapper.querySelector('table');
+            if (!table) {
+                wrapper.remove();
+                return;
+            }
+
+            // Remove old action bars, scroll containers, resize handles
+            wrapper.querySelectorAll('.table-actions, .table-resize-handle').forEach(el => el.remove());
+
+            // Unwrap from scroll container if present
+            const scrollContainer = wrapper.querySelector('.table-scroll-container');
+            if (scrollContainer) {
+                // Move table out of scroll container
+                const tableEl = scrollContainer.querySelector('table');
+                if (tableEl) {
+                    scrollContainer.replaceWith(tableEl);
+                }
+            }
+
+            // Remove contenteditable="false" from wrapper
+            wrapper.removeAttribute('contenteditable');
+
+            // Ensure all cells are editable
+            wrapper.querySelectorAll('th, td').forEach(cell => {
+                cell.setAttribute('contenteditable', 'true');
+            });
+
+            // Clean table style
+            const tbl = wrapper.querySelector('table');
+            if (tbl) {
+                tbl.style.tableLayout = 'fixed';
+                tbl.style.width = '100%';
+            }
+        });
+
+        const newContent = temp.innerHTML;
+        if (newContent !== note.content) {
+            note.content = newContent;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        saveData(appData);
+        console.log('✅ Migrated old table HTML in notes');
+    }
+}
+
 /* ===== BIND EVENTS ===== */
 function bindNotesEvents() {
 
     /* ---------- CLICK ---------- */
     document.addEventListener('click', (e) => {
         // Hide context menu on any click outside it
-        hideTableContextMenu();
+        if (!e.target.closest('#table-context-menu')) {
+            hideTableContextMenu();
+        }
 
         // --- Header / Editor buttons ---
         if (e.target.closest('#btn-create-note')) return createNewNote();
@@ -171,10 +240,8 @@ function bindNotesEvents() {
 
     /* ---------- CONTEXT MENU (right click) on table cells ---------- */
     document.addEventListener('contextmenu', (e) => {
-        const cell = e.target.closest('.note-table-wrapper td, .note-table-wrapper th');
+        const cell = e.target.closest('#note-content-editor .note-table-wrapper td, #note-content-editor .note-table-wrapper th');
         if (!cell) return;
-        // Only inside note editor
-        if (!cell.closest('#note-content-editor')) return;
 
         e.preventDefault();
         ctxTargetCell = cell;
@@ -198,7 +265,6 @@ function bindNotesEvents() {
             highlightColor = e.target.value;
             updateHighlightBtnIndicator();
         }
-        // Auto-save on content change
         if (e.target.id === 'note-title-input' || e.target.id === 'note-content-editor' || e.target.closest('#note-content-editor')) {
             scheduleAutoSave();
         }
@@ -237,17 +303,16 @@ function bindNotesEvents() {
             if (tm && tm.style.display !== 'none') { closeTableCreator(); return; }
         }
 
-        // Tab inside table cell → move to next cell
+        // Tab inside table cell → navigate cells
         if (e.key === 'Tab') {
-            const cell = e.target.closest?.('.note-table-wrapper td, .note-table-wrapper th');
-            if (cell && cell.closest('#note-content-editor')) {
+            const cell = document.activeElement?.closest?.('#note-content-editor .note-table-wrapper td, #note-content-editor .note-table-wrapper th');
+            if (cell) {
                 e.preventDefault();
                 const row = cell.parentElement;
                 const table = cell.closest('table');
                 if (!table) return;
 
                 if (e.shiftKey) {
-                    // Previous cell
                     if (cell.previousElementSibling) {
                         cell.previousElementSibling.focus();
                     } else if (row.previousElementSibling) {
@@ -256,15 +321,12 @@ function bindNotesEvents() {
                         if (lastCell) lastCell.focus();
                     }
                 } else {
-                    // Next cell
                     if (cell.nextElementSibling) {
                         cell.nextElementSibling.focus();
                     } else if (row.nextElementSibling) {
-                        const nextRow = row.nextElementSibling;
-                        const firstCell = nextRow.cells[0];
-                        if (firstCell) firstCell.focus();
+                        row.nextElementSibling.cells[0]?.focus();
                     } else {
-                        // Last cell of last row → add new row
+                        // Last cell → add new row
                         const cols = table.rows[0]?.cells.length || 1;
                         const newRow = table.insertRow();
                         for (let c = 0; c < cols; c++) {
@@ -281,7 +343,6 @@ function bindNotesEvents() {
 
     /* ---------- MOUSEDOWN: column & row resize ---------- */
     document.addEventListener('mousedown', (e) => {
-        // Only in note editor tables
         const cell = e.target.closest?.('#note-content-editor .note-table-wrapper td, #note-content-editor .note-table-wrapper th');
         if (!cell) return;
 
@@ -292,18 +353,34 @@ function bindNotesEvents() {
         const nearRight = e.clientX >= rect.right - 5;
         const nearBottom = e.clientY >= rect.bottom - 5;
 
-        // Column resize: near right border of any cell
         if (nearRight) {
             e.preventDefault();
             initColumnResize(e, cell, table);
             return;
         }
 
-        // Row resize: near bottom border of any cell
         if (nearBottom) {
             e.preventDefault();
             initRowResize(e, cell, table);
             return;
+        }
+    });
+
+    /* ---------- MOUSEMOVE: show resize cursors ---------- */
+    document.addEventListener('mousemove', (e) => {
+        const cell = e.target.closest?.('#note-content-editor .note-table-wrapper td, #note-content-editor .note-table-wrapper th');
+        if (!cell) return;
+
+        const rect = cell.getBoundingClientRect();
+        const nearRight = e.clientX >= rect.right - 5;
+        const nearBottom = e.clientY >= rect.bottom - 5;
+
+        if (nearRight) {
+            cell.style.cursor = 'col-resize';
+        } else if (nearBottom) {
+            cell.style.cursor = 'row-resize';
+        } else {
+            cell.style.cursor = 'text';
         }
     });
 }
@@ -313,16 +390,15 @@ function bindNotesEvents() {
    ======================================== */
 
 function initColumnResize(e, cell, table) {
-    // Ensure table-layout fixed and all cols have explicit widths
     table.style.tableLayout = 'fixed';
     const headerCells = table.rows[0]?.cells;
     if (!headerCells) return;
 
+    // Snapshot all column widths
     const widths = [];
     for (let i = 0; i < headerCells.length; i++) {
         widths.push(headerCells[i].offsetWidth);
     }
-    // Set explicit widths
     for (let i = 0; i < headerCells.length; i++) {
         headerCells[i].style.width = widths[i] + 'px';
     }
@@ -335,8 +411,7 @@ function initColumnResize(e, cell, table) {
     document.body.style.userSelect = 'none';
 
     const onMove = (ev) => {
-        const diff = ev.clientX - startX;
-        const newW = Math.max(30, startWidth + diff);
+        const newW = Math.max(30, startWidth + (ev.clientX - startX));
         headerCells[colIndex].style.width = newW + 'px';
     };
 
@@ -354,7 +429,6 @@ function initColumnResize(e, cell, table) {
 
 function initRowResize(e, cell, table) {
     const row = cell.parentElement;
-    const rowIndex = row.rowIndex;
     const startY = e.clientY;
     const startHeight = row.offsetHeight;
 
@@ -362,8 +436,7 @@ function initRowResize(e, cell, table) {
     document.body.style.userSelect = 'none';
 
     const onMove = (ev) => {
-        const diff = ev.clientY - startY;
-        const newH = Math.max(24, startHeight + diff);
+        const newH = Math.max(24, startHeight + (ev.clientY - startY));
         row.style.height = newH + 'px';
     };
 
@@ -380,23 +453,23 @@ function initRowResize(e, cell, table) {
 }
 
 /* ========================================
-   TABLE CONTEXT MENU (Word-like right click)
+   TABLE CONTEXT MENU
    ======================================== */
 
 function showTableContextMenu(x, y) {
     const menu = document.getElementById('table-context-menu');
     if (!menu) return;
-
     menu.style.display = 'block';
 
-    // Position: ensure menu stays within viewport
-    const menuW = 220;
-    const menuH = menu.offsetHeight || 300;
-    const maxX = window.innerWidth - menuW - 10;
-    const maxY = window.innerHeight - menuH - 10;
-
-    menu.style.left = Math.min(x, maxX) + 'px';
-    menu.style.top = Math.min(y, maxY) + 'px';
+    // Use requestAnimationFrame so offsetHeight is accurate
+    requestAnimationFrame(() => {
+        const menuW = menu.offsetWidth || 220;
+        const menuH = menu.offsetHeight || 300;
+        const maxX = window.innerWidth - menuW - 8;
+        const maxY = window.innerHeight - menuH - 8;
+        menu.style.left = Math.max(0, Math.min(x, maxX)) + 'px';
+        menu.style.top = Math.max(0, Math.min(y, maxY)) + 'px';
+    });
 }
 
 function hideTableContextMenu() {
@@ -432,22 +505,20 @@ function handleTableContextAction(action) {
             break;
         case 'delete-row':
             if (totalRows <= 1) {
-                // Only one row → delete entire table
-                if (wrapper) wrapper.remove();
+                if (wrapper) { wrapper.remove(); }
             } else {
                 table.deleteRow(rowIndex);
             }
             break;
         case 'delete-col':
             if (totalCols <= 1) {
-                if (wrapper) wrapper.remove();
+                if (wrapper) { wrapper.remove(); }
             } else {
                 for (let r = 0; r < table.rows.length; r++) {
                     if (colIndex < table.rows[r].cells.length) {
                         table.rows[r].deleteCell(colIndex);
                     }
                 }
-                // Update header widths
                 recalcColWidths(table);
             }
             break;
@@ -455,7 +526,7 @@ function handleTableContextAction(action) {
             ctxTargetCell.innerHTML = '';
             break;
         case 'delete-table':
-            if (wrapper) wrapper.remove();
+            if (wrapper) { wrapper.remove(); }
             break;
     }
 
@@ -474,7 +545,7 @@ function insertRowAt(table, atIndex, totalCols) {
 function insertColAt(table, atIndex) {
     for (let r = 0; r < table.rows.length; r++) {
         const row = table.rows[r];
-        const isHeader = (r === 0);
+        const isHeader = (r === 0 && row.cells[0]?.tagName === 'TH');
         const cell = document.createElement(isHeader ? 'th' : 'td');
         cell.contentEditable = 'true';
         if (isHeader) cell.textContent = 'Mới';
@@ -489,15 +560,12 @@ function insertColAt(table, atIndex) {
 }
 
 function recalcColWidths(table) {
-    // After adding/removing columns, reset to auto widths then re-fix
     const headerCells = table.rows[0]?.cells;
     if (!headerCells) return;
-    // Temporarily auto
     table.style.tableLayout = 'auto';
     for (let i = 0; i < headerCells.length; i++) {
         headerCells[i].style.width = '';
     }
-    // Force reflow, then fix
     void table.offsetWidth;
     table.style.tableLayout = 'fixed';
     for (let i = 0; i < headerCells.length; i++) {
@@ -541,7 +609,10 @@ function openNote(noteId) {
     if (!editor) return;
 
     if (titleInput) titleInput.value = note.title || '';
-    if (contentEditor) contentEditor.innerHTML = note.content || '';
+    if (contentEditor) {
+        // Clean content before rendering
+        contentEditor.innerHTML = cleanTableHtml(note.content || '');
+    }
     if (colorPicker) colorPicker.value = note.color || '#ffffff';
     if (pinBtn) pinBtn.classList.toggle('active', note.pinned);
     if (imagesContainer) renderNoteImages(note.images || [], imagesContainer);
@@ -553,6 +624,46 @@ function openNote(noteId) {
 
     if (!note.title && titleInput) titleInput.focus();
     else if (contentEditor) contentEditor.focus();
+}
+
+/** Clean any residual old table markup before rendering */
+function cleanTableHtml(html) {
+    if (!html) return html;
+    if (!html.includes('table-actions') &&
+        !html.includes('table-scroll-container') &&
+        !html.includes('table-resize-handle')) return html;
+
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    temp.querySelectorAll('.note-table-wrapper').forEach(wrapper => {
+        const table = wrapper.querySelector('table');
+        if (!table) { wrapper.remove(); return; }
+
+        // Remove legacy elements
+        wrapper.querySelectorAll('.table-actions, .table-resize-handle').forEach(el => el.remove());
+
+        // Unwrap scroll container
+        const sc = wrapper.querySelector('.table-scroll-container');
+        if (sc) {
+            const tbl = sc.querySelector('table');
+            if (tbl) sc.replaceWith(tbl);
+        }
+
+        wrapper.removeAttribute('contenteditable');
+
+        wrapper.querySelectorAll('th, td').forEach(cell => {
+            cell.setAttribute('contenteditable', 'true');
+        });
+
+        const tbl = wrapper.querySelector('table');
+        if (tbl) {
+            tbl.style.tableLayout = 'fixed';
+            tbl.style.width = '100%';
+        }
+    });
+
+    return temp.innerHTML;
 }
 
 function closeEditor() {
@@ -708,12 +819,12 @@ function insertTable(rows, cols) {
     const defaultColWidth = Math.max(60, Math.floor(700 / cols));
 
     let html = '<div class="note-table-wrapper">';
-    html += '<table style="table-layout:fixed;">';
+    html += '<table style="table-layout:fixed;width:100%;">';
     for (let r = 0; r < rows; r++) {
         html += '<tr>';
         for (let c = 0; c < cols; c++) {
             if (r === 0) {
-                html += `<th contenteditable="true" style="width:${defaultColWidth}px;">Tiêu đề</th>`;
+                html += `<th contenteditable="true" style="width:${defaultColWidth}px;"></th>`;
             } else {
                 html += '<td contenteditable="true"></td>';
             }
@@ -833,7 +944,6 @@ function applyLightboxZoom() {
 
 function lightboxDeleteImage() {
     if (!lightboxWrapperRef) { closeLightbox(); return; }
-
     window.showConfirm({
         title: 'Xóa ảnh',
         message: 'Xóa ảnh này khỏi ghi chú?',
