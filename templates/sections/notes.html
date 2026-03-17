@@ -65,46 +65,33 @@
 
             <!-- Toolbar -->
             <div class="note-toolbar">
-                <!-- Undo / Redo -->
                 <button class="toolbar-btn" id="btn-undo" title="Hoàn tác (Ctrl+Z)"><i class="fas fa-undo"></i></button>
                 <button class="toolbar-btn" id="btn-redo" title="Làm lại (Ctrl+Y)"><i class="fas fa-redo"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Text format -->
                 <button class="toolbar-btn" data-cmd="bold" title="Đậm"><i class="fas fa-bold"></i></button>
                 <button class="toolbar-btn" data-cmd="italic" title="Nghiêng"><i class="fas fa-italic"></i></button>
                 <button class="toolbar-btn" data-cmd="underline" title="Gạch chân"><i class="fas fa-underline"></i></button>
                 <button class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Highlight with color picker -->
                 <div class="toolbar-highlight-group">
                     <button class="toolbar-btn" id="btn-highlight" title="Highlight"><i class="fas fa-highlighter"></i></button>
                     <input type="color" id="highlight-color-picker" class="highlight-color-input" value="#fff176" title="Chọn màu highlight">
                 </div>
                 <button class="toolbar-btn" id="btn-remove-highlight" title="Xóa highlight"><i class="fas fa-eraser"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Lists -->
                 <button class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách"><i class="fas fa-list-ul"></i></button>
                 <button class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
                 <button class="toolbar-btn" id="btn-todo-list" title="To-do list"><i class="fas fa-tasks"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Indent -->
                 <button class="toolbar-btn" data-cmd="indent" title="Thụt đầu dòng"><i class="fas fa-indent"></i></button>
                 <button class="toolbar-btn" data-cmd="outdent" title="Bớt thụt"><i class="fas fa-outdent"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Headings H1, H2, H3 -->
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H1" title="Tiêu đề 1">H1</button>
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H2" title="Tiêu đề 2">H2</button>
                 <button class="toolbar-btn toolbar-heading" data-cmd="formatBlock" data-value="H3" title="Tiêu đề 3">H3</button>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE" title="Trích dẫn"><i class="fas fa-quote-right"></i></button>
                 <button class="toolbar-btn" data-cmd="formatBlock" data-value="P" title="Đoạn văn thường"><i class="fas fa-paragraph"></i></button>
                 <span class="toolbar-divider"></span>
-
-                <!-- Table -->
                 <button class="toolbar-btn" id="btn-insert-table" title="Chèn bảng"><i class="fas fa-table"></i></button>
             </div>
 
@@ -151,6 +138,20 @@
                 <button class="btn-primary" id="btn-confirm-table"><i class="fas fa-check"></i> Chèn bảng</button>
             </div>
         </div>
+    </div>
+
+    <!-- ===== TABLE CONTEXT MENU ===== -->
+    <div id="table-context-menu" class="table-context-menu" style="display:none;">
+        <button class="ctx-item" data-action="insert-row-above"><i class="fas fa-arrow-up"></i> Thêm dòng phía trên</button>
+        <button class="ctx-item" data-action="insert-row-below"><i class="fas fa-arrow-down"></i> Thêm dòng phía dưới</button>
+        <button class="ctx-item" data-action="insert-col-left"><i class="fas fa-arrow-left"></i> Thêm cột bên trái</button>
+        <button class="ctx-item" data-action="insert-col-right"><i class="fas fa-arrow-right"></i> Thêm cột bên phải</button>
+        <div class="ctx-divider"></div>
+        <button class="ctx-item" data-action="delete-row"><i class="fas fa-minus"></i> Xóa dòng này</button>
+        <button class="ctx-item" data-action="delete-col"><i class="fas fa-columns"></i> Xóa cột này</button>
+        <button class="ctx-item ctx-danger" data-action="clear-cell"><i class="fas fa-eraser"></i> Xóa nội dung ô</button>
+        <div class="ctx-divider"></div>
+        <button class="ctx-item ctx-danger" data-action="delete-table"><i class="fas fa-trash"></i> Xóa toàn bộ bảng</button>
     </div>
 
     <!-- ===== IMAGE LIGHTBOX ===== -->
