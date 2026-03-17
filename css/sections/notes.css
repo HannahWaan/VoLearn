@@ -1,5 +1,5 @@
 /* ============================================
-   NOTES SECTION – VoLearn v2.6.0
+   NOTES SECTION – VoLearn v2.5.2
    ============================================ */
 
 /* ---------- Header ---------- */
@@ -20,7 +20,6 @@
 .notes-view-toggle{display:flex;background:var(--bg-tertiary);border-radius:8px;overflow:hidden;border:1px solid var(--border-color)}
 .view-btn{background:none;border:none;color:var(--text-secondary);padding:6px 10px;cursor:pointer;font-size:.85rem;transition:all .2s}
 .view-btn.active,.view-btn:hover{color:var(--text-primary);background:var(--bg-secondary)}
-#split-view-btn.active{color:#fff;background:var(--gradient-primary);background:linear-gradient(135deg,var(--primary-color),var(--secondary-color,var(--primary-color)))}
 
 /* ---------- Grid / List ---------- */
 .notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
@@ -48,30 +47,6 @@
 .notes-empty span{font-size:.85rem;opacity:.7}
 
 /* ============================================
-   SPLIT VIEW
-   ============================================ */
-.split-view-container{display:flex;gap:0;height:calc(100vh - 160px);border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background:var(--bg-secondary)}
-.split-pane{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
-.split-pane-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color)}
-.split-pane-label{font-weight:600;font-size:.8rem;color:var(--text-secondary);white-space:nowrap}
-.split-note-select{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:.8rem;outline:none;min-width:0}
-.split-pane-close{background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px 6px;font-size:.85rem;transition:color .2s}
-.split-pane-close:hover{color:#e74c3c}
-.split-pane-body{flex:1;overflow-y:auto;padding:16px;color:var(--text-primary);font-size:.9rem;line-height:1.6}
-.split-pane-body h1,.split-pane-body h2,.split-pane-body h3{margin:12px 0 6px}
-.split-pane-body table{width:100%;border-collapse:collapse;margin:10px 0}
-.split-pane-body td,.split-pane-body th{border:1px solid var(--border-color);padding:6px 8px}
-.split-pane-body img{max-width:100%;border-radius:8px;margin:8px 0}
-.split-pane-body .todo-item{display:flex;align-items:center;gap:8px;padding:4px 0}
-.split-pane-body .todo-item input[type="checkbox"]{accent-color:var(--primary-color)}
-.split-pane-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);opacity:.5;gap:10px}
-.split-pane-placeholder i{font-size:2rem}
-
-.split-divider{width:6px;background:var(--border-color);cursor:col-resize;flex-shrink:0;transition:background .2s;position:relative}
-.split-divider:hover,.split-divider.dragging{background:var(--primary-color)}
-.split-divider::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:30px;background:var(--text-secondary);border-radius:2px;opacity:.5}
-
-/* ============================================
    NOTE EDITOR (full screen)
    ============================================ */
 .note-editor{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-primary);z-index:1000;display:flex;flex-direction:column;overflow:hidden}
@@ -95,7 +70,7 @@
 .editor-toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:8px;background:var(--bg-tertiary);border-radius:8px;margin-bottom:16px;align-items:center;border:1px solid var(--border-color)}
 .toolbar-btn{background:none;border:none;color:var(--text-secondary);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s;position:relative}
 .toolbar-btn:hover{color:var(--text-primary);background:var(--bg-secondary)}
-.toolbar-btn.active{color:var(--primary-color);background:rgba(var(--primary-rgb,.1))}
+.toolbar-btn.active{color:var(--primary-color);background:rgba(var(--primary-rgb),.1)}
 .toolbar-heading{font-weight:700;font-size:.75rem;width:auto;padding:0 8px}
 .toolbar-sep{width:1px;height:20px;background:var(--border-color);margin:0 4px;flex-shrink:0}
 
@@ -187,16 +162,9 @@
   .notes-header-right{flex-wrap:wrap}
   .notes-search input{width:100%}
   .notes-grid{grid-template-columns:1fr}
-
   .toolbar-btn{width:28px;height:28px;font-size:.7rem}
   .toolbar-heading{padding:0 5px;font-size:.65rem}
-
   .table-creator-content{width:95vw}
   .lightbox-image{max-width:95%;max-height:80%}
   .lightbox-btn{width:30px;height:30px;font-size:.8rem}
-
-  /* Split view: vertical on mobile */
-  .split-view-container{flex-direction:column;height:calc(100vh - 140px)}
-  .split-divider{width:100%;height:6px;cursor:row-resize}
-  .split-divider::after{width:30px;height:2px}
 }
