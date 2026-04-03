@@ -615,7 +615,7 @@ function renderCompoundWords(items) {
     }).join('');
 }
 
-/* ===== WORD POPUP - Click từ trong Word Family ===== */
+
 async function showWordPopup(word, x, y) {
     // Reuse wordLookup popup nếu có
     if (window.showWordLookupPopup) {
@@ -693,10 +693,6 @@ async function showWordPopup(word, x, y) {
         if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Lỗi kết nối</div>';
     }
 }
-
-
-/* ===== WORD POPUP - Click từ trong Word Family ===== */
-
 
 function inferPOSFromSuffix(word) {
     const wordLower = word.toLowerCase();
