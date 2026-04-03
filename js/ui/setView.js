@@ -36,6 +36,10 @@ function bindSetViewEvents() {
     });
     
     document.addEventListener('input', (e) => {
+        if (e.target.id === 'set-view-sort-select') {
+            const query = document.getElementById('set-view-search-input')?.value || '';
+            filterWords(query);
+        }
         if (e.target.id === 'set-view-search-input') {
             filterWords(e.target.value);
         }
@@ -96,12 +100,37 @@ export function backToBookshelf() {
 
 /* ===== FILTER WORDS ===== */
 function filterWords(query) {
-    const words = getWordsForSet(currentSetId);
-    const filtered = words.filter(w => 
-        w.word?.toLowerCase().includes(query.toLowerCase()) ||
-        w.meanings?.[0]?.defVi?.toLowerCase().includes(query.toLowerCase())
-    );
-    renderWordList(filtered);
+    let words = getWordsForSet(currentSetId);
+    if (query) {
+        words = words.filter(w => 
+            w.word?.toLowerCase().includes(query.toLowerCase()) ||
+            w.meanings?.[0]?.defVi?.toLowerCase().includes(query.toLowerCase())
+        );
+    }
+    words = sortWords(words);
+    renderWordList(words);
+}
+
+function sortWords(words) {
+    const sortSelect = document.getElementById('set-view-sort-select');
+    const sortBy = sortSelect?.value || 'newest';
+    const sorted = [...words];
+    switch (sortBy) {
+        case 'az':
+            sorted.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
+            break;
+        case 'za':
+            sorted.sort((a, b) => (b.word || '').localeCompare(a.word || ''));
+            break;
+        case 'oldest':
+            sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+            break;
+        case 'newest':
+        default:
+            sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            break;
+    }
+    return sorted;
 }
 
 /* ===== GET WORDS FOR SET ===== */

@@ -398,17 +398,6 @@ function getFilteredWordsForTyping() {
   }
 
   // include groups (OR logic)
-  // CEFR Level filter
-  const typCefrLevels = [];
-  document.querySelectorAll('#typing-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
-    if (cb.checked) typCefrLevels.push(cb.value);
-  });
-  if (typCefrLevels.length > 0 && typCefrLevels.length < 7) {
-    words = words.filter(w => {
-      const level = w.cefrLevel || getCEFRLevel(w.word).level;
-      return typCefrLevels.includes(level);
-    });
-  }
 
   words = words.filter(w => {
     const mastered = isMastered(w);

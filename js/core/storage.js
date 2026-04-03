@@ -2,6 +2,7 @@
 /* VoLearn v2.2.0 - Local Storage & Export/Import */
 
 import { appData } from './state.js';
+import { getCEFRLevel } from '../data/cefrEngine.js';
 
 /* ===== CONSTANTS ===== */
 const STORAGE_KEY = 'volearn_data';
@@ -47,6 +48,15 @@ function sanitizeLoadedData(data) {
         return entry;
     });
     
+    // Auto-assign cefrLevel cho từ cũ chưa có
+    sanitized.vocabulary = sanitized.vocabulary.map(w => {
+        if (!w.cefrLevel && w.word) {
+            const pos = w.meanings?.[0]?.pos || null;
+            w.cefrLevel = getCEFRLevel(w.word, pos).level;
+        }
+        return w;
+    });
+
     return sanitized;
 }
 

@@ -777,3 +777,25 @@
     border-color: var(--primary-color);
     outline: none;
 }
+
+/* ===== SORT DROPDOWN ===== */
+.set-view-sort {
+    padding: 0 12px 8px;
+}
+
+.set-view-sort select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.set-view-sort select:focus {
+    border-color: var(--primary-color);
+}

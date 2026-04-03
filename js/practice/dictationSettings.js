@@ -423,18 +423,6 @@ function getFilteredWordsForDictation() {
     }
   }
 
-  // CEFR Level filter
-  const dictCefrLevels = [];
-  document.querySelectorAll('#dictation-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
-    if (cb.checked) dictCefrLevels.push(cb.value);
-  });
-  if (dictCefrLevels.length > 0 && dictCefrLevels.length < 7) {
-    words = words.filter(w => {
-      const level = w.cefrLevel || getCEFRLevel(w.word).level;
-      return dictCefrLevels.includes(level);
-    });
-  }
-
   // marks OR logic
   words = words.filter(w => {
     const mastered = isMastered(w);

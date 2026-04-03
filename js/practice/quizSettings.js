@@ -37,7 +37,6 @@ let quizSettings = {
   includeBookmarked: true,
 
   sortBy: 'random',
-  cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'],
 
   questionFields: [1, 5],
   answerFields: [5],
@@ -391,15 +390,6 @@ function getQuizSettingsFromForm() {
   const opt = document.querySelector('input[name="quiz-option-count"]:checked');
   quizSettings.optionCount = parseInt(opt?.value || '4', 10);
 
-  // CEFR levels
-  quizSettings.cefrLevels = [];
-  document.querySelectorAll('#quiz-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
-    if (cb.checked) quizSettings.cefrLevels.push(cb.value);
-  });
-  if (quizSettings.cefrLevels.length === 0) {
-    quizSettings.cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'];
-  }
-
   return quizSettings;
 }
 
@@ -431,14 +421,6 @@ function getFilteredWordsForQuiz() {
         return new Date(w.createdAt) >= startDate;
       });
     }
-  }
-
-  // CEFR Level filter
-  if (quizSettings.cefrLevels.length < 7) {
-    words = words.filter(w => {
-      const level = w.cefrLevel || getCEFRLevel(w.word).level;
-      return quizSettings.cefrLevels.includes(level);
-    });
   }
 
   // marks (unmarked/mastered/learning/bookmarked)

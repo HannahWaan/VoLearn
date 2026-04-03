@@ -34,7 +34,6 @@ let flashcardSettings = {
     includeMastered: true,
     includeLearning: true,
     sortBy: 'random',
-    cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'],
     frontFields: ['word', 'phonetic'],
     backFields: ['pos', 'defVi', 'example']
 };
@@ -410,15 +409,6 @@ export function getFlashcardSettingsFromForm() {
         }
     });
 
-    // CEFR levels
-    flashcardSettings.cefrLevels = [];
-    document.querySelectorAll('#flashcard-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
-        if (cb.checked) flashcardSettings.cefrLevels.push(cb.value);
-    });
-    if (flashcardSettings.cefrLevels.length === 0) {
-        flashcardSettings.cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'];
-    }
-
     return flashcardSettings;
 }
 
@@ -445,14 +435,6 @@ export function getFilteredWordsForFlashcard() {
         if (startDate) {
             words = words.filter(w => new Date(w.createdAt) >= startDate);
         }
-    }
-
-    // CEFR Level filter
-    if (flashcardSettings.cefrLevels.length < 7) {
-        words = words.filter(w => {
-            const level = w.cefrLevel || getCEFRLevel(w.word).level;
-            return flashcardSettings.cefrLevels.includes(level);
-        });
     }
 
     words = words.filter(w => {
