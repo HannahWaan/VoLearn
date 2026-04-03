@@ -37,12 +37,15 @@ function bindSetViewEvents() {
     });
     
     document.addEventListener('input', (e) => {
+        if (e.target.id === 'set-view-search-input') {
+            filterWords(e.target.value);
+        }
+    });
+    
+    document.addEventListener('change', (e) => {
         if (e.target.id === 'set-view-sort-select') {
             const query = document.getElementById('set-view-search-input')?.value || '';
             filterWords(query);
-        }
-        if (e.target.id === 'set-view-search-input') {
-            filterWords(e.target.value);
         }
     });
     
@@ -166,7 +169,8 @@ export function renderSetView() {
         wordCountEl.textContent = `${words.length} từ`;
     }
     
-    renderWordList(words);
+    const sorted = sortWords(words);
+    renderWordList(sorted);
     resetDetailPanel();
 }
 

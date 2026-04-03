@@ -391,9 +391,7 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     // Render Derived Forms tags
     renderDerivedForms(baseWordLower, allForms);
     
-    // Show the card
-    const card = document.getElementById('word-family-card');
-    if (card && allForms.size > 0) card.style.display = 'block';
+    // Card is always visible, just update content
     
     // Still return text format for storage
     const sortedForms = Array.from(allForms.entries())
@@ -1174,8 +1172,11 @@ function clearAllMeaningBlocks() {
     
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal) wordFormGlobal.value = '';
-    const wfCard = document.getElementById('word-family-card');
-    if (wfCard) wfCard.style.display = 'none';
+    // Reset word family body to collapsed
+    const wfBody = document.getElementById('word-family-body');
+    if (wfBody) wfBody.style.display = 'none';
+    const wfIcon = document.getElementById('wf-toggle-icon');
+    if (wfIcon) { wfIcon.classList.remove('fa-chevron-up'); wfIcon.classList.add('fa-chevron-down'); }
     const wfTbody = document.getElementById('word-family-tbody');
     if (wfTbody) wfTbody.innerHTML = '<tr><td colspan="4" class="wf-empty">Nhập từ để xem word family</td></tr>';
     const dfSection = document.getElementById('derived-forms-section');
