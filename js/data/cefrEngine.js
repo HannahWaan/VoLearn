@@ -59,36 +59,104 @@ const POS_MAP = {
  * @param {string} [pos] - loại từ (noun, verb, adjective...)
  * @returns {{ level: string, color: string, label: string }}
  */
+// Heuristic CEFR estimation for words not in Oxford 5000
+const ADVANCED_SUFFIXES_C2 = ['esque', 'ennial', 'aceous', 'itious', 'ulent', 'iform', 'oid'];
+const ADVANCED_SUFFIXES_C1 = ['tion', 'sion', 'ment', 'ness', 'ity', 'ence', 'ance', 'ous', 'ive', 'ial', 'ical', 'uous', 'eous', 'ible', 'able', 'ism', 'ist', 'ize', 'ise', 'fy', 'tude', 'ular'];
+const ADVANCED_SUFFIXES_B2 = ['ly', 'ful', 'less', 'al', 'en', 'ward', 'wise'];
+const ADVANCED_PREFIXES_C2 = ['circum', 'extra', 'infra', 'macro', 'micro', 'mono', 'poly', 'proto', 'quasi', 'retro', 'hyper', 'hypo'];
+const ADVANCED_PREFIXES_C1 = ['anti', 'counter', 'inter', 'mis', 'non', 'over', 'pre', 'pseudo', 'semi', 'sub', 'super', 'trans', 'ultra', 'under'];
+
+function estimateCEFR(word) {
+    const w = word.toLowerCase().trim();
+    const len = w.length;
+    
+    // Very short common words → likely A1-A2
+    if (len <= 3) return 'A1';
+    if (len <= 4) return 'A2';
+    
+    let score = 0; // Higher = more advanced
+    
+    // Length factor (longer words tend to be more advanced)
+    if (len >= 12) score += 3;
+    else if (len >= 9) score += 2;
+    else if (len >= 7) score += 1;
+    
+    // Check C2 suffixes
+    for (const suf of ADVANCED_SUFFIXES_C2) {
+        if (w.endsWith(suf)) { score += 4; break; }
+    }
+    // Check C1 suffixes
+    for (const suf of ADVANCED_SUFFIXES_C1) {
+        if (w.endsWith(suf)) { score += 3; break; }
+    }
+    // Check B2 suffixes
+    for (const suf of ADVANCED_SUFFIXES_B2) {
+        if (w.endsWith(suf)) { score += 1; break; }
+    }
+    
+    // Check C2 prefixes
+    for (const pre of ADVANCED_PREFIXES_C2) {
+        if (w.startsWith(pre)) { score += 4; break; }
+    }
+    // Check C1 prefixes
+    for (const pre of ADVANCED_PREFIXES_C1) {
+        if (w.startsWith(pre)) { score += 2; break; }
+    }
+    
+    // Latin/Greek roots indicator (multiple syllables, complex patterns)
+    const vowelGroups = w.match(/[aeiouy]+/gi);
+    const syllables = vowelGroups ? vowelGroups.length : 1;
+    if (syllables >= 5) score += 3;
+    else if (syllables >= 4) score += 2;
+    else if (syllables >= 3) score += 1;
+    
+    // Double consonants, uncommon letter combos
+    if (/ph|th[^e]|ght|sch|chr|psych|pneum/i.test(w)) score += 1;
+    
+    // Map score to CEFR
+    if (score >= 7) return 'C2';
+    if (score >= 5) return 'C1';
+    if (score >= 3) return 'B2';
+    if (score >= 2) return 'B1';
+    if (score >= 1) return 'A2';
+    return 'B1'; // Default for unknown words
+}
+
 export function getCEFRLevel(word, pos = null) {
     const result = { level: 'unknown', color: CEFR_COLORS.unknown, label: CEFR_LABELS.unknown };
     if (!word) return result;
 
     const key = word.toLowerCase().trim();
     const entry = CEFR_DB[key];
-    if (!entry) return result;
-
+    
     let level = null;
 
-    // Nếu có POS, tra theo POS trước
-    if (pos) {
-        const mapped = POS_MAP[pos.toLowerCase()] || pos.toLowerCase();
-        level = entry[mapped] || null;
-    }
-
-    // Fallback: lấy level thấp nhất (dễ nhất) trong tất cả POS
-    if (!level) {
-        const allLevels = Object.values(entry);
-        if (allLevels.length > 0) {
-            level = allLevels.reduce((min, l) => {
-                return CEFR_LEVELS.indexOf(l) < CEFR_LEVELS.indexOf(min) ? l : min;
-            });
+    if (entry) {
+        // Nếu có POS, tra theo POS trước
+        if (pos) {
+            const mapped = POS_MAP[pos.toLowerCase()] || pos.toLowerCase();
+            level = entry[mapped] || null;
         }
+
+        // Fallback: lấy level thấp nhất (dễ nhất) trong tất cả POS
+        if (!level) {
+            const allLevels = Object.values(entry).filter(l => l && l.trim());
+            if (allLevels.length > 0) {
+                level = allLevels.reduce((min, l) => {
+                    return CEFR_LEVELS.indexOf(l) < CEFR_LEVELS.indexOf(min) ? l : min;
+                });
+            }
+        }
+    } else {
+        // Không có trong Oxford 5000 → dùng heuristic estimation
+        level = estimateCEFR(key);
     }
 
     if (level && CEFR_LEVELS.includes(level)) {
         result.level = level;
         result.color = CEFR_COLORS[level];
         result.label = CEFR_LABELS[level];
+        if (!entry) result.estimated = true; // Đánh dấu là ước tính
     }
 
     return result;
