@@ -216,3 +216,43 @@
     font-size: 0.75rem;
     color: var(--text-secondary);
 }
+
+
+/* ===== Distribution Chart Tabs ===== */
+.dist-tabs {
+    display: flex;
+    gap: 0;
+    margin: 0 16px 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-secondary, #f0f0f0);
+}
+.dist-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.dist-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary, #e0e0e0);
+}
+.dist-tab.active {
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+}
+.dist-chart-panel {
+    display: none;
+}
+.dist-chart-panel.active {
+    display: block;
+}

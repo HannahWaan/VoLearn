@@ -382,34 +382,85 @@ function inferPOSFromSuffix(word) {
 
 function findDerivedForms(baseWord, apiData) {
     const forms = new Map();
-    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    const abbr = {
+        'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv',
+        'preposition': 'prep', 'conjunction': 'conj', 'interjection': 'interj',
+        'pronoun': 'pron', 'phrasal verb': 'pv', 'auxiliary verb': 'aux'
+    };
     
     if (!apiData || !Array.isArray(apiData)) return forms;
     
+    const baseWordLower = baseWord.toLowerCase();
+    
+    function addForm(word, posEn) {
+        const w = word.toLowerCase().replace(/\*/g, '').trim();
+        if (!w || w === baseWordLower) return;
+        const posAbbr = abbr[posEn] || posEn;
+        if (!posAbbr) return;
+        
+        if (forms.has(w)) {
+            const existing = forms.get(w);
+            if (!existing.includes(posAbbr)) {
+                forms.set(w, existing + ', ' + posAbbr);
+            }
+        } else {
+            forms.set(w, posAbbr);
+        }
+    }
+    
     apiData.forEach(entry => {
         if (!entry.meta) return;
-        
-        entry.meta.stems?.forEach(stem => {
-            const stemLower = stem.toLowerCase();
-            if (stemLower !== baseWord.toLowerCase()) {
-                const pos = entry.fl;
-                if (pos && abbr[pos]) {
-                    forms.set(stemLower, abbr[pos]);
-                }
-            }
-        });
+        const entryPos = entry.fl || '';
         
         if (entry.uros) {
             entry.uros.forEach(uro => {
-                if (uro.ure) {
-                    const form = uro.ure.replace(/\*/g, '').toLowerCase();
-                    const pos = uro.fl;
-                    if (pos && abbr[pos]) {
-                        forms.set(form, abbr[pos]);
-                    }
+                if (uro.ure && uro.fl) {
+                    addForm(uro.ure, uro.fl);
                 }
             });
         }
+        
+        entry.meta.stems?.forEach(stem => {
+            const stemClean = stem.toLowerCase().replace(/\*/g, '').trim();
+            if (stemClean !== baseWordLower && !forms.has(stemClean)) {
+                const inferredPos = inferPOSFromSuffix(stemClean);
+                if (inferredPos) {
+                    addForm(stem, inferredPos);
+                } else if (entryPos) {
+                    addForm(stem, entryPos);
+                }
+            }
+        });
+    });
+    
+    return forms;
+}
+    
+    apiData.forEach(entry => {
+        if (!entry.meta) return;
+        const entryPos = entry.fl || '';
+        
+        // 1. uros (undefined running-on) — derived forms chính xác nhất
+        if (entry.uros) {
+            entry.uros.forEach(uro => {
+                if (uro.ure && uro.fl) {
+                    addForm(uro.ure, uro.fl);
+                }
+            });
+        }
+        
+        // 2. stems — chỉ lấy nếu khác base word và chưa có trong forms
+        entry.meta.stems?.forEach(stem => {
+            const stemClean = stem.toLowerCase().replace(/\*/g, '').trim();
+            if (stemClean !== baseWordLower && !forms.has(stemClean)) {
+                const inferredPos = inferPOSFromSuffix(stemClean);
+                if (inferredPos) {
+                    addForm(stem, inferredPos);
+                } else if (entryPos) {
+                    addForm(stem, entryPos);
+                }
+            }
+        });
     });
     
     return forms;

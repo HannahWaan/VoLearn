@@ -10,7 +10,7 @@
         <div class="card-body">
             <!-- Từ vựng -->
             <div class="form-group">
-                <label for="word-input">Từ vựng <span class="required">*</span></label>
+                <label for="word-input">Từ vựng <span class="required">*</span> <span id="cefr-level-display" style="display:none;"><span id="cefr-badge-container"></span> <span class="cefr-label-text" id="cefr-label-text"></span></span></label>
                 <div class="input-with-icon">
                     <input type="text" id="word-input" placeholder="Nhập từ tiếng Anh..." autocomplete="off">
                     <button type="button" id="btn-speak-word" class="btn-input-icon" title="Phát âm">
@@ -20,10 +20,6 @@
                 <div id="word-suggestions" class="suggestions-dropdown"></div>
 
             <!-- CEFR Level Display -->
-            <div id="cefr-level-display" style="display:none;">
-                <span id="cefr-badge-container"></span>
-                <span class="cefr-label-text" id="cefr-label-text"></span>
-            </div>
 
             <!-- Phiên âm GLOBAL (đưa lên trên, 1 chỗ duy nhất) -->
             <div class="form-group phonetic-global-group">

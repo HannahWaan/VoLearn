@@ -716,4 +716,16 @@ export function initHome() {
 
 /* ===== Globals ===== */
 window.renderHome = renderHome;
+
+/* ===== Switch Distribution Chart Tab ===== */
+function switchDistChart(chart, btn) {
+    document.querySelectorAll('.dist-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.dist-chart-panel').forEach(p => p.classList.remove('active'));
+    
+    if (btn) btn.classList.add('active');
+    const panel = document.getElementById('dist-panel-' + chart);
+    if (panel) panel.classList.add('active');
+}
+window.switchDistChart = switchDistChart;
+
 window.initHome = initHome;
