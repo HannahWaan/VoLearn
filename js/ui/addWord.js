@@ -1090,6 +1090,7 @@ export function clearWordForm() {
 
 function doClearWordForm() {
     currentFilledWord = '';
+    updateCEFRDisplay(null);
     editingWordId = null;
     lastSelectedSetId = '';
     
@@ -1230,6 +1231,7 @@ export function saveWord() {
 
 function clearWordFormSilent() {
     currentFilledWord = '';
+    updateCEFRDisplay(null);
     editingWordId = null;
     
     const wordInput = document.getElementById('word-input');

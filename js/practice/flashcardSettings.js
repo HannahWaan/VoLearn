@@ -8,6 +8,7 @@ import { saveData } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeAllModals } from '../ui/modalEngine.js';
 import { startFlashcard } from './flashcard.js';
+import { getCEFRLevel, cefrBadgeHTML } from '../data/cefrEngine.js';
 
 /* ===== CONSTANTS ===== */
 const POS_MAPPING = {
@@ -33,6 +34,7 @@ let flashcardSettings = {
     includeMastered: true,
     includeLearning: true,
     sortBy: 'random',
+    cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'],
     frontFields: ['word', 'phonetic'],
     backFields: ['pos', 'defVi', 'example']
 };
@@ -154,7 +156,8 @@ export function renderFieldSelectors() {
         { id: 'defVi', label: 'Nghĩa (VI)' },
         { id: 'example', label: 'Ví dụ' },
         { id: 'synonyms', label: 'Từ đồng nghĩa' },
-        { id: 'antonyms', label: 'Từ trái nghĩa' }
+        { id: 'antonyms', label: 'Từ trái nghĩa' },
+        { id: 'cefrLevel', label: 'CEFR Level' }
     ];
 
     // Render Front Fields - THÊM class 'selected'
@@ -407,6 +410,15 @@ export function getFlashcardSettingsFromForm() {
         }
     });
 
+    // CEFR levels
+    flashcardSettings.cefrLevels = [];
+    document.querySelectorAll('#flashcard-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) flashcardSettings.cefrLevels.push(cb.value);
+    });
+    if (flashcardSettings.cefrLevels.length === 0) {
+        flashcardSettings.cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'unknown'];
+    }
+
     return flashcardSettings;
 }
 
@@ -433,6 +445,14 @@ export function getFilteredWordsForFlashcard() {
         if (startDate) {
             words = words.filter(w => new Date(w.createdAt) >= startDate);
         }
+    }
+
+    // CEFR Level filter
+    if (flashcardSettings.cefrLevels.length < 7) {
+        words = words.filter(w => {
+            const level = w.cefrLevel || getCEFRLevel(w.word).level;
+            return flashcardSettings.cefrLevels.includes(level);
+        });
     }
 
     words = words.filter(w => {

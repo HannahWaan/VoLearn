@@ -3,6 +3,7 @@
 
 import { appData } from '../core/state.js';
 import { saveData } from '../core/storage.js';
+import { getCEFRLevel } from '../data/cefrEngine.js';
 import { showToast } from './toast.js';
 import { speak } from '../utils/speech.js';
 import { generateId } from '../utils/helpers.js';
@@ -777,9 +778,12 @@ function addToVocabulary() {
     
     // Create word object
     const now = new Date().toISOString();
+    const firstPos = meanings[0]?.pos || null;
+    const cefr = getCEFRLevel(word, firstPos);
     const newWord = {
         id: generateId(),
         word: word,
+        cefrLevel: cefr.level,
         setId: null,
         formation: '',
         meanings: meanings,

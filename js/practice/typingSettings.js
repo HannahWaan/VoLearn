@@ -8,6 +8,7 @@ import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { showPracticeArea } from './practiceEngine.js';
 import { startTyping } from './typing.js';
+import { getCEFRLevel } from '../data/cefrEngine.js';
 
 const POS_MAPPING = {
   noun: 'Danh từ',
@@ -397,6 +398,18 @@ function getFilteredWordsForTyping() {
   }
 
   // include groups (OR logic)
+  // CEFR Level filter
+  const typCefrLevels = [];
+  document.querySelectorAll('#typing-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
+    if (cb.checked) typCefrLevels.push(cb.value);
+  });
+  if (typCefrLevels.length > 0 && typCefrLevels.length < 7) {
+    words = words.filter(w => {
+      const level = w.cefrLevel || getCEFRLevel(w.word).level;
+      return typCefrLevels.includes(level);
+    });
+  }
+
   words = words.filter(w => {
     const mastered = isMastered(w);
     const bookmarked = isBookmarked(w);

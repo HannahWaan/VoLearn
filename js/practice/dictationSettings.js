@@ -9,6 +9,7 @@ import { appData } from '../core/state.js';
 import { showToast } from '../ui/toast.js';
 import { openModal, closeModal, closeAllModals } from '../ui/modalEngine.js';
 import { showPracticeArea } from './practiceEngine.js';
+import { getCEFRLevel } from '../data/cefrEngine.js';
 
 /* ===== FIELD DEFINITIONS ===== */
 const DICTATION_FIELDS = [
@@ -420,6 +421,18 @@ function getFilteredWordsForDictation() {
         return new Date(w.createdAt) >= startDate;
       });
     }
+  }
+
+  // CEFR Level filter
+  const dictCefrLevels = [];
+  document.querySelectorAll('#dictation-settings-modal .cefr-filter-group input[type="checkbox"]').forEach(cb => {
+    if (cb.checked) dictCefrLevels.push(cb.value);
+  });
+  if (dictCefrLevels.length > 0 && dictCefrLevels.length < 7) {
+    words = words.filter(w => {
+      const level = w.cefrLevel || getCEFRLevel(w.word).level;
+      return dictCefrLevels.includes(level);
+    });
   }
 
   // marks OR logic
