@@ -1194,6 +1194,8 @@ export function saveWord() {
         }
     } else {
         // Adding new word
+        const firstPos = meanings[0]?.pos || null;
+        const cefr = getCEFRLevel(word, firstPos);
         const newWord = {
             id: generateId(),
             word,
