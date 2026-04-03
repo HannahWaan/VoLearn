@@ -32,8 +32,33 @@
           <input type="range" id="quiz-limit-slider" min="0" max="100" value="0" class="full-slider">
         </div>
 
-        <!-- Scope -->
-        
+        <div class="setting-section">
+          <h4><i class="fas fa-book"></i> Phạm Vi</h4>
+          <div class="scope-option" onclick="openQuizScopeSelector('set')">
+              <i class="fas fa-folder"></i>
+              <span id="quiz-selected-set-name">Tất Cả Từ Vựng</span>
+              <i class="fas fa-chevron-right"></i>
+          </div>
+          <div class="scope-option" onclick="openQuizScopeSelector('date')">
+              <i class="fas fa-calendar-alt"></i>
+              <span id="quiz-selected-date-range">Tất Cả Ngày</span>
+              <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+
+        <div class="setting-section">
+          <h4><i class="fas fa-filter"></i> Lọc Từ</h4>
+          <label class="checkbox-item">
+              <input type="checkbox" id="quiz-include-learning" checked>
+              <span class="checkmark"></span>
+              <span class="checkbox-label">Đang học</span>
+          </label>
+          <label class="checkbox-item">
+              <input type="checkbox" id="quiz-include-mastered" checked>
+              <span class="checkmark"></span>
+              <span class="checkbox-label">Đã thuộc</span>
+          </label>
+        </div>
 
 <div class="setting-section">
           <h4><i class="fas fa-sort"></i> Sắp Xếp Theo</h4>
