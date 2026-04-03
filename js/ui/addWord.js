@@ -6,9 +6,9 @@ import { saveData } from '../core/storage.js';
 import { showToast } from './toast.js';
 import { speak } from '../utils/speech.js';
 import { escapeHtml, generateId } from '../utils/helpers.js';
-import { getCEFRLevel, cefrBadgeHTML, generateFormationWithCEFR, getCEFRAllPOS } from '../data/cefrEngine.js';
 import { renderShelves, populateSetSelect } from './bookshelf.js';
 import { navigate } from '../core/router.js';
+import { getCEFRLevel, cefrBadgeHTML, generateFormationWithCEFR, getCEFRAllPOS } from '../data/cefrEngine.js';
 
 /* ===== CONSTANTS ===== */
 const API_BASE = 'https://volearn.asstrayca.workers.dev';
@@ -296,6 +296,8 @@ async function processLearnerData(data, word) {
                 synonyms: '', antonyms: ''
             });
         }
+    }
+    
     const translations = await Promise.all(
         meaningsList.map(m => translateToVietnamese(m.defEn))
     );
@@ -380,60 +382,38 @@ function inferPOSFromSuffix(word) {
 
 function findDerivedForms(baseWord, apiData) {
     const forms = new Map();
-    const abbr = {
-        'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv',
-        'preposition': 'prep', 'conjunction': 'conj', 'interjection': 'interj',
-        'pronoun': 'pron', 'phrasal verb': 'pv', 'auxiliary verb': 'aux'
-    };
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
     
     if (!apiData || !Array.isArray(apiData)) return forms;
     
-    const baseWordLower = baseWord.toLowerCase();
-    
-    function addForm(word, posEn) {
-        const w = word.toLowerCase().replace(/\*/g, '').trim();
-        if (!w || w === baseWordLower) return;
-        const posAbbr = abbr[posEn] || posEn;
-        if (!posAbbr) return;
-        
-        if (forms.has(w)) {
-            const existing = forms.get(w);
-            if (!existing.includes(posAbbr)) {
-                forms.set(w, existing + ', ' + posAbbr);
-            }
-        } else {
-            forms.set(w, posAbbr);
-        }
-    }
-    
     apiData.forEach(entry => {
         if (!entry.meta) return;
-        const entryPos = entry.fl || '';
-        
-        if (entry.uros) {
-            entry.uros.forEach(uro => {
-                if (uro.ure && uro.fl) {
-                    addForm(uro.ure, uro.fl);
-                }
-            });
-        }
         
         entry.meta.stems?.forEach(stem => {
-            const stemClean = stem.toLowerCase().replace(/\*/g, '').trim();
-            if (stemClean !== baseWordLower && !forms.has(stemClean)) {
-                const inferredPos = inferPOSFromSuffix(stemClean);
-                if (inferredPos) {
-                    addForm(stem, inferredPos);
-                } else if (entryPos) {
-                    addForm(stem, entryPos);
+            const stemLower = stem.toLowerCase();
+            if (stemLower !== baseWord.toLowerCase()) {
+                const pos = entry.fl;
+                if (pos && abbr[pos]) {
+                    forms.set(stemLower, abbr[pos]);
                 }
             }
         });
+        
+        if (entry.uros) {
+            entry.uros.forEach(uro => {
+                if (uro.ure) {
+                    const form = uro.ure.replace(/\*/g, '').toLowerCase();
+                    const pos = uro.fl;
+                    if (pos && abbr[pos]) {
+                        forms.set(form, abbr[pos]);
+                    }
+                }
+            });
+        }
     });
     
     return forms;
 }
-    
 
 async function addThesaurusData(result, thesaurusData) {
     if (!thesaurusData || !Array.isArray(thesaurusData) || typeof thesaurusData[0] === 'string') {
