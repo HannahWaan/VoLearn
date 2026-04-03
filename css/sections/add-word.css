@@ -407,3 +407,160 @@
     }
 }
 
+
+/* ===== WORD FAMILY CARD ===== */
+.word-family-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.word-family-header {
+    margin-bottom: 12px;
+}
+
+.word-family-header label {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.word-family-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+
+.word-family-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.word-family-table th {
+    background: var(--bg-tertiary);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.word-family-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+.word-family-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wf-word {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin: 2px 0;
+    cursor: default;
+}
+
+.wf-word.wf-base {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.wf-word.wf-derived {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.wf-word .wf-cefr {
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.wf-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 20px !important;
+}
+
+/* Derived Forms */
+.derived-forms-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+}
+
+.derived-forms-section label {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.derived-forms-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.df-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.df-tag:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-light, rgba(233, 30, 140, 0.08));
+}
+
+.df-tag .df-pos {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.df-tag .df-cefr {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+@media (max-width: 480px) {
+    .word-family-table th,
+    .word-family-table td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+    .wf-word {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+}

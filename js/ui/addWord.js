@@ -314,51 +314,158 @@ async function processLearnerData(data, word) {
 
 function generateWordFormation(baseWord, wordFormsMap, apiData) {
     const abbr = { 
-        'noun': 'n', 
-        'verb': 'v', 
-        'adjective': 'adj', 
-        'adverb': 'adv',
-        'preposition': 'prep',
-        'conjunction': 'conj'
+        'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv',
+        'preposition': 'prep', 'conjunction': 'conj'
     };
     
-    const forms = new Map();
+    const posCategories = { noun: [], verb: [], adjective: [], adverb: [] };
+    const allForms = new Map(); // word -> Set of POS
     const baseWordLower = baseWord.toLowerCase();
     
+    // Collect from wordFormsMap
     wordFormsMap.forEach((posSet, formWord) => {
-        if (posSet.size > 0) {
-            const posArray = Array.from(posSet).map(p => abbr[p] || p).filter(p => p);
-            if (posArray.length > 0) {
-                forms.set(formWord, posArray.join(', '));
+        if (!allForms.has(formWord)) allForms.set(formWord, new Set());
+        posSet.forEach(p => allForms.get(formWord).add(p));
+    });
+    
+    // Collect from API uros (derived forms)
+    if (apiData && Array.isArray(apiData)) {
+        apiData.forEach(entry => {
+            if (!entry.meta) return;
+            if (entry.uros) {
+                entry.uros.forEach(uro => {
+                    if (uro.ure && uro.fl) {
+                        const form = uro.ure.replace(/\*/g, '').toLowerCase();
+                        if (!allForms.has(form)) allForms.set(form, new Set());
+                        allForms.get(form).add(uro.fl);
+                    }
+                });
             }
-        }
-    });
-    
-    forms.forEach((pos, formWord) => {
-        if (!pos) {
-            const inferredPos = inferPOSFromSuffix(formWord);
-            if (inferredPos) {
-                forms.set(formWord, abbr[inferredPos] || inferredPos);
+            // Also add headword
+            const hw = entry.hwi?.hw?.replace(/\*/g, '').toLowerCase() || '';
+            if (hw && entry.fl) {
+                if (!allForms.has(hw)) allForms.set(hw, new Set());
+                allForms.get(hw).add(entry.fl);
             }
+        });
+    }
+    
+    // Infer POS for forms without one
+    allForms.forEach((posSet, formWord) => {
+        if (posSet.size === 0) {
+            const inferred = inferPOSFromSuffix(formWord);
+            if (inferred) posSet.add(inferred);
         }
     });
     
-    const derivedForms = findDerivedForms(baseWord, apiData);
-    derivedForms.forEach((pos, formWord) => {
-        if (!forms.has(formWord)) {
-            forms.set(formWord, pos);
+    // Categorize into POS groups
+    allForms.forEach((posSet, formWord) => {
+        posSet.forEach(pos => {
+            const key = pos.toLowerCase();
+            if (posCategories[key]) {
+                if (!posCategories[key].includes(formWord)) {
+                    posCategories[key].push(formWord);
+                }
+            }
+        });
+    });
+    
+    // Render Word Family Table
+    renderWordFamilyTable(baseWordLower, posCategories);
+    
+    // Render Derived Forms tags
+    renderDerivedForms(baseWordLower, allForms);
+    
+    // Show the card
+    const card = document.getElementById('word-family-card');
+    if (card && allForms.size > 0) card.style.display = 'block';
+    
+    // Still return text format for storage
+    const sortedForms = Array.from(allForms.entries())
+        .sort((a, b) => a[0] === baseWordLower ? -1 : b[0] === baseWordLower ? 1 : a[0].localeCompare(b[0]));
+    return sortedForms.map(([word, posSet]) => {
+        const posStr = Array.from(posSet).map(p => abbr[p] || p).join(', ');
+        return posStr ? word + ' (' + posStr + ')' : word;
+    }).join(', ');
+}
+
+function renderWordFamilyTable(baseWord, posCategories) {
+    const tbody = document.getElementById('word-family-tbody');
+    if (!tbody) return;
+    
+    const maxRows = Math.max(
+        posCategories.noun.length,
+        posCategories.verb.length,
+        posCategories.adjective.length,
+        posCategories.adverb.length,
+        1
+    );
+    
+    const totalWords = posCategories.noun.length + posCategories.verb.length + 
+                       posCategories.adjective.length + posCategories.adverb.length;
+    
+    if (totalWords === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="wf-empty">Không tìm thấy word family</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    for (let i = 0; i < maxRows; i++) {
+        html += '<tr>';
+        ['noun', 'verb', 'adjective', 'adverb'].forEach(pos => {
+            const word = posCategories[pos][i];
+            if (word) {
+                const isBase = word === baseWord;
+                const cefr = getCEFRLevel(word);
+                const cefrBadge = cefr.level !== 'unknown' 
+                    ? '<span class="wf-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>' 
+                    : '';
+                html += '<td><span class="wf-word ' + (isBase ? 'wf-base' : 'wf-derived') + '">' + 
+                         escapeHtml(word) + cefrBadge + '</span></td>';
+            } else {
+                html += '<td></td>';
+            }
+        });
+        html += '</tr>';
+    }
+    
+    tbody.innerHTML = html;
+}
+
+function renderDerivedForms(baseWord, allForms) {
+    const container = document.getElementById('derived-forms-tags');
+    const section = document.getElementById('derived-forms-section');
+    if (!container || !section) return;
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    
+    // Collect all forms except the base word
+    const derivedList = [];
+    allForms.forEach((posSet, formWord) => {
+        if (formWord !== baseWord) {
+            derivedList.push({ word: formWord, pos: Array.from(posSet) });
         }
     });
     
-    if (forms.size === 0) return '';
+    if (derivedList.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
     
-    const sortedForms = Array.from(forms.entries()).sort((a, b) => {
-        if (a[0] === baseWordLower) return -1;
-        if (b[0] === baseWordLower) return 1;
-        return a[0].localeCompare(b[0]);
-    });
+    section.style.display = 'block';
     
-    return sortedForms.map(([word, pos]) => `${word} (${pos})`).join(', ');
+    // Sort alphabetically
+    derivedList.sort((a, b) => a.word.localeCompare(b.word));
+    
+    container.innerHTML = derivedList.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrHTML = cefr.level !== 'unknown'
+            ? ' <span class="df-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>'
+            : '';
+        return '<span class="df-tag">' + escapeHtml(item.word) + 
+               ' <span class="df-pos">' + posStr + '</span>' + cefrHTML + '</span>';
+    }).join('');
 }
 
 function inferPOSFromSuffix(word) {
@@ -1052,6 +1159,12 @@ function clearAllMeaningBlocks() {
     
     const wordFormGlobal = document.getElementById('word-formation-global');
     if (wordFormGlobal) wordFormGlobal.value = '';
+    const wfCard = document.getElementById('word-family-card');
+    if (wfCard) wfCard.style.display = 'none';
+    const wfTbody = document.getElementById('word-family-tbody');
+    if (wfTbody) wfTbody.innerHTML = '<tr><td colspan="4" class="wf-empty">Nhập từ để xem word family</td></tr>';
+    const dfSection = document.getElementById('derived-forms-section');
+    if (dfSection) dfSection.style.display = 'none';
     const phoneticUSGlobal = document.getElementById('phonetic-us-global');
     if (phoneticUSGlobal) phoneticUSGlobal.value = '';
     const phoneticUKGlobal = document.getElementById('phonetic-uk-global');

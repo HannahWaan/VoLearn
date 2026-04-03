@@ -47,11 +47,33 @@
                 </div>
             </div>
 
-            <!-- Word Formation -->
-            <div class="form-group">
-                <label for="word-formation-global">Word Formation</label>
-                <input type="text" id="word-formation-global" class="word-formation-global" placeholder="advance (n, v), advanced (adj), advancement (n)">
+            <!-- Word Family & Derived Forms -->
+            <div class="word-family-card" id="word-family-card" style="display:none;">
+                <div class="word-family-header">
+                    <label><i class="fas fa-project-diagram"></i> Word Family</label>
+                </div>
+                <div class="word-family-table-wrap">
+                    <table class="word-family-table" id="word-family-table">
+                        <thead>
+                            <tr>
+                                <th>Noun</th>
+                                <th>Verb</th>
+                                <th>Adjective</th>
+                                <th>Adverb</th>
+                            </tr>
+                        </thead>
+                        <tbody id="word-family-tbody">
+                            <tr><td colspan="4" class="wf-empty">Nhập từ để xem word family</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="derived-forms-section" id="derived-forms-section" style="display:none;">
+                    <label><i class="fas fa-code-branch"></i> Derived Forms</label>
+                    <div class="derived-forms-tags" id="derived-forms-tags"></div>
+                </div>
             </div>
+            <!-- Hidden input to store formation data -->
+            <input type="hidden" id="word-formation-global">
 
             <!-- Bộ từ vựng -->
             <div class="form-group">
