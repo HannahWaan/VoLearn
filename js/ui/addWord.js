@@ -296,7 +296,6 @@ async function processLearnerData(data, word) {
                 synonyms: '', antonyms: ''
             });
         }
-    
     const translations = await Promise.all(
         meaningsList.map(m => translateToVietnamese(m.defEn))
     );
