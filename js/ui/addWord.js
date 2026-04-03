@@ -6,6 +6,7 @@ import { saveData } from '../core/storage.js';
 import { showToast } from './toast.js';
 import { speak } from '../utils/speech.js';
 import { escapeHtml, generateId } from '../utils/helpers.js';
+import { getCEFRLevel, cefrBadgeHTML, generateFormationWithCEFR, getCEFRAllPOS } from '../data/cefrEngine.js';
 import { renderShelves, populateSetSelect } from './bookshelf.js';
 import { navigate } from '../core/router.js';
 
@@ -58,10 +59,12 @@ function setupEventListeners() {
             
             if (word.length < 2) {
                 hideSuggestions();
+                updateCEFRDisplay(null);
                 return;
             }
             
             showSearchingState(word);
+            updateCEFRDisplay(word);
             debounceTimer = setTimeout(() => fetchWordData(word), 500);
         });
         
@@ -1161,6 +1164,7 @@ export function saveWord() {
             existingWord.word = word;
             existingWord.setId = setId;
             existingWord.formation = wordFormation;
+            existingWord.cefrLevel = getCEFRLevel(word, meanings[0]?.pos || null).level;
             existingWord.meanings = meanings;
             existingWord.updatedAt = now;
             savedWordId = editingWordId;
@@ -1172,6 +1176,7 @@ export function saveWord() {
         const newWord = {
             id: generateId(),
             word,
+            cefrLevel: cefr.level,
             setId,
             formation: wordFormation,
             meanings,
@@ -1344,3 +1349,21 @@ export {
     lastSelectedSetId,
     POS_MAPPING
 };
+
+/* ===== CEFR AUTO-DETECT ===== */
+function updateCEFRDisplay(word) {
+    const container = document.getElementById('cefr-level-display');
+    const badgeEl = document.getElementById('cefr-badge-container');
+    const labelEl = document.getElementById('cefr-label-text');
+    if (!container || !badgeEl) return;
+
+    if (!word || word.length < 2) {
+        container.style.display = 'none';
+        return;
+    }
+
+    const cefr = getCEFRLevel(word);
+    badgeEl.innerHTML = cefrBadgeHTML(cefr.level);
+    if (labelEl) labelEl.textContent = cefr.label;
+    container.style.display = 'inline-flex';
+}

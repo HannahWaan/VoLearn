@@ -160,7 +160,7 @@ export function exportToJSON() {
 /* ===== EXPORT TO CSV ===== */
 export function exportToCSV() {
     const headers = [
-        'Word', 'Phonetic US', 'Phonetic UK', 'POS', 
+        'Word', 'CEFR Level', 'Phonetic US', 'Phonetic UK', 'POS', 
         'Definition EN', 'Definition VI', 'Example', 
         'Synonyms', 'Antonyms', 'Set', 'Mastered', 'Bookmarked'
     ];
@@ -188,6 +188,7 @@ export function exportToCSV() {
         if (meanings.length === 0) {
             rows.push([
                 escapeCSV(word.word),
+                escapeCSV(word.cefrLevel || ''),
                 '', '', '', '', '', '', '', '',
                 escapeCSV(getSetName(word.setId)),
                 word.mastered ? 'Yes' : 'No',
@@ -197,6 +198,7 @@ export function exportToCSV() {
             meanings.forEach((m, idx) => {
                 rows.push([
                     idx === 0 ? escapeCSV(word.word) : '',
+                    idx === 0 ? escapeCSV(word.cefrLevel || '') : '',
                     escapeCSV(m.phoneticUS),
                     escapeCSV(m.phoneticUK),
                     escapeCSV(m.pos),

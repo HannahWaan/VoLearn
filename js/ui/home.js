@@ -3,6 +3,7 @@
    ======================================== */
 
 import { appData, getStats } from '../core/state.js';
+import { analyzeVocabularyCEFR, CEFR_COLORS, CEFR_LABELS, CEFR_LEVELS } from '../data/cefrEngine.js';
 
 let charts = {
   scoreGauge: null,
@@ -609,6 +610,46 @@ function buildCharts(words, practiceSessions) {
       value: distValues[idx],
       color: distColors[idx],
       total: sum(distValues)
+    }))
+  );
+
+  // 6) CEFR distribution bar chart
+  const cefrAnalysis = analyzeVocabularyCEFR(words);
+  const cefrLabels = CEFR_LEVELS;
+  const cefrValues = cefrLabels.map(l => cefrAnalysis.distribution[l] || 0);
+  const cefrColors = cefrLabels.map(l => CEFR_COLORS[l]);
+
+  const cefrCtx = ?.getContext?.('2d');
+  if (cefrCtx) {
+    charts.cefrBar = new Chart(cefrCtx, {
+      type: 'bar',
+      data: {
+        labels: cefrLabels,
+        datasets: [{
+          label: 'Số từ',
+          data: cefrValues,
+          backgroundColor: cefrColors,
+          borderWidth: 0,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  }
+
+  renderLegend(
+    'home-cefr-legend',
+    cefrLabels.map((label, idx) => ({
+      label: label + ' - ' + (CEFR_LABELS[label] || ''),
+      value: cefrValues[idx],
+      color: cefrColors[idx],
+      total: sum(cefrValues)
     }))
   );
 }
