@@ -371,11 +371,6 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     });
     
     // Render Word Family Table
-    console.log('=== generateWordFormation called ===');
-    console.log('allForms:', allForms.size, 'entries');
-    console.log('posCategories noun:', posCategories.noun.length, 'verb:', posCategories.verb.length, 'adj:', posCategories.adjective.length, 'adv:', posCategories.adverb.length);
-    console.log('word-family-tbody exists:', sed -n '375,385p' js/ui/addWord.jsdocument.getElementById('word-family-tbody'));
-    console.log('word-family-card exists:', sed -n '375,385p' js/ui/addWord.jsdocument.getElementById('word-family-card'));
     renderWordFamilyTable(baseWordLower, posCategories);
     
     // Render Derived Forms tags
