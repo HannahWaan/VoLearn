@@ -242,7 +242,7 @@ async function processLearnerData(data, word) {
         if (!entry.meta || !entry.shortdef) continue;
         
         entry.meta.stems?.forEach(stem => {
-            const clean = stem.toLowerCase().replace(/[^a-z-]/g, '');
+            const clean = stem.toLowerCase().replace(/[^a-z\s-]/g, '').trim();
             if (clean && clean !== word.toLowerCase()) {
                 if (!wordFormsMap.has(clean)) {
                     wordFormsMap.set(clean, new Set());
