@@ -7,6 +7,7 @@ import { showToast, showSuccess } from './toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { navigate } from '../core/router.js';
 import { getCEFRLevel, cefrBadgeHTML, cefrBadgeSmallHTML } from '../data/cefrEngine.js';
+import { getWordFamilyHTML } from './addWord.js';
 
 /* ===== STATE ===== */
 let currentSetId = null;
@@ -297,13 +298,8 @@ function showWordDetail(word) {
                 </div>
             </div>
             
-            <!-- Word Formation nếu có -->
-            ${word.formation ? `
-                <div class="detail-formation">
-                    <span class="formation-label">Word Formation:</span>
-                    <span class="formation-text">${escapeHtml(word.formation)}</span>
-                </div>
-            ` : ''}
+            <!-- Word Family -->
+            ${word.formation ? getWordFamilyHTML(word.word, word.formation) : ''}
             
             <!-- Meanings -->
             <div class="detail-meanings-list">

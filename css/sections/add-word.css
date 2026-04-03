@@ -564,3 +564,26 @@
         padding: 2px 8px;
     }
 }
+
+/* ===== WORD FAMILY TOGGLE ===== */
+.word-family-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.wf-toggle-icon {
+    color: var(--text-secondary);
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.word-family-header:hover .wf-toggle-icon {
+    color: var(--primary-color);
+}
+
+/* In set view detail */
+.word-detail-content .word-family-card {
+    margin: 12px 0;
+}

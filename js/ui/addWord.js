@@ -118,6 +118,21 @@ function setupEventListeners() {
     // Save word
     document.getElementById('btn-save-word')?.addEventListener('click', saveWord);
     
+    // Word Family toggle
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('#word-family-toggle, .wf-toggle-btn');
+        if (toggle) {
+            const body = toggle.closest('.word-family-card')?.querySelector('.word-family-body') || document.getElementById('word-family-body');
+            const icon = toggle.closest('.word-family-card')?.querySelector('.wf-toggle-icon') || document.getElementById('wf-toggle-icon');
+            if (body) {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) icon.classList.toggle('fa-chevron-down', !isHidden);
+                if (icon) icon.classList.toggle('fa-chevron-up', isHidden);
+            }
+        }
+    });
+    
     // ========== EVENT DELEGATION CHO MEANING BLOCKS ==========
     const meaningsContainer = document.getElementById('meanings-container');
     if (meaningsContainer) {
@@ -1483,4 +1498,111 @@ function updateCEFRDisplay(word) {
     badgeEl.innerHTML = cefrBadgeHTML(cefr.level);
     if (labelEl) labelEl.textContent = cefr.label;
     container.style.display = 'inline-flex';
+}
+
+
+/* ===== EXPORT WORD FAMILY HTML FOR SET VIEW ===== */
+export function getWordFamilyHTML(word, formation) {
+    if (!word) return '';
+    
+    // Parse formation string to build word family
+    const posCategories = { noun: [], verb: [], adjective: [], adverb: [] };
+    const allForms = new Map();
+    
+    if (formation) {
+        // Parse "advance (n, v), advanced (adj), advancement (n)"
+        const parts = formation.split(',').map(s => s.trim()).filter(Boolean);
+        for (const part of parts) {
+            const match = part.match(/^(.+?)\s*\(([^)]+)\)$/);
+            if (match) {
+                const formWord = match[1].trim().toLowerCase();
+                const posArr = match[2].split(',').map(p => p.trim());
+                const posSet = new Set();
+                const posMap = { 'n': 'noun', 'v': 'verb', 'adj': 'adjective', 'adv': 'adverb' };
+                posArr.forEach(p => {
+                    const full = posMap[p] || p;
+                    posSet.add(full);
+                    if (posCategories[full] && !posCategories[full].includes(formWord)) {
+                        posCategories[full].push(formWord);
+                    }
+                });
+                allForms.set(formWord, posSet);
+            } else {
+                const formWord = part.trim().toLowerCase();
+                allForms.set(formWord, new Set());
+            }
+        }
+    }
+    
+    const baseWord = word.toLowerCase();
+    const totalWords = posCategories.noun.length + posCategories.verb.length +
+                       posCategories.adjective.length + posCategories.adverb.length;
+    
+    if (totalWords === 0 && allForms.size === 0) return '';
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    
+    // Build table HTML
+    const maxRows = Math.max(
+        posCategories.noun.length, posCategories.verb.length,
+        posCategories.adjective.length, posCategories.adverb.length, 1
+    );
+    
+    let tableHTML = '';
+    for (let i = 0; i < maxRows; i++) {
+        tableHTML += '<tr>';
+        ['noun', 'verb', 'adjective', 'adverb'].forEach(pos => {
+            const w = posCategories[pos][i];
+            if (w) {
+                const isBase = w === baseWord;
+                const cefr = getCEFRLevel(w);
+                const cefrBadge = cefr.level !== 'unknown'
+                    ? '<span class="wf-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>'
+                    : '';
+                tableHTML += '<td><span class="wf-word ' + (isBase ? 'wf-base' : 'wf-derived') + '">' +
+                             escapeHtml(w) + cefrBadge + '</span></td>';
+            } else {
+                tableHTML += '<td></td>';
+            }
+        });
+        tableHTML += '</tr>';
+    }
+    
+    // Build derived forms
+    const derivedList = [];
+    allForms.forEach((posSet, formWord) => {
+        if (formWord !== baseWord) {
+            derivedList.push({ word: formWord, pos: Array.from(posSet) });
+        }
+    });
+    derivedList.sort((a, b) => a.word.localeCompare(b.word));
+    
+    const derivedHTML = derivedList.length > 0 ? derivedList.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrTag = cefr.level !== 'unknown'
+            ? ' <span class="df-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>'
+            : '';
+        return '<span class="df-tag">' + escapeHtml(item.word) +
+               ' <span class="df-pos">' + posStr + '</span>' + cefrTag + '</span>';
+    }).join('') : '';
+    
+    return '<div class="word-family-card" style="display:block;">' +
+        '<div class="word-family-header wf-toggle-btn" style="cursor:pointer;">' +
+            '<label style="cursor:pointer;"><i class="fas fa-project-diagram"></i> Word Family</label>' +
+            '<i class="fas fa-chevron-down wf-toggle-icon"></i>' +
+        '</div>' +
+        '<div class="word-family-body" style="display:none;">' +
+            '<div class="word-family-table-wrap">' +
+                '<table class="word-family-table">' +
+                    '<thead><tr><th>Noun</th><th>Verb</th><th>Adjective</th><th>Adverb</th></tr></thead>' +
+                    '<tbody>' + (totalWords > 0 ? tableHTML : '<tr><td colspan="4" class="wf-empty">Không có dữ liệu</td></tr>') + '</tbody>' +
+                '</table>' +
+            '</div>' +
+            (derivedHTML ? '<div class="derived-forms-section" style="display:block;">' +
+                '<label><i class="fas fa-code-branch"></i> Derived Forms</label>' +
+                '<div class="derived-forms-tags">' + derivedHTML + '</div>' +
+            '</div>' : '') +
+        '</div>' +
+    '</div>';
 }

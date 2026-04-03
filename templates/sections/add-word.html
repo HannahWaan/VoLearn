@@ -49,9 +49,11 @@
 
             <!-- Word Family & Derived Forms -->
             <div class="word-family-card" id="word-family-card" style="display:none;">
-                <div class="word-family-header">
-                    <label><i class="fas fa-project-diagram"></i> Word Family</label>
+                <div class="word-family-header" id="word-family-toggle" style="cursor:pointer;">
+                    <label style="cursor:pointer;"><i class="fas fa-project-diagram"></i> Word Family</label>
+                    <i class="fas fa-chevron-down wf-toggle-icon" id="wf-toggle-icon"></i>
                 </div>
+                <div class="word-family-body" id="word-family-body" style="display:none;">
                 <div class="word-family-table-wrap">
                     <table class="word-family-table" id="word-family-table">
                         <thead>
@@ -71,6 +73,7 @@
                     <label><i class="fas fa-code-branch"></i> Derived Forms</label>
                     <div class="derived-forms-tags" id="derived-forms-tags"></div>
                 </div>
+            </div>
             </div>
             <!-- Hidden input to store formation data -->
             <input type="hidden" id="word-formation-global">
