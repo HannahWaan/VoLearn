@@ -619,7 +619,7 @@ function buildCharts(words, practiceSessions) {
   const cefrValues = cefrLabels.map(l => cefrAnalysis.distribution[l] || 0);
   const cefrColors = cefrLabels.map(l => CEFR_COLORS[l]);
 
-  const cefrCtx = ?.getContext?.('2d');
+  const cefrCtx = $('chart-cefr-bar')?.getContext?.('2d');
   if (cefrCtx) {
     charts.cefrBar = new Chart(cefrCtx, {
       type: 'bar',
