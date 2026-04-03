@@ -296,7 +296,6 @@ async function processLearnerData(data, word) {
                 synonyms: '', antonyms: ''
             });
         }
-    }
     
     const translations = await Promise.all(
         meaningsList.map(m => translateToVietnamese(m.defEn))
@@ -436,35 +435,6 @@ function findDerivedForms(baseWord, apiData) {
     return forms;
 }
     
-    apiData.forEach(entry => {
-        if (!entry.meta) return;
-        const entryPos = entry.fl || '';
-        
-        // 1. uros (undefined running-on) — derived forms chính xác nhất
-        if (entry.uros) {
-            entry.uros.forEach(uro => {
-                if (uro.ure && uro.fl) {
-                    addForm(uro.ure, uro.fl);
-                }
-            });
-        }
-        
-        // 2. stems — chỉ lấy nếu khác base word và chưa có trong forms
-        entry.meta.stems?.forEach(stem => {
-            const stemClean = stem.toLowerCase().replace(/\*/g, '').trim();
-            if (stemClean !== baseWordLower && !forms.has(stemClean)) {
-                const inferredPos = inferPOSFromSuffix(stemClean);
-                if (inferredPos) {
-                    addForm(stem, inferredPos);
-                } else if (entryPos) {
-                    addForm(stem, entryPos);
-                }
-            }
-        });
-    });
-    
-    return forms;
-}
 
 async function addThesaurusData(result, thesaurusData) {
     if (!thesaurusData || !Array.isArray(thesaurusData) || typeof thesaurusData[0] === 'string') {
