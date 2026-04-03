@@ -133,6 +133,82 @@ function setupEventListeners() {
         }
     });
     
+    // Phrasal Verbs toggle
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('#phrasal-verbs-toggle');
+        if (toggle) {
+            const body = document.getElementById('phrasal-verbs-body');
+            const icon = document.getElementById('pv-toggle-icon');
+            if (body) {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); }
+            }
+        }
+    });
+
+    // Compound Words toggle
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('#compound-words-toggle');
+        if (toggle) {
+            const body = document.getElementById('compound-words-body');
+            const icon = document.getElementById('cw-toggle-icon');
+            if (body) {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); }
+            }
+        }
+    });
+
+    // Click word in Word Family / Phrasal / Compound -> popup
+    document.addEventListener('click', (e) => {
+        const clickable = e.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable');
+        if (clickable) {
+            e.preventDefault();
+            const word = clickable.dataset.word;
+            if (word) showWordPopup(word, e.clientX, e.clientY);
+        }
+    });
+
+    // Phrasal Verbs toggle
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('#phrasal-verbs-toggle');
+        if (toggle) {
+            const body = document.getElementById('phrasal-verbs-body');
+            const icon = document.getElementById('pv-toggle-icon');
+            if (body) {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); }
+            }
+        }
+    });
+
+    // Compound Words toggle
+    document.addEventListener('click', (e) => {
+        const toggle = e.target.closest('#compound-words-toggle');
+        if (toggle) {
+            const body = document.getElementById('compound-words-body');
+            const icon = document.getElementById('cw-toggle-icon');
+            if (body) {
+                const isHidden = body.style.display === 'none';
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) { icon.classList.toggle('fa-chevron-down', !isHidden); icon.classList.toggle('fa-chevron-up', isHidden); }
+            }
+        }
+    });
+
+    // Click word in Word Family / Phrasal / Compound -> popup
+    document.addEventListener('click', (e) => {
+        const clickable = e.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable');
+        if (clickable) {
+            e.preventDefault();
+            const word = clickable.dataset.word;
+            if (word) showWordPopup(word, e.clientX, e.clientY);
+        }
+    });
+
     // ========== EVENT DELEGATION CHO MEANING BLOCKS ==========
     const meaningsContainer = document.getElementById('meanings-container');
     if (meaningsContainer) {
@@ -391,6 +467,106 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     // Render Derived Forms tags
     renderDerivedForms(baseWordLower, allForms);
     
+    // Extract and render phrasal verbs & compound words
+    const phrasalVerbs = [];
+    const compoundWords = [];
+    allForms.forEach((posSet, formWord) => {
+        if (formWord.includes(' ')) {
+            const posArr = Array.from(posSet);
+            if (posArr.some(p => p === 'phrasal verb') || formWord.split(' ').length === 2 && posArr.some(p => p === 'verb')) {
+                phrasalVerbs.push({ word: formWord, pos: posArr });
+            } else {
+                compoundWords.push({ word: formWord, pos: posArr });
+            }
+        } else if (formWord.includes('-') && formWord !== baseWordLower) {
+            compoundWords.push({ word: formWord, pos: Array.from(posSet) });
+        }
+    });
+    // Also check API data for phrasal verbs (defined_in entries)
+    if (apiData && Array.isArray(apiData)) {
+        apiData.forEach(entry => {
+            if (!entry.meta) return;
+            // Check if entry itself is a phrasal verb
+            if (entry.fl === 'phrasal verb' || (entry.fl === 'verb' && entry.hwi?.hw?.includes(' '))) {
+                const hw = (entry.hwi?.hw || '').replace(/\*/g, '').toLowerCase();
+                if (hw && hw.includes(' ') && !phrasalVerbs.some(p => p.word === hw)) {
+                    phrasalVerbs.push({ word: hw, pos: [entry.fl || 'phrasal verb'] });
+                }
+            }
+            // Check defined_in for related phrasal verbs
+            if (entry.dros) {
+                entry.dros.forEach(dro => {
+                    if (dro.drp) {
+                        const phrase = dro.drp.toLowerCase().trim();
+                        if (phrase.includes(' ') && phrase.includes(baseWordLower)) {
+                            if (dro.fl === 'phrasal verb' || dro.def) {
+                                if (!phrasalVerbs.some(p => p.word === phrase)) {
+                                    phrasalVerbs.push({ word: phrase, pos: [dro.fl || 'phrasal verb'] });
+                                }
+                            } else {
+                                if (!compoundWords.some(c => c.word === phrase)) {
+                                    compoundWords.push({ word: phrase, pos: [dro.fl || 'noun'] });
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+    renderPhrasalVerbs(phrasalVerbs);
+    renderCompoundWords(compoundWords);
+
+    // Extract and render phrasal verbs & compound words
+    const phrasalVerbs = [];
+    const compoundWords = [];
+    allForms.forEach((posSet, formWord) => {
+        if (formWord.includes(' ')) {
+            const posArr = Array.from(posSet);
+            if (posArr.some(p => p === 'phrasal verb') || formWord.split(' ').length === 2 && posArr.some(p => p === 'verb')) {
+                phrasalVerbs.push({ word: formWord, pos: posArr });
+            } else {
+                compoundWords.push({ word: formWord, pos: posArr });
+            }
+        } else if (formWord.includes('-') && formWord !== baseWordLower) {
+            compoundWords.push({ word: formWord, pos: Array.from(posSet) });
+        }
+    });
+    // Also check API data for phrasal verbs (defined_in entries)
+    if (apiData && Array.isArray(apiData)) {
+        apiData.forEach(entry => {
+            if (!entry.meta) return;
+            // Check if entry itself is a phrasal verb
+            if (entry.fl === 'phrasal verb' || (entry.fl === 'verb' && entry.hwi?.hw?.includes(' '))) {
+                const hw = (entry.hwi?.hw || '').replace(/\*/g, '').toLowerCase();
+                if (hw && hw.includes(' ') && !phrasalVerbs.some(p => p.word === hw)) {
+                    phrasalVerbs.push({ word: hw, pos: [entry.fl || 'phrasal verb'] });
+                }
+            }
+            // Check defined_in for related phrasal verbs
+            if (entry.dros) {
+                entry.dros.forEach(dro => {
+                    if (dro.drp) {
+                        const phrase = dro.drp.toLowerCase().trim();
+                        if (phrase.includes(' ') && phrase.includes(baseWordLower)) {
+                            if (dro.fl === 'phrasal verb' || dro.def) {
+                                if (!phrasalVerbs.some(p => p.word === phrase)) {
+                                    phrasalVerbs.push({ word: phrase, pos: [dro.fl || 'phrasal verb'] });
+                                }
+                            } else {
+                                if (!compoundWords.some(c => c.word === phrase)) {
+                                    compoundWords.push({ word: phrase, pos: [dro.fl || 'noun'] });
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+    renderPhrasalVerbs(phrasalVerbs);
+    renderCompoundWords(compoundWords);
+
     // Card is always visible, just update content
     
     // Still return text format for storage
@@ -433,8 +609,8 @@ function renderWordFamilyTable(baseWord, posCategories) {
                 const cefrBadge = cefr.level !== 'unknown' 
                     ? '<span class="wf-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>' 
                     : '';
-                html += '<td><span class="wf-word ' + (isBase ? 'wf-base' : 'wf-derived') + '">' + 
-                         escapeHtml(word) + cefrBadge + '</span></td>';
+                html += '<td><span class="wf-word wf-word-clickable ' + (isBase ? 'wf-base' : 'wf-derived') + '" data-word="' + escapeHtml(word) + '">' + 
+                         escapeHtml(word) + (cefrBadge ? ' ' + cefrBadge : '') + '</span></td>';
             } else {
                 html += '<td></td>';
             }
@@ -476,9 +652,247 @@ function renderDerivedForms(baseWord, allForms) {
         const cefrHTML = cefr.level !== 'unknown'
             ? ' <span class="df-cefr" style="background:' + cefr.color + ';color:white;">' + cefr.level + '</span>'
             : '';
-        return '<span class="df-tag">' + escapeHtml(item.word) + 
+        return '<span class="df-tag df-tag-clickable" data-word="' + escapeHtml(item.word) + '">' + escapeHtml(item.word) + 
                ' <span class="df-pos">' + posStr + '</span>' + cefrHTML + '</span>';
     }).join('');
+}
+
+function renderPhrasalVerbs(items) {
+    const container = document.getElementById('phrasal-verbs-tags');
+    if (!container) return;
+    
+    if (items.length === 0) {
+        container.innerHTML = '<span class="wf-empty-inline">Không tìm thấy phrasal verbs</span>';
+        return;
+    }
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv', 'phrasal verb': 'phr.v' };
+    items.sort((a, b) => a.word.localeCompare(b.word));
+    
+    container.innerHTML = items.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrHTML = cefr.level !== 'unknown'
+            ? ' <span class="pv-cefr" style="background:' + cefr.color + ';">' + cefr.level + '</span>'
+            : '';
+        return '<span class="pv-tag" data-word="' + escapeHtml(item.word) + '">' +
+               escapeHtml(item.word) + ' <span class="pv-pos">' + posStr + '</span>' + cefrHTML + '</span>';
+    }).join('');
+}
+
+function renderCompoundWords(items) {
+    const container = document.getElementById('compound-words-tags');
+    if (!container) return;
+    
+    if (items.length === 0) {
+        container.innerHTML = '<span class="wf-empty-inline">Không tìm thấy compound words</span>';
+        return;
+    }
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    items.sort((a, b) => a.word.localeCompare(b.word));
+    
+    container.innerHTML = items.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrHTML = cefr.level !== 'unknown'
+            ? ' <span class="cw-cefr" style="background:' + cefr.color + ';">' + cefr.level + '</span>'
+            : '';
+        return '<span class="cw-tag" data-word="' + escapeHtml(item.word) + '">' +
+               escapeHtml(item.word) + ' <span class="cw-pos">' + posStr + '</span>' + cefrHTML + '</span>';
+    }).join('');
+}
+
+/* ===== WORD POPUP - Click từ trong Word Family ===== */
+async function showWordPopup(word, x, y) {
+    // Reuse wordLookup popup nếu có
+    if (window.showWordLookupPopup) {
+        window.showWordLookupPopup(x, y, word);
+        return;
+    }
+    
+    // Fallback popup
+    let popup = document.getElementById('wf-word-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'wf-word-popup';
+        popup.className = 'wf-word-popup';
+        document.body.appendChild(popup);
+        
+        document.addEventListener('click', (ev) => {
+            if (popup && !popup.contains(ev.target) && !ev.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable')) {
+                popup.style.display = 'none';
+            }
+        });
+        document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && popup) popup.style.display = 'none'; });
+    }
+    
+    const pw = 360, ph = 320;
+    let posX = Math.min(x + 10, window.innerWidth - pw - 20);
+    let posY = Math.min(y + 10, window.innerHeight - ph - 20);
+    posX = Math.max(10, posX); posY = Math.max(10, posY);
+    
+    popup.style.cssText = 'position:fixed;z-index:99999;left:' + posX + 'px;top:' + posY + 'px;min-width:300px;max-width:400px;max-height:400px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column;';
+    
+    popup.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);">' +
+        '<div style="display:flex;align-items:center;gap:8px;"><strong style="font-size:1.1rem;">' + escapeHtml(word) + '</strong><span id="wf-popup-phonetic" style="color:var(--text-secondary);font-size:0.9rem;"></span></div>' +
+        '<div style="display:flex;gap:4px;">' +
+        '<button onclick="if(window.speak)window.speak('' + escapeHtml(word).replace(/'/g, "\'") + '','en-US')" style="width:32px;height:32px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fas fa-volume-up"></i></button>' +
+        '<button onclick="this.closest('#wf-word-popup').style.display='none'" style="width:32px;height:32px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fas fa-times"></i></button>' +
+        '</div></div>' +
+        '<div id="wf-popup-content" style="padding:16px;overflow-y:auto;max-height:300px;">' +
+        '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Đang tìm...</div></div>';
+    
+    try {
+        const lookupWord = word.toLowerCase().trim().split(/\s+/)[0];
+        const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word.includes(' ') ? lookupWord : word));
+        const contentEl = document.getElementById('wf-popup-content');
+        const phoneticEl = document.getElementById('wf-popup-phonetic');
+        
+        if (!res.ok) {
+            if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-search"></i> Không tìm thấy "' + escapeHtml(word) + '"</div>';
+            return;
+        }
+        
+        const data = await res.json();
+        const entry = data[0];
+        if (phoneticEl && entry.phonetic) phoneticEl.textContent = entry.phonetic;
+        
+        let html = '';
+        (entry.meanings || []).slice(0, 3).forEach(m => {
+            html += '<div class="wf-popup-meaning"><div class="wf-popup-pos">' + (m.partOfSpeech || '') + '</div>';
+            (m.definitions || []).slice(0, 2).forEach((def, i) => {
+                html += '<div class="wf-popup-def">' + (i+1) + '. ' + escapeHtml(def.definition || '');
+                if (def.example) html += '<div class="wf-popup-example">"' + escapeHtml(def.example) + '"</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+        });
+        
+        if (contentEl) contentEl.innerHTML = html || '<div style="color:var(--text-muted);">Không có định nghĩa</div>';
+    } catch (err) {
+        const contentEl = document.getElementById('wf-popup-content');
+        if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Lỗi kết nối</div>';
+    }
+}
+
+function renderPhrasalVerbs(items) {
+    const container = document.getElementById('phrasal-verbs-tags');
+    if (!container) return;
+    
+    if (items.length === 0) {
+        container.innerHTML = '<span class="wf-empty-inline">Không tìm thấy phrasal verbs</span>';
+        return;
+    }
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv', 'phrasal verb': 'phr.v' };
+    items.sort((a, b) => a.word.localeCompare(b.word));
+    
+    container.innerHTML = items.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrHTML = cefr.level !== 'unknown'
+            ? ' <span class="pv-cefr" style="background:' + cefr.color + ';">' + cefr.level + '</span>'
+            : '';
+        return '<span class="pv-tag" data-word="' + escapeHtml(item.word) + '">' +
+               escapeHtml(item.word) + ' <span class="pv-pos">' + posStr + '</span>' + cefrHTML + '</span>';
+    }).join('');
+}
+
+function renderCompoundWords(items) {
+    const container = document.getElementById('compound-words-tags');
+    if (!container) return;
+    
+    if (items.length === 0) {
+        container.innerHTML = '<span class="wf-empty-inline">Không tìm thấy compound words</span>';
+        return;
+    }
+    
+    const abbr = { 'noun': 'n', 'verb': 'v', 'adjective': 'adj', 'adverb': 'adv' };
+    items.sort((a, b) => a.word.localeCompare(b.word));
+    
+    container.innerHTML = items.map(item => {
+        const cefr = getCEFRLevel(item.word);
+        const posStr = item.pos.map(p => abbr[p] || p).join('/');
+        const cefrHTML = cefr.level !== 'unknown'
+            ? ' <span class="cw-cefr" style="background:' + cefr.color + ';">' + cefr.level + '</span>'
+            : '';
+        return '<span class="cw-tag" data-word="' + escapeHtml(item.word) + '">' +
+               escapeHtml(item.word) + ' <span class="cw-pos">' + posStr + '</span>' + cefrHTML + '</span>';
+    }).join('');
+}
+
+/* ===== WORD POPUP - Click từ trong Word Family ===== */
+async function showWordPopup(word, x, y) {
+    // Reuse wordLookup popup nếu có
+    if (window.showWordLookupPopup) {
+        window.showWordLookupPopup(x, y, word);
+        return;
+    }
+    
+    // Fallback popup
+    let popup = document.getElementById('wf-word-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'wf-word-popup';
+        popup.className = 'wf-word-popup';
+        document.body.appendChild(popup);
+        
+        document.addEventListener('click', (ev) => {
+            if (popup && !popup.contains(ev.target) && !ev.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable')) {
+                popup.style.display = 'none';
+            }
+        });
+        document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && popup) popup.style.display = 'none'; });
+    }
+    
+    const pw = 360, ph = 320;
+    let posX = Math.min(x + 10, window.innerWidth - pw - 20);
+    let posY = Math.min(y + 10, window.innerHeight - ph - 20);
+    posX = Math.max(10, posX); posY = Math.max(10, posY);
+    
+    popup.style.cssText = 'position:fixed;z-index:99999;left:' + posX + 'px;top:' + posY + 'px;min-width:300px;max-width:400px;max-height:400px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column;';
+    
+    popup.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);">' +
+        '<div style="display:flex;align-items:center;gap:8px;"><strong style="font-size:1.1rem;">' + escapeHtml(word) + '</strong><span id="wf-popup-phonetic" style="color:var(--text-secondary);font-size:0.9rem;"></span></div>' +
+        '<div style="display:flex;gap:4px;">' +
+        '<button onclick="if(window.speak)window.speak('' + escapeHtml(word).replace(/'/g, "\'") + '','en-US')" style="width:32px;height:32px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fas fa-volume-up"></i></button>' +
+        '<button onclick="this.closest('#wf-word-popup').style.display='none'" style="width:32px;height:32px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fas fa-times"></i></button>' +
+        '</div></div>' +
+        '<div id="wf-popup-content" style="padding:16px;overflow-y:auto;max-height:300px;">' +
+        '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Đang tìm...</div></div>';
+    
+    try {
+        const lookupWord = word.toLowerCase().trim().split(/\s+/)[0];
+        const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word.includes(' ') ? lookupWord : word));
+        const contentEl = document.getElementById('wf-popup-content');
+        const phoneticEl = document.getElementById('wf-popup-phonetic');
+        
+        if (!res.ok) {
+            if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-search"></i> Không tìm thấy "' + escapeHtml(word) + '"</div>';
+            return;
+        }
+        
+        const data = await res.json();
+        const entry = data[0];
+        if (phoneticEl && entry.phonetic) phoneticEl.textContent = entry.phonetic;
+        
+        let html = '';
+        (entry.meanings || []).slice(0, 3).forEach(m => {
+            html += '<div class="wf-popup-meaning"><div class="wf-popup-pos">' + (m.partOfSpeech || '') + '</div>';
+            (m.definitions || []).slice(0, 2).forEach((def, i) => {
+                html += '<div class="wf-popup-def">' + (i+1) + '. ' + escapeHtml(def.definition || '');
+                if (def.example) html += '<div class="wf-popup-example">"' + escapeHtml(def.example) + '"</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+        });
+        
+        if (contentEl) contentEl.innerHTML = html || '<div style="color:var(--text-muted);">Không có định nghĩa</div>';
+    } catch (err) {
+        const contentEl = document.getElementById('wf-popup-content');
+        if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Lỗi kết nối</div>';
+    }
 }
 
 function inferPOSFromSuffix(word) {
@@ -1181,6 +1595,34 @@ function clearAllMeaningBlocks() {
     if (wfTbody) wfTbody.innerHTML = '<tr><td colspan="4" class="wf-empty">Nhập từ để xem word family</td></tr>';
     const dfSection = document.getElementById('derived-forms-section');
     if (dfSection) dfSection.style.display = 'none';
+    // Reset Phrasal Verbs
+    const pvBody = document.getElementById('phrasal-verbs-body');
+    if (pvBody) pvBody.style.display = 'none';
+    const pvIcon = document.getElementById('pv-toggle-icon');
+    if (pvIcon) { pvIcon.classList.remove('fa-chevron-up'); pvIcon.classList.add('fa-chevron-down'); }
+    const pvTags = document.getElementById('phrasal-verbs-tags');
+    if (pvTags) pvTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem phrasal verbs</span>';
+    // Reset Compound Words
+    const cwBody = document.getElementById('compound-words-body');
+    if (cwBody) cwBody.style.display = 'none';
+    const cwIcon = document.getElementById('cw-toggle-icon');
+    if (cwIcon) { cwIcon.classList.remove('fa-chevron-up'); cwIcon.classList.add('fa-chevron-down'); }
+    const cwTags = document.getElementById('compound-words-tags');
+    if (cwTags) cwTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem compound words</span>';
+    // Reset Phrasal Verbs
+    const pvBody = document.getElementById('phrasal-verbs-body');
+    if (pvBody) pvBody.style.display = 'none';
+    const pvIcon = document.getElementById('pv-toggle-icon');
+    if (pvIcon) { pvIcon.classList.remove('fa-chevron-up'); pvIcon.classList.add('fa-chevron-down'); }
+    const pvTags = document.getElementById('phrasal-verbs-tags');
+    if (pvTags) pvTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem phrasal verbs</span>';
+    // Reset Compound Words
+    const cwBody = document.getElementById('compound-words-body');
+    if (cwBody) cwBody.style.display = 'none';
+    const cwIcon = document.getElementById('cw-toggle-icon');
+    if (cwIcon) { cwIcon.classList.remove('fa-chevron-up'); cwIcon.classList.add('fa-chevron-down'); }
+    const cwTags = document.getElementById('compound-words-tags');
+    if (cwTags) cwTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem compound words</span>';
     const phoneticUSGlobal = document.getElementById('phonetic-us-global');
     if (phoneticUSGlobal) phoneticUSGlobal.value = '';
     const phoneticUKGlobal = document.getElementById('phonetic-uk-global');
