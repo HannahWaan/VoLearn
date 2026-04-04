@@ -1408,20 +1408,6 @@ function clearAllMeaningBlocks() {
     if (cwIcon) { cwIcon.classList.remove('fa-chevron-up'); cwIcon.classList.add('fa-chevron-down'); }
     const cwTags = document.getElementById('compound-words-tags');
     if (cwTags) cwTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem compound words</span>';
-    // Reset Phrasal Verbs
-    const pvBody = document.getElementById('phrasal-verbs-body');
-    if (pvBody) pvBody.style.display = 'none';
-    const pvIcon = document.getElementById('pv-toggle-icon');
-    if (pvIcon) { pvIcon.classList.remove('fa-chevron-up'); pvIcon.classList.add('fa-chevron-down'); }
-    const pvTags = document.getElementById('phrasal-verbs-tags');
-    if (pvTags) pvTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem phrasal verbs</span>';
-    // Reset Compound Words
-    const cwBody = document.getElementById('compound-words-body');
-    if (cwBody) cwBody.style.display = 'none';
-    const cwIcon = document.getElementById('cw-toggle-icon');
-    if (cwIcon) { cwIcon.classList.remove('fa-chevron-up'); cwIcon.classList.add('fa-chevron-down'); }
-    const cwTags = document.getElementById('compound-words-tags');
-    if (cwTags) cwTags.innerHTML = '<span class="wf-empty-inline">Nhập từ để xem compound words</span>';
     const phoneticUSGlobal = document.getElementById('phonetic-us-global');
     if (phoneticUSGlobal) phoneticUSGlobal.value = '';
     const phoneticUKGlobal = document.getElementById('phonetic-uk-global');
