@@ -412,7 +412,10 @@ function generateWordFormation(baseWord, wordFormsMap, apiData) {
     });
     
     // Categorize into POS groups
+    // Categorize - chỉ single word (không có space, không có hyphen trừ base word)
     allForms.forEach((posSet, formWord) => {
+        if (formWord.includes(' ')) return; // skip phrasal verbs
+        if (formWord.includes('-') && formWord !== baseWordLower) return; // skip compound words
         posSet.forEach(pos => {
             const key = pos.toLowerCase();
             if (posCategories[key]) {
@@ -543,9 +546,10 @@ function renderDerivedForms(baseWord, allForms) {
     // Collect all forms except the base word
     const derivedList = [];
     allForms.forEach((posSet, formWord) => {
-        if (formWord !== baseWord) {
-            derivedList.push({ word: formWord, pos: Array.from(posSet) });
-        }
+        if (formWord === baseWord) return;
+        if (formWord.includes(' ')) return; // skip phrasal verbs -> shown in PV section
+        if (formWord.includes('-')) return; // skip compound words -> shown in CW section
+        derivedList.push({ word: formWord, pos: Array.from(posSet) });
     });
     
     if (derivedList.length === 0) {
@@ -617,34 +621,34 @@ function renderCompoundWords(items) {
 
 
 async function showWordPopup(word, x, y) {
-    // Reuse wordLookup popup nếu có
-    if (window.showWordLookupPopup) {
-        window.showWordLookupPopup(x, y, word);
-        return;
-    }
+    // Remove old popup if exists
+    const oldPopup = document.getElementById('wf-word-popup');
+    if (oldPopup) oldPopup.remove();
     
-    // Fallback popup
-    let popup = document.getElementById('wf-word-popup');
-    if (!popup) {
-        popup = document.createElement('div');
-        popup.id = 'wf-word-popup';
-        popup.className = 'wf-word-popup';
-        document.body.appendChild(popup);
-        
-        document.addEventListener('click', (ev) => {
-            if (popup && !popup.contains(ev.target) && !ev.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable')) {
-                popup.style.display = 'none';
-            }
-        });
-        document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && popup) popup.style.display = 'none'; });
-    }
+    const popup = document.createElement('div');
+    popup.id = 'wf-word-popup';
+    popup.className = 'wf-word-popup';
+    document.body.appendChild(popup);
+    
+    // Close on click outside
+    const closeHandler = (ev) => {
+        if (!popup.contains(ev.target) && !ev.target.closest('.wf-word-clickable, .pv-tag, .cw-tag, .df-tag-clickable')) {
+            popup.remove();
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 10);
+    
+    // Close on Escape
+    const escHandler = (ev) => { if (ev.key === 'Escape') { popup.remove(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
     
     const pw = 360, ph = 320;
     let posX = Math.min(x + 10, window.innerWidth - pw - 20);
     let posY = Math.min(y + 10, window.innerHeight - ph - 20);
     posX = Math.max(10, posX); posY = Math.max(10, posY);
     
-    popup.style.cssText = 'position:fixed;z-index:99999;left:' + posX + 'px;top:' + posY + 'px;min-width:300px;max-width:400px;max-height:400px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column;';
+    popup.style.cssText = 'position:fixed;z-index:99999;left:' + posX + 'px;top:' + posY + 'px;min-width:300px;max-width:400px;max-height:400px;background:var(--bg-secondary,#fff);border:1px solid var(--border-color,#ddd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);overflow:hidden;display:block;';
     
     popup.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);">' +
         '<div style="display:flex;align-items:center;gap:8px;"><strong style="font-size:1.1rem;">' + escapeHtml(word) + '</strong><span id="wf-popup-phonetic" style="color:var(--text-secondary);font-size:0.9rem;"></span></div>' +
@@ -659,7 +663,7 @@ async function showWordPopup(word, x, y) {
     const speakBtn = document.getElementById('wf-popup-speak-btn');
     if (speakBtn) speakBtn.onclick = () => { if (window.speak) speak(word, 'en-US'); };
     const closeBtn = document.getElementById('wf-popup-close-btn');
-    if (closeBtn) closeBtn.onclick = () => { popup.style.display = 'none'; };
+    if (closeBtn) closeBtn.onclick = () => { popup.remove(); };
     
     try {
         const lookupWord = word.toLowerCase().trim().split(/\s+/)[0];
@@ -1799,9 +1803,10 @@ export function getWordFamilyHTML(word, formation) {
     // Build derived forms
     const derivedList = [];
     allForms.forEach((posSet, formWord) => {
-        if (formWord !== baseWord) {
-            derivedList.push({ word: formWord, pos: Array.from(posSet) });
-        }
+        if (formWord === baseWord) return;
+        if (formWord.includes(' ')) return; // skip phrasal verbs -> shown in PV section
+        if (formWord.includes('-')) return; // skip compound words -> shown in CW section
+        derivedList.push({ word: formWord, pos: Array.from(posSet) });
     });
     derivedList.sort((a, b) => a.word.localeCompare(b.word));
     
