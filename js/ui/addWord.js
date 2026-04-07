@@ -1683,3 +1683,47 @@ export function getWordFamilyHTML(word, formation) {
         </div>
     `;
 }
+
+/* ===== WORD FAMILY HTML (for setView) ===== */
+export function getWordFamilyHTML(word, formation) {
+    if (!formation) return '';
+
+    let formsText = '';
+    if (typeof formation === 'string') {
+        formsText = formation;
+    } else if (typeof formation === 'object') {
+        const entries = Object.entries(formation);
+        formsText = entries.map(([form, pos]) => {
+            if (Array.isArray(pos)) return form + ' (' + pos.join(', ') + ')';
+            return form + ' (' + pos + ')';
+        }).join(', ');
+    }
+
+    if (!formsText) return '';
+
+    const parts = formsText.split(',').map(p => p.trim()).filter(Boolean);
+
+    const tagsHTML = parts.map(part => {
+        const match = part.match(/^([a-zA-Z\s-]+?)(?:\s*\(([^)]+)\))?$/);
+        if (!match) return '<span class="wf-detail-tag">' + escapeHtml(part) + '</span>';
+
+        const formWord = match[1].trim();
+        const posStr = match[2] || '';
+        const cefr = getCEFRLevel(formWord);
+        const isBase = formWord.toLowerCase() === word.toLowerCase();
+        const cefrBadge = cefr.level !== 'unknown'
+            ? ' <span class="wf-cefr-sm" style="background:' + cefr.color + ';color:#fff;padding:1px 4px;border-radius:3px;font-size:0.7em;">' + cefr.level + '</span>'
+            : '';
+
+        return '<span class="wf-detail-tag' + (isBase ? ' wf-base-tag' : '') + '">'
+            + escapeHtml(formWord)
+            + (posStr ? ' <span class="wf-pos-sm">(' + escapeHtml(posStr) + ')</span>' : '')
+            + cefrBadge
+            + '</span>';
+    }).join(' ');
+
+    return '<div class="detail-word-family">'
+        + '<div class="wf-detail-header"><i class="fas fa-sitemap"></i> Word Family</div>'
+        + '<div class="wf-detail-tags">' + tagsHTML + '</div>'
+        + '</div>';
+}
