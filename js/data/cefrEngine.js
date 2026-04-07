@@ -59,177 +59,209 @@ const POS_MAP = {
  * @param {string} [pos] - loại từ (noun, verb, adjective...)
  * @returns {{ level: string, color: string, label: string }}
  */
-// Heuristic CEFR estimation for words not in Oxford 5000
-const ADVANCED_SUFFIXES_C2 = ['esque', 'ennial', 'aceous', 'itious', 'ulent', 'iform', 'oid'];
-const ADVANCED_SUFFIXES_C1 = ['tion', 'sion', 'ment', 'ness', 'ity', 'ence', 'ance', 'ous', 'ive', 'ial', 'ical', 'uous', 'eous', 'ible', 'able', 'ism', 'ist', 'ize', 'ise', 'fy', 'tude', 'ular'];
-const ADVANCED_SUFFIXES_B2 = ['ly', 'ful', 'less', 'al', 'en', 'ward', 'wise'];
-const ADVANCED_PREFIXES_C2 = ['circum', 'extra', 'infra', 'macro', 'micro', 'mono', 'poly', 'proto', 'quasi', 'retro', 'hyper', 'hypo'];
-const ADVANCED_PREFIXES_C1 = ['anti', 'counter', 'inter', 'mis', 'non', 'over', 'pre', 'pseudo', 'semi', 'sub', 'super', 'trans', 'ultra', 'under'];
+/* ===== HEURISTIC CEFR ESTIMATOR ===== */
+/* Dùng cho từ KHÔNG có trong Oxford 5000 database.
+ * Oxford 5000 cover hầu hết từ phổ biến A1→C1.
+ * Từ ngoài list = hiếm → tối thiểu B2.
+ * Logic: 1) Check known lists → 2) Heuristic scoring → 3) Default B2
+ */
+
+// Khai báo ngoài function để không tạo lại mỗi lần gọi
+const COMMON_SHORT = new Set([
+    // Từ cơ bản ≤4 ký tự có thể không có trong Oxford 5000 (inflected forms, etc.)
+    'i', 'me', 'my', 'you', 'he', 'she', 'it', 'we', 'us', 'him', 'her',
+    'his', 'its', 'our', 'a', 'an', 'the', 'am', 'is', 'are', 'was', 'be',
+    'do', 'go', 'no', 'so', 'or', 'if', 'as', 'at', 'by', 'in', 'of',
+    'on', 'to', 'up', 'and', 'but', 'not', 'for', 'all', 'can', 'had',
+    'has', 'did', 'get', 'got', 'run', 'ran', 'say', 'see', 'saw', 'now',
+    'out', 'how', 'who', 'new', 'old', 'big', 'own', 'too', 'any', 'day',
+    'way', 'use', 'set', 'put', 'end', 'ask', 'try', 'let', 'may', 'off',
+    'yes', 'yet', 'add', 'age', 'ago', 'air', 'arm', 'art', 'bad', 'bag',
+    'bar', 'bed', 'bit', 'box', 'boy', 'bus', 'buy', 'car', 'cat', 'cup',
+    'cut', 'dad', 'dog', 'dry', 'ear', 'eat', 'ate', 'egg', 'eye', 'far',
+    'fat', 'few', 'fit', 'fix', 'fly', 'fun', 'gas', 'god', 'gun', 'guy',
+    'hat', 'hey', 'hi', 'hit', 'hot', 'ice', 'ill', 'job', 'key', 'kid',
+    'lay', 'leg', 'lie', 'lip', 'lot', 'low', 'map', 'mix', 'mom', 'mum',
+    'mud', 'net', 'nor', 'nut', 'odd', 'oil', 'ok', 'one', 'own', 'pan',
+    'pay', 'pet', 'pie', 'pin', 'pop', 'pot', 'raw', 'red', 'rid', 'row',
+    'sad', 'sat', 'sea', 'sir', 'sit', 'six', 'sky', 'son', 'sun', 'tea',
+    'ten', 'tie', 'tip', 'toe', 'top', 'toy', 'two', 'van', 'war', 'wet',
+    'win', 'won', 'via', 'per', 'pro', 'etc', 'bye', 'ok',
+    'also', 'back', 'been', 'best', 'body', 'book', 'born', 'both',
+    'call', 'came', 'card', 'care', 'case', 'city', 'cold', 'come',
+    'cook', 'cool', 'copy', 'cost', 'dark', 'data', 'date', 'dead',
+    'deal', 'dear', 'deep', 'does', 'done', 'door', 'down', 'draw',
+    'drew', 'drop', 'drug', 'each', 'east', 'edge', 'else', 'even',
+    'ever', 'face', 'fact', 'fair', 'fall', 'farm', 'fast', 'fear',
+    'feel', 'feet', 'fell', 'felt', 'file', 'fill', 'film', 'find',
+    'fine', 'fire', 'fish', 'five', 'flat', 'food', 'foot', 'form',
+    'four', 'free', 'from', 'full', 'fund', 'game', 'gave', 'gift',
+    'girl', 'give', 'glad', 'goes', 'gold', 'gone', 'good', 'grew',
+    'grow', 'hair', 'half', 'hall', 'hand', 'hang', 'hard', 'hate',
+    'have', 'head', 'hear', 'heat', 'help', 'here', 'hide', 'high',
+    'hill', 'hold', 'hole', 'home', 'hope', 'hour', 'huge', 'hung',
+    'hurt', 'idea', 'into', 'iron', 'join', 'jump', 'just', 'keen',
+    'keep', 'kept', 'kick', 'kill', 'kind', 'king', 'knew', 'know',
+    'lack', 'lady', 'laid', 'lake', 'land', 'last', 'late', 'lead',
+    'left', 'less', 'life', 'lift', 'like', 'line', 'link', 'list',
+    'live', 'long', 'look', 'lord', 'lose', 'lost', 'lots', 'love',
+    'luck', 'made', 'main', 'make', 'male', 'many', 'mark', 'mass',
+    'meal', 'mean', 'meet', 'mind', 'mine', 'miss', 'mood', 'moon',
+    'more', 'most', 'move', 'much', 'must', 'name', 'near', 'neck',
+    'need', 'next', 'nice', 'nine', 'none', 'nose', 'note', 'okay',
+    'once', 'only', 'onto', 'open', 'over', 'pack', 'page', 'paid',
+    'pain', 'pair', 'pale', 'park', 'part', 'pass', 'past', 'path',
+    'pick', 'plan', 'play', 'plus', 'poem', 'pool', 'poor', 'post',
+    'pull', 'pure', 'push', 'race', 'rain', 'read', 'real', 'rest',
+    'rich', 'ride', 'ring', 'rise', 'risk', 'road', 'rock', 'role',
+    'roll', 'roof', 'room', 'rose', 'rule', 'runs', 'rush', 'safe',
+    'said', 'sale', 'salt', 'same', 'sand', 'save', 'seat', 'seem',
+    'seen', 'self', 'sell', 'send', 'sent', 'sept', 'ship', 'shop',
+    'shot', 'show', 'shut', 'sick', 'side', 'sign', 'sing', 'site',
+    'size', 'skin', 'slip', 'slow', 'snow', 'soft', 'soil', 'sold',
+    'some', 'song', 'soon', 'sort', 'soul', 'spot', 'star', 'stay',
+    'step', 'stop', 'such', 'suit', 'sure', 'swim', 'take', 'tale',
+    'talk', 'tall', 'tank', 'task', 'team', 'tell', 'tend', 'term',
+    'test', 'text', 'than', 'that', 'them', 'then', 'they', 'thin',
+    'this', 'thus', 'till', 'tiny', 'told', 'tone', 'took', 'tool',
+    'tour', 'town', 'tree', 'trip', 'TRUE', 'true', 'turn', 'type',
+    'unit', 'upon', 'used', 'user', 'vast', 'very', 'view', 'vote',
+    'wage', 'wait', 'wake', 'walk', 'wall', 'want', 'warm', 'warn',
+    'wash', 'wave', 'weak', 'wear', 'week', 'well', 'went', 'were',
+    'west', 'what', 'when', 'whom', 'wide', 'wife', 'wild', 'will',
+    'wind', 'wine', 'wing', 'wire', 'wise', 'wish', 'with', 'wood',
+    'word', 'wore', 'work', 'worn', 'wrap', 'yard', 'yeah', 'year',
+    'your', 'zero', 'zone'
+]);
+
+const RARE_C2 = new Set([
+    'prodigal', 'plethora', 'aplomb', 'myriad', 'ephemeral', 'esoteric', 'erudite',
+    'arcane', 'abstruse', 'recondite', 'quixotic', 'feckless', 'fatuous',
+    'ennui', 'hubris', 'pathos', 'ethos', 'praxis',
+    'zeitgeist', 'schadenfreude', 'leitmotif', 'gestalt',
+    'cacophony', 'euphony', 'dichotomy', 'epitome', 'hyperbole', 'litotes',
+    'synecdoche', 'metonymy', 'oxymoron', 'juxtapose', 'superfluous',
+    'ubiquitous', 'perfunctory', 'sycophant', 'charlatan', 'demagogue',
+    'pariah', 'panacea', 'anathema',
+    'catharsis', 'nemesis', 'epiphany', 'serendipity',
+    'vicissitude', 'verisimilitude', 'pusillanimous', 'magnanimous',
+    'equanimity', 'perspicacity', 'loquacious', 'garrulous', 'laconic',
+    'pithy', 'cogent', 'trenchant', 'piquant', 'acrid',
+    'caustic', 'mordant', 'sardonic', 'acerbic', 'vitriolic',
+    'bellicose', 'truculent', 'pugnacious', 'litigious',
+    'inimical', 'deleterious', 'pernicious', 'insidious', 'nefarious',
+    'heinous', 'egregious', 'brazen', 'audacious', 'intrepid',
+    'dauntless', 'redoubtable', 'indomitable',
+    'impregnable', 'impervious', 'impetuous', 'capricious', 'mercurial',
+    'vacillate', 'oscillate', 'undulate', 'peregrinate',
+    'sojourn', 'peripatetic',
+    'recalcitrant', 'intransigent', 'obdurate', 'pertinacious',
+    'assiduous', 'sedulous', 'fastidious', 'punctilious',
+    'sanguine', 'phlegmatic', 'choleric', 'melancholic', 'lugubrious',
+    'doleful', 'plaintive', 'wistful', 'rueful',
+    'contrite', 'penitent', 'compunction',
+    'ignominy', 'obloquy', 'opprobrium', 'calumny',
+    'abrogate', 'abnegate', 'abscond', 'abstemious',
+    'acquiesce', 'amalgamate', 'ameliorate', 'conflagration', 'conundrum',
+    'corpulent', 'corroborate', 'debilitate', 'delineate', 'desiccate',
+    'ebullient', 'effervescent', 'efficacious',
+    'elucidate', 'emaciated', 'enervate', 'exacerbate', 'exonerate',
+    'extenuate', 'hapless', 'impecunious',
+    'incorrigible', 'ineffable', 'inexorable', 'inscrutable', 'inveterate',
+    'irascible', 'languish', 'lurid', 'maelstrom',
+    'obfuscate', 'obviate', 'onerous', 'palliate', 'penchant', 'penurious',
+    'perfidious', 'perspicacious', 'placate', 'platitude',
+    'propensity', 'propitiate', 'quagmire', 'querulous',
+    'redolent', 'refractory', 'replete', 'repudiate', 'sagacious',
+    'salubrious', 'sanctimonious', 'soporific', 'spurious', 'strident',
+    'supercilious', 'taciturn', 'tantamount', 'temerity', 'tenuous',
+    'torpid', 'turgid', 'unctuous', 'usurp', 'venal',
+    'venerate', 'veracity', 'vestige', 'vociferous',
+    'bucolic', 'pulchritude', 'limpid', 'pellucid',
+    'dulcet', 'mellifluous', 'resplendent'
+]);
+
+const RARE_C1 = new Set([
+    'albeit', 'alleviate', 'amicable', 'anomaly',
+    'benevolent', 'candid', 'coherent',
+    'concurrent', 'conducive', 'consecutive', 'consolidate',
+    'contingency', 'culminate', 'curtail', 'deem',
+    'depict', 'deteriorate', 'discrepancy',
+    'discretion', 'disparity', 'disposition', 'disproportionate', 'disseminate',
+    'divert', 'doctrine', 'elicit', 'encompass', 'endeavour', 'endeavor',
+    'envision', 'erratic', 'excerpt', 'exemption',
+    'feasible', 'fiscal', 'forthcoming',
+    'futile', 'hamper', 'hinder',
+    'imperative', 'implicit',
+    'incidence', 'indicative',
+    'induce', 'inflict', 'inherent',
+    'inhibit', 'integral', 'interim', 'invoke',
+    'jeopardize', 'jurisdiction', 'levy',
+    'lucrative', 'mandate', 'marginal', 'mediate', 'municipal', 'negligible',
+    'niche', 'notwithstanding', 'oblige',
+    'orthodox', 'parameter', 'partisan', 'peculiar', 'pertain', 'pertinent',
+    'plausible', 'postulate', 'pragmatic',
+    'precede', 'precedent', 'predominantly', 'preliminary', 'prevalent',
+    'procure', 'prohibit', 'prone', 'prospective',
+    'provisional', 'prudent', 'rationale', 'realm', 'reconcile',
+    'reluctance', 'repeal',
+    'restrain', 'retort', 'rigorous',
+    'sceptical', 'scrutiny', 'simulate', 'solely', 'sovereign',
+    'spectrum', 'stance', 'statute', 'stimulus',
+    'stipulate', 'subordinate', 'subsidy', 'suppress',
+    'tangible', 'tenure', 'threshold', 'trait',
+    'trajectory', 'underlying', 'undermine',
+    'unprecedented', 'utterance', 'viable', 'vigorous',
+    'warrant', 'whereby', 'wield',
+    'convivial', 'gregarious', 'tenacious', 'meticulous',
+    'scrupulous', 'conscientious', 'resilient'
+]);
 
 function estimateCEFR(word) {
     const w = word.toLowerCase().trim();
     const len = w.length;
     
-    // ========== KNOWN RARE/ADVANCED WORDS ==========
-    // Từ ngắn nhưng hiếm, không thể phát hiện bằng suffix/length
-    const RARE_C2 = new Set([
-        'prodigal', 'plethora', 'aplomb', 'myriad', 'ephemeral', 'esoteric', 'erudite',
-        'arcane', 'obtuse', 'abstruse', 'recondite', 'quixotic', 'feckless', 'fatuous',
-        'ennui', 'malaise', 'hubris', 'pathos', 'ethos', 'logos', 'praxis', 'nexus',
-        'onus', 'crux', 'flux', 'redux', 'kudos', 'zeitgeist', 'angst', 'kitsch',
-        'schadenfreude', 'wanderlust', 'doppelganger', 'leitmotif', 'gestalt',
-        'cacophony', 'euphony', 'dichotomy', 'epitome', 'hyperbole', 'litotes',
-        'synecdoche', 'metonymy', 'oxymoron', 'juxtapose', 'superfluous',
-        'ubiquitous', 'perfunctory', 'sycophant', 'charlatan', 'demagogue',
-        'pariah', 'panacea', 'anathema', 'paradigm', 'stigma', 'dogma', 'enigma',
-        'dilemma', 'trauma', 'karma', 'dharma', 'mantra', 'guru', 'avatar',
-        'nirvana', 'tsunami', 'typhoon', 'monsoon', 'debacle', 'fiasco',
-        'vendetta', 'manifesto', 'bravado', 'aficionado', 'virtuoso', 'maestro',
-        'cognoscenti', 'glitterati', 'literati', 'paparazzi', 'graffiti',
-        'crescendo', 'diminuendo', 'fortissimo', 'pianissimo', 'staccato',
-        'innuendo', 'incognito', 'inferno', 'limbo', 'purgatory', 'labyrinth',
-        'catharsis', 'nemesis', 'genesis', 'exodus', 'apocalypse', 'epiphany',
-        'serendipity', 'synchronicity', 'vicissitude', 'verisimilitude',
-        'pusillanimous', 'magnanimous', 'equanimity', 'perspicacity',
-        'loquacious', 'garrulous', 'verbose', 'laconic', 'terse', 'pithy',
-        'cogent', 'trenchant', 'poignant', 'piquant', 'pungent', 'acrid',
-        'astringent', 'caustic', 'mordant', 'sardonic', 'acerbic', 'vitriolic',
-        'bellicose', 'truculent', 'pugnacious', 'contentious', 'litigious',
-        'inimical', 'deleterious', 'pernicious', 'insidious', 'nefarious',
-        'heinous', 'egregious', 'flagrant', 'blatant', 'brazen', 'audacious',
-        'intrepid', 'dauntless', 'redoubtable', 'formidable', 'indomitable',
-        'invincible', 'impregnable', 'impervious', 'impetuous', 'imprudent',
-        'capricious', 'mercurial', 'volatile', 'vacillate', 'oscillate',
-        'fluctuate', 'undulate', 'meander', 'peregrinate', 'sojourn',
-        'itinerant', 'peripatetic', 'nomadic', 'vagrant', 'wayward',
-        'recalcitrant', 'intransigent', 'obdurate', 'adamant', 'tenacious',
-        'pertinacious', 'assiduous', 'sedulous', 'diligent', 'meticulous',
-        'scrupulous', 'fastidious', 'punctilious', 'conscientious',
-        'sanguine', 'phlegmatic', 'choleric', 'melancholic', 'lugubrious',
-        'morose', 'doleful', 'woeful', 'plaintive', 'wistful', 'rueful',
-        'contrite', 'penitent', 'remorseful', 'repentant', 'compunction',
-        'ignominy', 'obloquy', 'opprobrium', 'calumny', 'aspersion',
-        'innuendo', 'insinuation', 'imputation', 'allegation',
-        'abrogate', 'abnegate', 'abdicate', 'abscond', 'abstemious',
-        'acquiesce', 'amalgamate', 'ameliorate', 'conflagration', 'conundrum',
-        'convivial', 'corpulent', 'corroborate', 'debilitate', 'delineate',
-        'desiccate', 'ebullient', 'effervescent', 'efficacious', 'egregious',
-        'elucidate', 'emaciated', 'enervate', 'exacerbate', 'exonerate',
-        'expedient', 'extenuate', 'gregarious', 'hapless', 'impecunious',
-        'incorrigible', 'ineffable', 'inexorable', 'inscrutable', 'inveterate',
-        'irascible', 'itinerant', 'languish', 'lurid', 'maelstrom', 'mitigate',
-        'obfuscate', 'obviate', 'onerous', 'palliate', 'penchant', 'penurious',
-        'perfidious', 'perspicacious', 'placate', 'platitude', 'precarious',
-        'propensity', 'propitiate', 'quagmire', 'querulous', 'recalcitrant',
-        'redolent', 'refractory', 'replete', 'repudiate', 'sagacious',
-        'salubrious', 'sanctimonious', 'soporific', 'spurious', 'strident',
-        'supercilious', 'taciturn', 'tantamount', 'temerity', 'tenuous',
-        'torpid', 'truculent', 'turgid', 'unctuous', 'usurp', 'venal',
-        'venerate', 'veracity', 'vestige', 'vicarious', 'vindicate', 'vociferous',
-        'zealous', 'bucolic', 'pulchritude', 'limpid', 'pellucid',
-        'dulcet', 'mellifluous', 'sonorous', 'resonant', 'resplendent'
-    ]);
-    
-    const RARE_C1 = new Set([
-        'albeit', 'albeit', 'alleviate', 'ambiguous', 'amicable', 'anomaly',
-        'arbitrary', 'benevolent', 'bureaucracy', 'candid', 'chronic',
-        'coherent', 'compliance', 'comprehensive', 'concurrent', 'conducive',
-        'confer', 'consecutive', 'consolidate', 'contingency', 'credible',
-        'culminate', 'curtail', 'deem', 'deficit', 'depict', 'deteriorate',
-        'devise', 'diminish', 'disclose', 'discrepancy', 'discretion',
-        'disparity', 'disposition', 'disproportionate', 'disseminate', 'divert',
-        'doctrine', 'elicit', 'encompass', 'endeavour', 'endorse', 'enhance',
-        'envision', 'erratic', 'excerpt', 'exemption', 'exert', 'explicit',
-        'exploitation', 'feasible', 'fiscal', 'fluctuation', 'foremost',
-        'forthcoming', 'foster', 'friction', 'futile', 'hamper', 'hierarchy',
-        'hinder', 'hypothesis', 'ideology', 'imperative', 'implicit',
-        'incentive', 'incidence', 'inclined', 'incorporate', 'indicative',
-        'induce', 'inevitably', 'inflict', 'infrastructure', 'inherent',
-        'inhibit', 'integral', 'integrity', 'interim', 'invoke', 'jeopardize',
-        'jurisdiction', 'legitimate', 'levy', 'liable', 'likewise', 'lucrative',
-        'mandate', 'manifest', 'marginal', 'mediate', 'municipal', 'negligible',
-        'niche', 'notwithstanding', 'nurture', 'oblige', 'onset', 'opt',
-        'orthodox', 'parameter', 'partisan', 'peculiar', 'pertain', 'pertinent',
-        'petition', 'plausible', 'pledge', 'portfolio', 'postulate', 'pragmatic',
-        'precede', 'precedent', 'predominantly', 'preliminary', 'prevalent',
-        'procure', 'profound', 'prohibit', 'prone', 'proposition', 'prospective',
-        'provisional', 'prudent', 'radical', 'rationale', 'realm', 'reconcile',
-        'reinforce', 'reluctance', 'repeal', 'replica', 'respectively',
-        'restrain', 'retain', 'retort', 'retrieve', 'revelation', 'rigorous',
-        'robust', 'sceptical', 'scrutiny', 'simulate', 'solely', 'sovereign',
-        'specification', 'spectrum', 'stance', 'statute', 'stimulus',
-        'stipulate', 'subordinate', 'subsidy', 'sue', 'supplement', 'suppress',
-        'sustain', 'tangible', 'tenure', 'thereby', 'threshold', 'trait',
-        'trajectory', 'transparent', 'underlying', 'undermine', 'undertake',
-        'unify', 'unprecedented', 'utterance', 'viable', 'vigorous', 'violate',
-        'virtue', 'warrant', 'whereby', 'wield', 'yield'
-    ]);
-    
-    // Check known rare words first
+    // 1) Check known word lists (ưu tiên cao nhất)
     if (RARE_C2.has(w)) return 'C2';
     if (RARE_C1.has(w)) return 'C1';
+    if (COMMON_SHORT.has(w)) return len <= 3 ? 'A1' : 'A2';
     
-    // Very short common words → likely A1-A2
-    if (len <= 3) return 'A1';
-    if (len <= 4) return 'A2';
+    // 2) Từ rất ngắn không trong list nào → B1 (có thể viết tắt, slang)
+    if (len <= 3) return 'B1';
+    if (len <= 4) return 'B1';
     
-    let score = 0; // Higher = more advanced
+    // 3) Heuristic: từ KHÔNG trong Oxford 5000 → tối thiểu B2
+    //    Chỉ cần phân biệt B2 vs C1 vs C2
+    let score = 0;
     
-    // Length factor
-    if (len >= 12) score += 3;
-    else if (len >= 10) score += 2.5;
-    else if (len >= 9) score += 2;
-    else if (len >= 7) score += 1;
-    else if (len >= 5) score += 0.5;
+    // Độ dài
+    if (len >= 13) score += 2;
+    else if (len >= 10) score += 1.5;
+    else if (len >= 8) score += 1;
+    else if (len >= 6) score += 0.5;
     
-    // Check C2 suffixes
-    for (const suf of ADVANCED_SUFFIXES_C2) {
-        if (w.endsWith(suf)) { score += 4; break; }
-    }
-    // Check C1 suffixes
-    for (const suf of ADVANCED_SUFFIXES_C1) {
-        if (w.endsWith(suf)) { score += 2.5; break; }
-    }
-    // Check B2 suffixes
-    for (const suf of ADVANCED_SUFFIXES_B2) {
-        if (w.endsWith(suf)) { score += 1; break; }
-    }
-    
-    // Check C2 prefixes
-    for (const pre of ADVANCED_PREFIXES_C2) {
-        if (w.startsWith(pre)) { score += 4; break; }
-    }
-    // Check C1 prefixes
-    for (const pre of ADVANCED_PREFIXES_C1) {
-        if (w.startsWith(pre)) { score += 2; break; }
-    }
-    
-    // Latin/Greek root patterns → more advanced
-    const latinGreekPatterns = /ph[aeiou]|psych|pneum|gn[aeio]|mn[aeio]|^eu|^dys|^syn|^para|^meta|^epi|^peri|^hyper|^hypo|xyl|onym|graph|gram|crypt|morph|path|log[iy]|phil|phob|chron|gen[ei]|theo|arch[aei]/i;
-    if (latinGreekPatterns.test(w)) score += 2;
-    
-    // Syllable count
+    // Âm tiết
     const vowelGroups = w.match(/[aeiouy]+/gi);
     const syllables = vowelGroups ? vowelGroups.length : 1;
-    if (syllables >= 5) score += 3;
-    else if (syllables >= 4) score += 2;
-    else if (syllables >= 3) score += 1;
+    if (syllables >= 5) score += 2;
+    else if (syllables >= 4) score += 1.5;
+    else if (syllables >= 3) score += 0.5;
     
-    // Uncommon letter patterns
-    if (/[xzqj]/.test(w)) score += 0.5;
-    if (/(?:ght|sch|chr|tch|dge|wh[aeiou])/.test(w)) score += 0.5;
+    // Gốc Latin/Greek
+    if (/(?:psych|pneum|gno[sm]|mne|philo|^eu[^r]|^dys|^syn[^c]|^para[^d]|^meta[^l]|^epi[^s]|^peri|onym|morph|crypt|theo[^r]|anth|^bene|^male?(?:vol|dict|fic)|^omni|^ambi|^ante|^circum|^infra|^proto|^quasi)/.test(w)) {
+        score += 1.5;
+    }
     
-    // Words NOT in common English → if word has unusual letter combos, bump up
-    if (/(?:uous|eous|ious|aceous|ulent|iferous)/.test(w)) score += 2;
+    // Suffix phức tạp
+    if (/(?:esque|aceous|itious|ulent|iform|oid$|ennial$)/.test(w)) score += 2;
+    else if (/(?:tude$|uous$|eous$|iferous$|istic$)/.test(w)) score += 1;
     
-    // Map score to CEFR (adjusted thresholds)
-    if (score >= 7) return 'C2';
-    if (score >= 5) return 'C1';
-    if (score >= 3) return 'B2';
-    if (score >= 1.5) return 'B1';
-    if (score >= 0.5) return 'A2';
-    return 'B1'; // Default for unknown words not in Oxford 5000
+    // Phân loại (mặc định B2 cho từ ngoài Oxford 5000)
+    if (score >= 4) return 'C2';
+    if (score >= 2) return 'C1';
+    return 'B2';
 }
+
 
 export function getCEFRLevel(word, pos = null) {
     const result = { level: 'unknown', color: CEFR_COLORS.unknown, label: CEFR_LABELS.unknown };
