@@ -1629,12 +1629,3 @@ export function getWordFamilyHTML(word, formation) {
     '</div>';
 }
 
-            <div class="wf-detail-header">
-                <i class="fas fa-sitemap"></i> Word Family
-            </div>
-            <div class="wf-detail-tags">
-                ${tagsHTML}
-            </div>
-        </div>
-    `;
-}
