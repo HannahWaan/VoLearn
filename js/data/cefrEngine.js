@@ -217,6 +217,39 @@ const RARE_C1 = new Set([
     'scrupulous', 'conscientious', 'resilient'
 ]);
 
+function isLikelyEnglish(word) {
+    const w = word.toLowerCase();
+    const len = w.length;
+    
+    // Quá dài (>25 ký tự) → không phải từ tiếng Anh thông thường
+    if (len > 25) return false;
+    
+    // Chỉ chứa a-z và hyphen
+    if (!/^[a-z]+(-[a-z]+)*$/.test(w)) return false;
+    
+    // Phải có ít nhất 1 nguyên âm
+    if (!/[aeiouy]/.test(w)) return false;
+    
+    // Tỷ lệ nguyên âm hợp lý (tiếng Anh thường 30-60%)
+    const vowels = (w.match(/[aeiouy]/g) || []).length;
+    const vowelRatio = vowels / len;
+    if (vowelRatio < 0.15 || vowelRatio > 0.75) return false;
+    
+    // Không có 4+ phụ âm liên tiếp (trừ một số pattern hợp lệ)
+    if (/[bcdfghjklmnpqrstvwxz]{5,}/.test(w)) return false;
+    
+    // Không có 4+ nguyên âm liên tiếp
+    if (/[aeiouy]{4,}/.test(w)) return false;
+    
+    // Không lặp ký tự 3+ lần liên tiếp
+    if (/(.){2,}/.test(w)) return false;
+    
+    // Từ dài (>15 ký tự) mà không trong bất kỳ list nào → khả năng cao là bịa
+    if (len > 15) return false;
+    
+    return true;
+}
+
 function estimateCEFR(word) {
     const w = word.toLowerCase().trim();
     const len = w.length;
@@ -230,7 +263,11 @@ function estimateCEFR(word) {
     if (len <= 3) return 'B1';
     if (len <= 4) return 'B1';
     
-    // 3) Heuristic: từ KHÔNG trong Oxford 5000 → tối thiểu B2
+    // 3) Kiểm tra từ có hợp lệ tiếng Anh không
+    //    Từ bịa/vô nghĩa → unknown
+    if (!isLikelyEnglish(w)) return 'unknown';
+    
+    // 4) Heuristic: từ KHÔNG trong Oxford 5000 → tối thiểu B2
     //    Chỉ cần phân biệt B2 vs C1 vs C2
     let score = 0;
     
@@ -429,4 +466,36 @@ export function cefrBadgeHTML(level) {
 export function cefrBadgeSmallHTML(level) {
     if (!level || level === 'unknown') return '';
     return `<span class="cefr-badge-sm cefr-${level.toLowerCase()}">${level}</span>`;
+}
+
+
+/* ===== RECALCULATE CEFR FOR EXISTING VOCABULARY ===== */
+
+/**
+ * Cập nhật lại CEFR level cho tất cả từ vựng đã lưu
+ * Gọi khi engine thay đổi logic
+ * @param {Array} vocabulary - appData.vocabulary
+ * @returns {{ updated: number, total: number }}
+ */
+export function recalculateAllCEFR(vocabulary) {
+    if (!vocabulary || !Array.isArray(vocabulary)) return { updated: 0, total: 0 };
+    
+    let updated = 0;
+    
+    vocabulary.forEach(wordObj => {
+        if (!wordObj.word) return;
+        
+        const pos = wordObj.meanings?.[0]?.pos || null;
+        const newCEFR = getCEFRLevel(wordObj.word, pos);
+        
+        if (wordObj.cefrLevel !== newCEFR.level) {
+            wordObj.cefrLevel = newCEFR.level;
+            wordObj.cefrColor = newCEFR.color;
+            wordObj.cefrLabel = newCEFR.label;
+            wordObj.cefrEstimated = newCEFR.estimated || false;
+            updated++;
+        }
+    });
+    
+    return { updated, total: vocabulary.length };
 }

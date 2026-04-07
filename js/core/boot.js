@@ -16,6 +16,7 @@ import { initSettings } from '../ui/settings.js';
 
 // Utils
 import { initSpeech } from '../utils/speech.js';
+import { recalculateAllCEFR } from '../data/cefrEngine.js';
 
 /**
  * Boot tất cả các hệ thống
