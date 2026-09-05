@@ -7,6 +7,7 @@ let currentSection = 'home';
 const sectionIdMap = {
     'home': 'home-section',
     'add-word': 'add-section',
+    'add': 'add-section',
     'bookshelf': 'bookshelf-section',
     'set-view': 'set-view-section',
     'practice': 'practice-section',
@@ -19,6 +20,7 @@ const sectionIdMap = {
 const pageTitles = {
     'home': 'Trang chủ',
     'add-word': 'Thêm từ vựng mới',
+    'add': 'Thêm từ vựng mới',
     'bookshelf': 'Tủ sách',
     'set-view': 'Chi tiết bộ từ',
     'practice': 'Luyện tập',
