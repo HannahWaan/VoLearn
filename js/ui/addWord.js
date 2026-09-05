@@ -1269,8 +1269,20 @@ export function saveWord() {
     }
     
     const setSelect = document.getElementById('set-select');
-    const wordFormation = document.getElementById('word-formation-global')?.value?.trim() || '';
     const setId = setSelect?.value || null;
+    const existingEditingWord = editingWordId
+    ? appData.vocabulary?.find(w => w.id === editingWordId)
+    : null;
+
+    const wordFormationInput = document.getElementById('word-formation-global')?.value?.trim() || '';
+    
+    const oldFormation =
+        existingEditingWord?.formation ||
+        existingEditingWord?.wordFormation ||
+        existingEditingWord?.wordForms ||
+        '';
+    
+    const wordFormation = wordFormationInput || oldFormation;
     
     const meanings = [];
     const meaningBlocks = document.querySelectorAll('.meaning-block');
@@ -1308,12 +1320,13 @@ export function saveWord() {
     let savedWordId = null;
     
     if (editingWordId) {
-        // Editing existing word
         const existingWord = appData.vocabulary?.find(w => w.id === editingWordId);
         if (existingWord) {
             existingWord.word = word;
             existingWord.setId = setId;
             existingWord.formation = wordFormation;
+            existingWord.wordFormation = wordFormation;
+            existingWord.wordForms = wordFormation;
             existingWord.cefrLevel = getCEFRLevel(word, meanings[0]?.pos || null).level;
             existingWord.meanings = meanings;
             existingWord.updatedAt = now;
@@ -1331,6 +1344,8 @@ export function saveWord() {
             cefrLevel: cefr.level,
             setId,
             formation: wordFormation,
+            wordFormation: wordFormation,
+            wordForms: wordFormation,
             meanings,
             createdAt: now,
             updatedAt: now,
@@ -1423,13 +1438,28 @@ export function loadWordForEdit(wordId) {
     const wordInput = document.getElementById('word-input');
     if (wordInput) wordInput.value = word.word;
     
-    const wordFormGlobal = document.getElementById('word-formation-global');
-    if (wordFormGlobal) wordFormGlobal.value = word.wordFormation || word.formation || '';
-    
     const setSelect = document.getElementById('set-select');
     if (setSelect) setSelect.value = word.setId || '';
     
     clearAllMeaningBlocks();
+
+    const wordFormGlobal = document.getElementById('word-formation-global');
+    const savedFormation = word.formation || word.wordFormation || word.wordForms || '';
+    if (wordFormGlobal) {
+        wordFormGlobal.value = savedFormation;
+    }
+
+    const wfBody = document.getElementById('word-family-body');
+    const wfIcon = document.getElementById('wf-toggle-icon');
+
+    if (savedFormation && wfBody) {
+        wfBody.style.display = 'block';
+    }
+
+    if (savedFormation && wfIcon) {
+        wfIcon.classList.remove('fa-chevron-down');
+        wfIcon.classList.add('fa-chevron-up');
+    }
     
     const meanings = word.meanings || [];
     const container = document.getElementById('meanings-container');
