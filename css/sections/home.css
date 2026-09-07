@@ -435,73 +435,143 @@
 }
 
 /* ===== DISTRIBUTION ===== */
-.dist-grid {
+.dashboard-distribution {
+  min-width: 0;
+}
+
+.dashboard-distribution .card-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Tabs */
+.dist-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px;
+  gap: 8px;
+  padding: 16px 20px 0;
+}
+
+.dist-tab {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.dist-grid .chart-wrap {
-  flex: 1 1 180px;
+.dist-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.dist-tab.active {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.28);
+}
+
+/* Panels */
+.dist-chart-panel {
+  display: none;
+}
+
+.dist-chart-panel.active {
+  display: block;
+}
+
+/* Layout chart + legend */
+.dist-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+  gap: 18px;
+  padding: 20px;
+  align-items: center;
+}
+
+/* Override .chart-wrap global */
+.dashboard-distribution .chart-wrap {
+  padding: 0;
+  width: 100%;
   max-width: 220px;
-  min-width: 160px;
+  min-width: 0;
+  height: 220px;
+  position: relative;
+  margin: 0 auto;
 }
 
-.dist-grid .dist-legend {
-  flex: 1 1 180px;
-  max-width: 260px;
+.dashboard-distribution canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
+/* Legend */
 .dist-legend {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
   border-radius: 10px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .legend-item:hover {
-  transform: translateX(4px);
+  transform: translateX(3px);
   border-color: var(--primary-color);
+  background: rgba(236, 72, 153, 0.08);
 }
 
 .legend-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+  min-width: 0;
 }
 
 .legend-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
 }
 
 .legend-name {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  min-width: 0;
 }
 
 .legend-value {
   color: var(--text-secondary);
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-weight: 800;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===== DAILY AVERAGE ===== */
@@ -663,6 +733,20 @@ canvas {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1100px) {
+  .dashboard-row {
+       grid-template-columns: 1fr;
+     }
+   
+     .dist-grid {
+       grid-template-columns: minmax(180px, 240px) 1fr;
+     }
+   
+     .dashboard-distribution .chart-wrap {
+       max-width: 240px;
+       height: 240px;
+     }
+   }
+
   .study-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -684,31 +768,39 @@ canvas {
   #home-section {
     padding: 16px;
   }
-  
+
   .home-dashboard {
     gap: 20px;
   }
-  
+
   .dashboard-row {
     grid-template-columns: 1fr;
   }
-  
-  .dist-grid,
-  
+
+  .dist-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-distribution .chart-wrap {
+    max-width: 260px;
+    height: 240px;
+  }
+
   .dist-legend {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
+
   .overview-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .total-breakdown {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .daily-grid {
     grid-template-columns: 1fr;
     gap: 16px;
